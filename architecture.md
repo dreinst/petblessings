@@ -47,15 +47,15 @@ Satu fungsi, `saveRegistration()`, adalah satu-satunya tempat yang bicara ke pen
 }
 ```
 
-Saat ini fungsi itu memanggil `window.storage`, penyimpanan sementara bawaan claude.ai yang hanya berfungsi di dalam sandbox artifact atau preview. Penyimpanan ini tidak akan berfungsi begitu form dideploy ke hosting biasa seperti Vercel, karena `window.storage` memang tidak ada di luar claude.ai.
-
-Rencana produksi: ganti isi `saveRegistration()` dengan panggilan ke Supabase, di proyek Supabase terpisah dari sistem 14-agent EO/WO yang sudah berjalan, supaya dua sistem tidak saling mengganggu. Bagian form yang lain tidak perlu diubah karena sudah terisolasi di balik fungsi ini.
+Fungsi ini sekarang memanggil Supabase (`supabase-js`, project terpisah dari sistem 14-agent EO/WO yang sudah berjalan, supaya dua sistem tidak saling mengganggu): insert satu baris ke `owners`, ambil `id`-nya, lalu insert N baris ke `pets` dengan `owner_id` itu. Kredensial (Project URL + anon key) ada di `supabase-config.js`, dimuat lewat `<script>` sebelum kode form. anon key aman ditaruh di sisi klien karena akses dibatasi lewat Row Level Security (lihat `supabase/schema.sql`): anon cuma boleh insert, tidak boleh membaca data pemilik/hewan lain.
 
 Foto (hewan, pemilik, bukti transfer) saat ini hanya dipratinjau di browser lewat FileReader, belum diunggah ke penyimpanan berkas mana pun. Di versi produksi, ini perlu diunggah ke Supabase Storage dan disimpan sebagai link, bukan sebagai data mentah di tabel.
 
 ### 3.3 Halaman pendaftaran masuk (sudah dibangun)
 
-Halaman terpisah (`pendaftaran-masuk.html`), memuat seluruh data dari penyimpanan yang sama, dengan pencarian berdasarkan nama pemilik atau hewan. Dipisah dari form publik supaya form tetap sederhana untuk pendaftar, dan halaman ini bisa nanti diberi proteksi akses tanpa memengaruhi form.
+Halaman terpisah (`pendaftaran-masuk.html`), dikunci login Supabase Auth (email + password panitia, dibuat manual lewat dashboard Supabase) sebelum data ditampilkan. Query lewat `owners.select('*, pets(*)')`, dengan pencarian berdasarkan nama pemilik atau hewan di sisi klien. RLS membatasi SELECT hanya untuk role `authenticated`, jadi tanpa login data tidak bisa dibaca sama sekali lewat anon key.
+
+Ada tombol "Export xlsx" (pakai SheetJS) yang mengunduh rekap: satu baris per hewan, lengkap dengan data pemilik, status umat, donasi, dan waktu daftar — untuk direkap panitia di luar aplikasi.
 
 ### 3.4 QR dan check-in (rencana)
 
@@ -126,10 +126,10 @@ petblessings/
 | Bagian | Sekarang (prototipe) | Rencana (produksi) |
 |---|---|---|
 | Frontend | HTML, CSS, JS satu berkas | Bisa tetap, atau dirapikan jadi proyek terstruktur |
-| Data | `window.storage`, khusus claude.ai | Supabase (Postgres) |
+| Data | Supabase (Postgres), sudah tersambung | — |
 | Penyimpanan foto | Pratinjau di browser saja | Supabase Storage |
 | Hosting | Belum dideploy | Vercel |
-| Kode sumber | Belum di-push | GitHub, `dreinst/petblessings` |
+| Kode sumber | GitHub, `dreinst/petblessings`, sudah di-push | — |
 
 ## 7. Rencana Eskalasi
 

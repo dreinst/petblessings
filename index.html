@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-config.js"></script>
 <style>
   :root{
     --ink:#2B2E22;
@@ -401,13 +403,42 @@
   }
 
   // Data layer: saveRegistration() is the one place that talks to storage.
-  // Swap this function's body for a real API call (e.g. POST to Supabase)
-  // when moving past the prototype. Nothing else in the form needs to change.
+  // Nothing else in the form needs to change if this function's storage
+  // backend changes again later.
+  var isSupabaseConfigured = !!(window.supabase && /^https?:\/\//.test(window.SUPABASE_URL || '') && window.SUPABASE_ANON_KEY && window.SUPABASE_ANON_KEY.indexOf('REPLACE_WITH') !== 0);
+  var supabaseClient = isSupabaseConfigured ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : null;
+
   async function saveRegistration(registration){
-    var key = 'registrations:' + registration.id;
-    var result = await window.storage.set(key, JSON.stringify(registration), true);
-    if(!result) throw new Error('Gagal menyimpan');
-    return result;
+    if(!supabaseClient) throw new Error('Supabase belum dikonfigurasi (lihat supabase-config.js)');
+
+    var ownerInsert = await supabaseClient.from('owners').insert({
+      name: registration.owner.name,
+      phone: registration.owner.phone,
+      is_parishioner: registration.owner.isParishioner,
+      parish_origin: registration.owner.parishOrigin || null,
+      donation_amount: registration.donation.amount || null,
+      donation_has_proof: registration.donation.hasProof,
+      agreed_tos: registration.agreedTos,
+      submitted_at: registration.submittedAt
+    }).select().single();
+
+    if(ownerInsert.error) throw ownerInsert.error;
+    var ownerId = ownerInsert.data.id;
+
+    var petsInsert = await supabaseClient.from('pets').insert(
+      registration.pets.map(function(p){
+        return {
+          owner_id: ownerId,
+          name: p.name,
+          type: p.type,
+          has_photo: p.hasPhoto,
+          notes: p.notes || null
+        };
+      })
+    );
+
+    if(petsInsert.error) throw petsInsert.error;
+    return ownerId;
   }
 
   document.getElementById('regForm').addEventListener('submit', async function(e){

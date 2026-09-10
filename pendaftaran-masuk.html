@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase-config.js"></script>
 <style>
   :root{
     --ink:#2B2E22; --ink-soft:#5B5F4E; --bg:#F4F1E4; --card:#FCFAF2;
@@ -40,19 +43,55 @@
   .donation-row{margin-top:10px;font-size:12.5px;color:var(--ink-soft);}
 
   .empty,.loading,.error{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:14px;}
+
+  .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
+  .login-wrap h1{font-size:22px;color:var(--sage-deep);margin-bottom:6px;}
+  .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
+  .login-wrap .field{margin-bottom:14px;}
+  .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
+  .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);box-sizing:border-box;}
+  .login-wrap button{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-wrap button:disabled{opacity:.6;cursor:not-allowed;}
+  .login-error{color:var(--danger, #A6423A);font-size:13px;margin-top:10px;display:none;}
+  .login-error.show{display:block;}
+
+  .toolbar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
+  .export-btn{padding:10px 14px;font-size:13px;font-family:inherit;border:1px solid var(--sage);border-radius:10px;background:var(--sage);color:#fff;cursor:pointer;white-space:nowrap;}
+  .export-btn:disabled{opacity:.5;cursor:not-allowed;}
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="login-wrap" id="loginWrap">
+  <h1>Login panitia</h1>
+  <p>Halaman ini khusus panitia. Login memakai akun yang sudah didaftarkan di Supabase Auth.</p>
+  <div class="field">
+    <label for="loginEmail">Email</label>
+    <input type="text" id="loginEmail" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+  </div>
+  <button type="button" id="loginBtn">Masuk</button>
+  <div class="login-error" id="loginError">Email atau password salah.</div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
   <header>
-    <a class="back" href="index.html">&laquo; Kembali ke form</a>
+    <div class="toolbar-top">
+      <a class="back" href="index.html">&laquo; Kembali ke form</a>
+      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+    </div>
     <h1>Pendaftaran masuk</h1>
-    <p>Data tersimpan di penyimpanan demo untuk tahap pengembangan, bukan database produksi.</p>
+    <p>Data langsung dari database Supabase, khusus panitia yang sudah login.</p>
   </header>
 
   <div class="toolbar">
     <input type="text" id="search" placeholder="Cari nama pemilik atau hewan">
     <button type="button" id="refreshBtn">Muat ulang</button>
+    <button type="button" class="export-btn" id="exportBtn">Export xlsx</button>
   </div>
   <div class="count" id="count"></div>
 
@@ -62,6 +101,13 @@
 <script>
 (function(){
   var allRegs = [];
+
+  var isConfigured = !!(window.supabase && /^https?:\/\//.test(window.SUPABASE_URL || '') && window.SUPABASE_ANON_KEY && window.SUPABASE_ANON_KEY.indexOf('REPLACE_WITH') !== 0);
+  var supabaseClient = isConfigured ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : null;
+  if(!isConfigured){
+    document.getElementById('loginWrap').innerHTML = '<div class="error">Supabase belum dikonfigurasi. Isi supabase-config.js dulu.</div>';
+    return;
+  }
 
   function escapeHtml(s){
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -74,18 +120,63 @@
     return d.toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   }
 
+  // --- Login gate ---
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'block';
+    load();
+  }
+  function showLogin(){
+    document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+
+  async function checkSession(){
+    if(!supabaseClient) return;
+    var res = await supabaseClient.auth.getSession();
+    if(res.data && res.data.session) showApp(); else showLogin();
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var btn = this;
+    var email = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var err = document.getElementById('loginError');
+    err.classList.remove('show');
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    var res = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+    btn.disabled = false; btn.textContent = 'Masuk';
+    if(res.error){ err.classList.add('show'); return; }
+    showApp();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async function(){
+    await supabaseClient.auth.signOut();
+    showLogin();
+  });
+
+  // --- Data ---
   async function listRegistrations(){
-    var listResult = await window.storage.list('registrations:', true);
-    if(!listResult || !listResult.keys) return [];
-    var out = [];
-    for(var i=0;i<listResult.keys.length;i++){
-      try{
-        var r = await window.storage.get(listResult.keys[i], true);
-        if(r && r.value) out.push(JSON.parse(r.value));
-      }catch(e){ /* skip an entry that fails to load */ }
-    }
-    out.sort(function(a,b){ return (b.submittedAt||'').localeCompare(a.submittedAt||''); });
-    return out;
+    var res = await supabaseClient.from('owners').select('*, pets(*)').order('submitted_at', { ascending: false });
+    if(res.error) throw res.error;
+    return (res.data || []).map(function(row){
+      return {
+        owner: {
+          name: row.name,
+          phone: row.phone,
+          isParishioner: row.is_parishioner,
+          parishOrigin: row.parish_origin
+        },
+        donation: {
+          amount: row.donation_amount,
+          hasProof: row.donation_has_proof
+        },
+        pets: (row.pets || []).map(function(p){
+          return { name: p.name, type: p.type, hasPhoto: p.has_photo, notes: p.notes };
+        }),
+        submittedAt: row.submitted_at
+      };
+    });
   }
 
   function render(regs){
@@ -135,10 +226,49 @@
     }
   }
 
+  function exportXlsx(){
+    if(!allRegs.length){ return; }
+    var rows = [];
+    allRegs.forEach(function(r){
+      if(!r.pets.length){
+        rows.push(baseRow(r, null));
+        return;
+      }
+      r.pets.forEach(function(p){ rows.push(baseRow(r, p)); });
+    });
+
+    function baseRow(r, p){
+      return {
+        'Nama pemilik': r.owner.name,
+        'No. HP': r.owner.phone,
+        'Status umat': r.owner.isParishioner === 'ya' ? 'Umat paroki' : 'Bukan umat paroki',
+        'Asal paroki/daerah': r.owner.parishOrigin || '',
+        'Nama hewan': p ? p.name : '',
+        'Jenis hewan': p ? p.type : '',
+        'Ada foto': p ? (p.hasPhoto ? 'Ya' : 'Tidak') : '',
+        'Catatan hewan': p ? (p.notes || '') : '',
+        'Donasi': r.donation.amount || '',
+        'Ada bukti transfer': r.donation.hasProof ? 'Ya' : 'Tidak',
+        'Waktu daftar': formatTime(r.submittedAt)
+      };
+    }
+
+    var ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      {wch:22},{wch:16},{wch:16},{wch:20},{wch:18},{wch:14},{wch:9},{wch:30},{wch:12},{wch:14},{wch:20}
+    ];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pendaftaran');
+
+    var stamp = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, 'pet-blessing-2026-pendaftaran-' + stamp + '.xlsx');
+  }
+
   document.getElementById('search').addEventListener('input', applySearch);
   document.getElementById('refreshBtn').addEventListener('click', load);
+  document.getElementById('exportBtn').addEventListener('click', exportXlsx);
 
-  load();
+  checkSession();
 })();
 </script>
 </body>
