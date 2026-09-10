@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendaftaran masuk, Pet Blessing 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2B2E22; --ink-soft:#5B5F4E; --bg:#F4F1E4; --card:#FCFAF2;
+    --sage:#3F5B44; --sage-deep:#2E4433; --sage-light:#E7ECE1;
+    --line:#DDD6C1;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:620px;margin:0 auto;padding:32px 20px 64px;}
+  a{color:var(--sage-deep);}
+  header{margin-bottom:24px;}
+  header a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;}
+  header h1{font-size:24px;color:var(--sage-deep);margin-top:10px;}
+  header p{font-size:14px;color:var(--ink-soft);margin-top:6px;}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;}
+  .toolbar input{flex:1;padding:10px 12px;font-size:14px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
+  .toolbar button{padding:10px 14px;font-size:13px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer;}
+  .count{font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+
+  .entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
+  .entry .owner{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;}
+  .entry .owner-name{font-weight:500;font-size:15px;}
+  .entry .time{font-size:12px;color:var(--ink-soft);}
+  .entry .phone{font-size:13.5px;color:var(--ink-soft);margin-top:2px;}
+  .entry .origin{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+  .pet-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .pet-row{font-size:13.5px;padding:8px 10px;background:var(--sage-light);border-radius:8px;color:var(--sage-deep);}
+  .pet-row .pet-notes{display:block;color:var(--ink-soft);margin-top:2px;font-size:12.5px;}
+  .donation-row{margin-top:10px;font-size:12.5px;color:var(--ink-soft);}
+
+  .empty,.loading,.error{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="back" href="index.html">&laquo; Kembali ke form</a>
+    <h1>Pendaftaran masuk</h1>
+    <p>Data tersimpan di penyimpanan demo untuk tahap pengembangan, bukan database produksi.</p>
+  </header>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Cari nama pemilik atau hewan">
+    <button type="button" id="refreshBtn">Muat ulang</button>
+  </div>
+  <div class="count" id="count"></div>
+
+  <div id="list"><div class="loading">Memuat pendaftaran…</div></div>
+</div>
+
+<script>
+(function(){
+  var allRegs = [];
+
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatTime(iso){
+    if(!iso) return '';
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  async function listRegistrations(){
+    var listResult = await window.storage.list('registrations:', true);
+    if(!listResult || !listResult.keys) return [];
+    var out = [];
+    for(var i=0;i<listResult.keys.length;i++){
+      try{
+        var r = await window.storage.get(listResult.keys[i], true);
+        if(r && r.value) out.push(JSON.parse(r.value));
+      }catch(e){ /* skip an entry that fails to load */ }
+    }
+    out.sort(function(a,b){ return (b.submittedAt||'').localeCompare(a.submittedAt||''); });
+    return out;
+  }
+
+  function render(regs){
+    var list = document.getElementById('list');
+    var count = document.getElementById('count');
+    if(regs.length === 0){
+      count.textContent = '';
+      list.innerHTML = '<div class="empty">Belum ada pendaftaran masuk.</div>';
+      return;
+    }
+    var totalPets = regs.reduce(function(sum,r){ return sum + r.pets.length; }, 0);
+    count.textContent = regs.length + ' pemilik, ' + totalPets + ' hewan';
+    list.innerHTML = regs.map(function(r){
+      var petsHtml = r.pets.map(function(p){
+        var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
+        return '<div class="pet-row">'+escapeHtml(p.name)+' &middot; '+escapeHtml(p.type)+(p.hasPhoto ? ' &middot; ada foto' : '')+notes+'</div>';
+      }).join('');
+      var originLine = r.owner.isParishioner === 'bukan' && r.owner.parishOrigin
+        ? '<div class="origin">Dari '+escapeHtml(r.owner.parishOrigin)+'</div>' : '';
+      var donationLine = (r.donation && (r.donation.amount || r.donation.hasProof))
+        ? '<div class="donation-row">Donasi: '+escapeHtml(r.donation.amount || 'tanpa jumlah')+(r.donation.hasProof ? ', ada bukti transfer' : '')+'</div>' : '';
+      return '<div class="entry" data-search="'+escapeHtml((r.owner.name+' '+r.pets.map(function(p){return p.name;}).join(' ')).toLowerCase())+'">'+
+        '<div class="owner"><span class="owner-name">'+escapeHtml(r.owner.name)+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
+        '<div class="phone">'+escapeHtml(r.owner.phone)+'</div>'+
+        originLine+
+        '<div class="pet-list">'+petsHtml+'</div>'+
+        donationLine+
+      '</div>';
+    }).join('');
+  }
+
+  function applySearch(){
+    var q = document.getElementById('search').value.trim().toLowerCase();
+    if(!q){ render(allRegs); return; }
+    render(allRegs.filter(function(r){
+      return (r.owner.name+' '+r.pets.map(function(p){return p.name;}).join(' ')).toLowerCase().indexOf(q) !== -1;
+    }));
+  }
+
+  async function load(){
+    document.getElementById('list').innerHTML = '<div class="loading">Memuat pendaftaran…</div>';
+    try{
+      allRegs = await listRegistrations();
+      applySearch();
+    }catch(e){
+      document.getElementById('list').innerHTML = '<div class="error">Belum bisa memuat data. Coba muat ulang.</div>';
+    }
+  }
+
+  document.getElementById('search').addEventListener('input', applySearch);
+  document.getElementById('refreshBtn').addEventListener('click', load);
+
+  load();
+})();
+</script>
+</body>
+</html>

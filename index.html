@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendaftaran Pet Blessing 2026, Paroki St. Vincentius a Paulo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2B2E22;
+    --ink-soft:#5B5F4E;
+    --bg:#F4F1E4;
+    --card:#FCFAF2;
+    --sage:#3F5B44;
+    --sage-deep:#2E4433;
+    --sage-light:#E7ECE1;
+    --gold:#B8862F;
+    --gold-light:#F3E6C8;
+    --rose:#B06B7F;
+    --line:#DDD6C1;
+    --danger:#A6423A;
+    --danger-bg:#F6E7E5;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:560px;margin:0 auto;padding-bottom:64px;}
+
+  header.hero{background:var(--sage-deep);color:#F6F2E4;padding:40px 24px 32px;border-radius:0 0 28px 28px;}
+  .hero-icon{width:36px;height:36px;color:var(--gold-light);margin-bottom:14px;}
+  header.hero h1{font-size:28px;line-height:1.2;color:#fff;}
+  header.hero .parish{margin-top:8px;font-size:15px;color:#CFE0CF;}
+  header.hero .tagline{margin-top:16px;font-size:15px;color:#E4DFC9;max-width:42ch;}
+
+  main{padding:0 20px;}
+  section.block{margin-top:32px;}
+  section.block h2{font-size:20px;color:var(--sage-deep);margin-bottom:4px;}
+  section.block .block-note{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;}
+  .field label .req{color:var(--rose);margin-left:2px;}
+  .field .hint{font-size:12.5px;color:var(--ink-soft);margin-top:5px;}
+  input[type=text],input[type=tel],input[type=number],select,textarea{
+    width:100%;padding:12px 14px;font-size:16px;font-family:inherit;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    transition:border-color .15s ease;
+  }
+  textarea{resize:vertical;min-height:72px;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px var(--sage-light);}
+  input.invalid,select.invalid,textarea.invalid{border-color:var(--danger);}
+  .field-error{display:none;color:var(--danger);font-size:12.5px;margin-top:5px;}
+  .field-error.show{display:block;}
+
+  .radio-row{display:flex;gap:10px;}
+  .radio-opt{flex:1;position:relative;}
+  .radio-opt input{position:absolute;opacity:0;inset:0;cursor:pointer;}
+  .radio-opt span{display:block;text-align:center;padding:11px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14.5px;font-weight:500;transition:.15s ease;}
+  .radio-opt input:checked + span{background:var(--sage);border-color:var(--sage);color:#fff;}
+
+  .conditional{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+  .conditional.open{max-height:200px;}
+
+  .file-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:var(--sage-light);color:var(--sage-deep);border:1px dashed var(--sage);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
+  .file-btn input{display:none;}
+  .file-preview{margin-top:10px;display:flex;align-items:center;gap:10px;}
+  .file-preview img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);}
+  .file-preview .remove-file{font-size:13px;color:var(--rose);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;}
+
+  .pet-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;position:relative;}
+  .pet-card .pet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .pet-card .pet-head h3{font-size:16px;color:var(--sage-deep);}
+  .pet-card .remove-pet{background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;font-family:inherit;padding:4px 6px;}
+  .pet-card .remove-pet:hover{color:var(--danger);}
+
+  .add-pet-btn{width:100%;padding:14px;background:none;border:1.5px dashed var(--sage);border-radius:12px;color:var(--sage-deep);font-family:'Work Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:.15s ease;}
+  .add-pet-btn:hover{background:var(--sage-light);}
+
+  .notice{background:var(--gold-light);border-radius:10px;padding:14px 16px;font-size:13.5px;color:#5E4419;margin-top:14px;}
+
+  .checkbox-row{display:flex;align-items:flex-start;gap:10px;margin-top:6px;}
+  .checkbox-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--sage);flex-shrink:0;}
+  .checkbox-row label{font-size:14px;font-weight:400;}
+
+  .submit-btn{width:100%;padding:16px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:28px;transition:background .15s ease;}
+  .submit-btn:hover{background:var(--sage-deep);}
+  .submit-btn:disabled{opacity:.6;cursor:not-allowed;}
+
+  .form-error-banner{display:none;background:var(--danger-bg);color:var(--danger);padding:12px 16px;border-radius:10px;font-size:14px;margin-top:20px;}
+  .form-error-banner.show{display:block;}
+
+  .confirm-wrap{display:none;padding:60px 24px;text-align:center;}
+  .confirm-wrap.show{display:block;}
+  .confirm-wrap .check{width:56px;height:56px;border-radius:50%;background:var(--sage-light);color:var(--sage-deep);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+  .confirm-wrap h2{font-size:24px;color:var(--sage-deep);}
+  .confirm-wrap p{color:var(--ink-soft);margin-top:10px;font-size:15px;}
+  .confirm-wrap .summary{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:22px;text-align:left;font-size:14px;}
+  .confirm-wrap .summary b{display:block;margin-bottom:4px;}
+  .confirm-wrap .again-btn{margin-top:24px;background:none;border:1px solid var(--sage);color:var(--sage-deep);padding:10px 18px;border-radius:10px;font-family:inherit;font-size:14px;cursor:pointer;}
+
+  .admin-toggle{display:block;text-align:center;margin:36px auto 0;font-size:13px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <svg class="hero-icon" viewBox="0 0 48 48" fill="currentColor"><ellipse cx="24" cy="31" rx="11" ry="9"/><ellipse cx="10.5" cy="17" rx="4.3" ry="5.3"/><ellipse cx="21.5" cy="10" rx="4.3" ry="5.3"/><ellipse cx="33.5" cy="11.5" rx="4.3" ry="5"/><ellipse cx="40.5" cy="21" rx="3.8" ry="4.8"/></svg>
+    <h1>Pendaftaran Pet Blessing 2026</h1>
+    <div class="parish">Paroki St. Vincentius a Paulo, Malang</div>
+    <p class="tagline">Ajak hewan kesayangan Anda menerima berkat bersama umat paroki. Isi data di bawah untuk mendaftar.</p>
+  </header>
+
+  <main>
+    <form id="regForm" novalidate>
+
+      <section class="block">
+        <h2>Data pemilik</h2>
+        <div class="field">
+          <label for="ownerName">Nama pet owner<span class="req">*</span></label>
+          <input type="text" id="ownerName" autocomplete="name">
+          <div class="field-error" id="err-ownerName">Nama pemilik wajib diisi.</div>
+        </div>
+        <div class="field">
+          <label for="ownerPhone">Kontak / no. HP (WhatsApp)<span class="req">*</span></label>
+          <input type="tel" id="ownerPhone" autocomplete="tel" placeholder="08xx xxxx xxxx">
+          <div class="field-error" id="err-ownerPhone">Nomor HP wajib diisi.</div>
+        </div>
+        <div class="field">
+          <label>Apakah Anda umat Paroki St. Vincentius a Paulo Malang?<span class="req">*</span></label>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="isParishioner" value="ya"><span>Ya</span></label>
+            <label class="radio-opt"><input type="radio" name="isParishioner" value="bukan"><span>Bukan</span></label>
+          </div>
+          <div class="field-error" id="err-isParishioner">Silakan pilih salah satu.</div>
+        </div>
+        <div class="conditional" id="parishOriginWrap">
+          <div class="field" style="margin-top:2px;">
+            <label for="parishOrigin">Asal paroki / gereja / daerah<span class="req">*</span></label>
+            <input type="text" id="parishOrigin">
+            <div class="field-error" id="err-parishOrigin">Mohon isi asal paroki Anda.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Data hewan peliharaan</h2>
+        <div class="block-note">Tambahkan satu kartu untuk tiap hewan yang ikut Pet Blessing.</div>
+        <div id="petCards"></div>
+        <button type="button" class="add-pet-btn" id="addPetBtn">+ Tambah hewan</button>
+      </section>
+
+      <section class="block">
+        <h2>Donasi</h2>
+        <div class="block-note">Donasi bersifat sukarela dan tidak memengaruhi pendaftaran.</div>
+        <div class="field">
+          <label for="donationAmount">Jumlah donasi (opsional)</label>
+          <input type="text" id="donationAmount" inputmode="numeric" placeholder="Rp">
+        </div>
+        <div class="field">
+          <label>Bukti transfer (opsional)</label>
+          <label class="file-btn"><input type="file" id="donationProof" accept="image/*"> Unggah bukti transfer</label>
+          <div class="file-preview" id="donationProofPreview" style="display:none;"></div>
+          <div class="hint">No. rekening panitia: <em>(isi di sini)</em></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Syarat &amp; ketentuan</h2>
+        <div class="checkbox-row">
+          <input type="checkbox" id="agreedTos">
+          <label for="agreedTos">Dengan ini saya menyatakan mendaftarkan diri dalam acara Pet Blessing Paroki St. Vincentius a Paulo dan bersedia mengikuti syarat &amp; ketentuan yang berlaku selama acara.</label>
+        </div>
+        <div class="field-error" id="err-agreedTos">Mohon centang persetujuan untuk melanjutkan.</div>
+        <div class="notice">Pastikan data yang diisi sudah benar, terutama nama hewan. Panitia tidak bertanggung jawab atas kesalahan penulisan setelah data disubmit.</div>
+      </section>
+
+      <div class="form-error-banner" id="formErrorBanner">Ada data yang belum lengkap. Mohon periksa kembali bagian yang ditandai di atas.</div>
+      <button type="submit" class="submit-btn" id="submitBtn">Kirim pendaftaran</button>
+    </form>
+
+    <div class="confirm-wrap" id="confirmWrap">
+      <div class="check">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2>Pendaftaran diterima</h2>
+      <p>Terima kasih sudah mendaftar. Simpan halaman ini sebagai catatan sementara.</p>
+      <div class="summary" id="confirmSummary"></div>
+      <button class="again-btn" id="againBtn">Daftarkan pemilik lain</button>
+    </div>
+
+    <a class="admin-toggle" href="pendaftaran-masuk.html">Lihat pendaftaran yang masuk</a>
+  </main>
+</div>
+
+<script>
+(function(){
+  var PET_TYPES = ['Anjing','Kucing','Burung','Kelinci','Hamster','Reptil','Lainnya'];
+  var pets = [];
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  function newPet(){ return { id: uid(), name:'', type:'', typeOther:'', notes:'', photoPreview:null, photoName:null }; }
+
+  function renderPetCards(){
+    var wrap = document.getElementById('petCards');
+    wrap.innerHTML = '';
+    pets.forEach(function(pet, idx){
+      var card = document.createElement('div');
+      card.className = 'pet-card';
+      card.dataset.id = pet.id;
+
+      var typeOptions = PET_TYPES.map(function(t){
+        return '<option value="'+t+'"'+(pet.type===t?' selected':'')+'>'+t+'</option>';
+      }).join('');
+
+      card.innerHTML =
+        '<div class="pet-head"><h3>Hewan '+(idx+1)+'</h3>'+
+        (pets.length>1 ? '<button type="button" class="remove-pet" data-action="remove">Hapus</button>' : '')+
+        '</div>'+
+        '<div class="field">'+
+          '<label>Nama hewan<span class="req">*</span></label>'+
+          '<input type="text" data-field="name" value="'+escapeHtml(pet.name)+'">'+
+          '<div class="field-error" data-error="name">Nama hewan wajib diisi.</div>'+
+        '</div>'+
+        '<div class="field">'+
+          '<label>Jenis hewan<span class="req">*</span></label>'+
+          '<select data-field="type"><option value="">Pilih jenis…</option>'+typeOptions+'</select>'+
+          '<div class="field-error" data-error="type">Pilih jenis hewan.</div>'+
+        '</div>'+
+        (pet.type==='Lainnya' ? '<div class="field"><label>Sebutkan jenisnya<span class="req">*</span></label><input type="text" data-field="typeOther" value="'+escapeHtml(pet.typeOther)+'"><div class="field-error" data-error="typeOther">Mohon sebutkan jenis hewannya.</div></div>' : '')+
+        '<div class="field">'+
+          '<label>Foto hewan (opsional)</label>'+
+          '<label class="file-btn"><input type="file" accept="image/*" capture="environment" data-field="photo"> Ambil / unggah foto</label>'+
+          '<div class="file-preview" data-preview style="display:'+(pet.photoPreview?'flex':'none')+';">'+
+            (pet.photoPreview ? '<img src="'+pet.photoPreview+'"><button type="button" class="remove-file" data-action="removePhoto">Hapus foto</button>' : '')+
+          '</div>'+
+        '</div>'+
+        '<div class="field" style="margin-bottom:0;">'+
+          '<label>Catatan</label>'+
+          '<textarea data-field="notes" placeholder="Agresif, mudah cemas, kondisi kesehatan khusus, atau disabilitas (misal: buta, pincang, dll.). Isi &quot;-&quot; kalau tidak ada.">'+escapeHtml(pet.notes)+'</textarea>'+
+        '</div>';
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('petCards').addEventListener('input', function(e){
+    var card = e.target.closest('.pet-card');
+    if(!card) return;
+    var pet = pets.find(function(p){ return p.id === card.dataset.id; });
+    if(!pet) return;
+    var field = e.target.dataset.field;
+    if(field === 'name'){ pet.name = e.target.value; clearFieldError(e.target); }
+    if(field === 'typeOther'){ pet.typeOther = e.target.value; clearFieldError(e.target); }
+    if(field === 'notes'){ pet.notes = e.target.value; }
+  });
+
+  document.getElementById('petCards').addEventListener('change', function(e){
+    var card = e.target.closest('.pet-card');
+    if(!card) return;
+    var pet = pets.find(function(p){ return p.id === card.dataset.id; });
+    if(!pet) return;
+    if(e.target.dataset.field === 'type'){
+      pet.type = e.target.value;
+      clearFieldError(e.target);
+      renderPetCards();
+    }
+    if(e.target.dataset.field === 'photo'){
+      var file = e.target.files[0];
+      if(file){
+        var reader = new FileReader();
+        reader.onload = function(ev){
+          pet.photoPreview = ev.target.result;
+          pet.photoName = file.name;
+          renderPetCards();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  });
+
+  document.getElementById('petCards').addEventListener('click', function(e){
+    var action = e.target.dataset.action;
+    if(!action) return;
+    var card = e.target.closest('.pet-card');
+    var pet = pets.find(function(p){ return p.id === card.dataset.id; });
+    if(action === 'remove'){
+      pets = pets.filter(function(p){ return p.id !== pet.id; });
+      renderPetCards();
+    }
+    if(action === 'removePhoto'){
+      pet.photoPreview = null; pet.photoName = null;
+      renderPetCards();
+    }
+  });
+
+  document.getElementById('addPetBtn').addEventListener('click', function(){
+    pets.push(newPet());
+    renderPetCards();
+  });
+
+  // Live-clear errors on the top-level fields as the person fixes them
+  ['ownerName','ownerPhone','parishOrigin'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(e){ clearFieldError(e.target); });
+  });
+
+  // Conditional parish origin
+  var parishRadios = document.querySelectorAll('input[name="isParishioner"]');
+  var parishOriginWrap = document.getElementById('parishOriginWrap');
+  parishRadios.forEach(function(r){
+    r.addEventListener('change', function(){
+      document.getElementById('err-isParishioner').classList.remove('show');
+      if(r.value === 'bukan' && r.checked){ parishOriginWrap.classList.add('open'); }
+      if(r.value === 'ya' && r.checked){ parishOriginWrap.classList.remove('open'); clearFieldError(document.getElementById('parishOrigin')); }
+    });
+  });
+
+  document.getElementById('agreedTos').addEventListener('change', function(e){
+    if(e.target.checked) document.getElementById('err-agreedTos').classList.remove('show');
+  });
+
+  // Donation proof preview
+  document.getElementById('donationProof').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    var box = document.getElementById('donationProofPreview');
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      box.style.display = 'flex';
+      box.innerHTML = '<img src="'+ev.target.result+'"><button type="button" class="remove-file" id="removeDonationProof">Hapus</button>';
+      document.getElementById('removeDonationProof').addEventListener('click', function(){
+        document.getElementById('donationProof').value = '';
+        box.style.display = 'none'; box.innerHTML = '';
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function clearFieldError(el){
+    if(!el) return;
+    el.classList.remove('invalid');
+    var container = el.closest('.pet-card') || el.closest('.field') || document;
+    var field = el.dataset ? el.dataset.field : null;
+    var errEl = field ? container.querySelector('[data-error="'+field+'"]') : (el.id ? document.getElementById('err-'+el.id) : null);
+    if(errEl) errEl.classList.remove('show');
+  }
+
+  function setError(inputEl, errorEl, show){
+    if(inputEl) inputEl.classList.toggle('invalid', show);
+    if(errorEl) errorEl.classList.toggle('show', show);
+  }
+
+  function validate(){
+    var ok = true;
+
+    var ownerName = document.getElementById('ownerName');
+    if(!ownerName.value.trim()){ setError(ownerName, document.getElementById('err-ownerName'), true); ok = false; }
+    else setError(ownerName, document.getElementById('err-ownerName'), false);
+
+    var ownerPhone = document.getElementById('ownerPhone');
+    if(!ownerPhone.value.trim()){ setError(ownerPhone, document.getElementById('err-ownerPhone'), true); ok = false; }
+    else setError(ownerPhone, document.getElementById('err-ownerPhone'), false);
+
+    var isParishioner = document.querySelector('input[name="isParishioner"]:checked');
+    if(!isParishioner){ document.getElementById('err-isParishioner').classList.add('show'); ok = false; }
+    else document.getElementById('err-isParishioner').classList.remove('show');
+
+    var parishOrigin = document.getElementById('parishOrigin');
+    if(isParishioner && isParishioner.value === 'bukan' && !parishOrigin.value.trim()){
+      setError(parishOrigin, document.getElementById('err-parishOrigin'), true); ok = false;
+    } else setError(parishOrigin, document.getElementById('err-parishOrigin'), false);
+
+    pets.forEach(function(pet){
+      var card = document.querySelector('.pet-card[data-id="'+pet.id+'"]');
+      if(!card) return;
+      var nameInput = card.querySelector('[data-field="name"]');
+      var typeInput = card.querySelector('[data-field="type"]');
+      var typeOtherInput = card.querySelector('[data-field="typeOther"]');
+      if(!pet.name.trim()){ setError(nameInput, card.querySelector('[data-error="name"]'), true); ok = false; }
+      else setError(nameInput, card.querySelector('[data-error="name"]'), false);
+      if(!pet.type){ setError(typeInput, card.querySelector('[data-error="type"]'), true); ok = false; }
+      else setError(typeInput, card.querySelector('[data-error="type"]'), false);
+      if(pet.type === 'Lainnya' && typeOtherInput && !pet.typeOther.trim()){
+        setError(typeOtherInput, card.querySelector('[data-error="typeOther"]'), true); ok = false;
+      }
+    });
+
+    var agreedTos = document.getElementById('agreedTos');
+    if(!agreedTos.checked){ document.getElementById('err-agreedTos').classList.add('show'); ok = false; }
+    else document.getElementById('err-agreedTos').classList.remove('show');
+
+    return ok;
+  }
+
+  // Data layer: saveRegistration() is the one place that talks to storage.
+  // Swap this function's body for a real API call (e.g. POST to Supabase)
+  // when moving past the prototype. Nothing else in the form needs to change.
+  async function saveRegistration(registration){
+    var key = 'registrations:' + registration.id;
+    var result = await window.storage.set(key, JSON.stringify(registration), true);
+    if(!result) throw new Error('Gagal menyimpan');
+    return result;
+  }
+
+  document.getElementById('regForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var banner = document.getElementById('formErrorBanner');
+    if(!validate()){
+      banner.classList.add('show');
+      var firstInvalid = document.querySelector('.invalid');
+      if(firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    banner.classList.remove('show');
+
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Mengirim…';
+
+    var isParishioner = document.querySelector('input[name="isParishioner"]:checked').value;
+    var registration = {
+      id: uid(),
+      owner: {
+        name: document.getElementById('ownerName').value.trim(),
+        phone: document.getElementById('ownerPhone').value.trim(),
+        isParishioner: isParishioner,
+        parishOrigin: isParishioner === 'bukan' ? document.getElementById('parishOrigin').value.trim() : ''
+      },
+      pets: pets.map(function(p){
+        return {
+          name: p.name.trim(),
+          type: p.type === 'Lainnya' ? p.typeOther.trim() : p.type,
+          hasPhoto: !!p.photoPreview,
+          notes: p.notes.trim()
+        };
+      }),
+      donation: {
+        amount: document.getElementById('donationAmount').value.trim(),
+        hasProof: !!document.getElementById('donationProof').files[0]
+      },
+      agreedTos: true,
+      submittedAt: new Date().toISOString()
+    };
+
+    try{
+      await saveRegistration(registration);
+      showConfirmation(registration);
+    }catch(err){
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Kirim pendaftaran';
+      banner.textContent = 'Gagal menyimpan pendaftaran. Coba lagi sebentar lagi.';
+      banner.classList.add('show');
+    }
+  });
+
+  function showConfirmation(registration){
+    document.getElementById('regForm').style.display = 'none';
+    var wrap = document.getElementById('confirmWrap');
+    wrap.classList.add('show');
+    var petLines = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
+    document.getElementById('confirmSummary').innerHTML =
+      '<b>'+escapeHtml(registration.owner.name)+'</b>'+
+      escapeHtml(registration.owner.phone)+'<br>'+
+      registration.pets.length+' hewan: '+escapeHtml(petLines);
+  }
+
+  document.getElementById('againBtn').addEventListener('click', function(){
+    document.getElementById('regForm').reset();
+    pets = [newPet()];
+    renderPetCards();
+    parishOriginWrap.classList.remove('open');
+    document.getElementById('donationProofPreview').style.display = 'none';
+    document.getElementById('confirmWrap').classList.remove('show');
+    document.getElementById('regForm').style.display = 'block';
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Kirim pendaftaran';
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  // init
+  pets = [newPet()];
+  renderPetCards();
+})();
+</script>
+</body>
+</html>
