@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check-in, Pet Blessing 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script src="api-config.js"></script>
+<style>
+  :root{
+    --ink:#2B2E22; --ink-soft:#5B5F4E; --bg:#F4F1E4; --card:#FCFAF2;
+    --sage:#3F5B44; --sage-deep:#2E4433; --sage-light:#E7ECE1;
+    --line:#DDD6C1; --danger:#A6423A; --danger-bg:#F6E7E5; --gold-light:#F3E6C8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 64px;}
+  a{color:var(--sage-deep);}
+
+  .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
+  .login-wrap h1{font-size:22px;color:var(--sage-deep);margin-bottom:6px;}
+  .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
+  .login-wrap .field{margin-bottom:14px;}
+  .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
+  .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);box-sizing:border-box;}
+  .login-wrap button{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-error{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
+  .login-error.show{display:block;}
+
+  header{margin-bottom:16px;}
+  header .top{display:flex;justify-content:space-between;align-items:center;}
+  header a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;}
+  .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
+  header h1{font-size:22px;color:var(--sage-deep);margin-top:8px;}
+
+  .post-select{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+  .post-select button{padding:12px 8px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;}
+  .post-select button.active{background:var(--sage);border-color:var(--sage);color:#fff;}
+
+  .scan-box{position:relative;width:100%;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px;}
+  .scan-box video{width:100%;height:100%;object-fit:cover;}
+  .scan-box .frame{position:absolute;inset:12%;border:3px solid rgba(255,255,255,.85);border-radius:16px;pointer-events:none;}
+  .scan-status{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+  .camera-error{background:var(--danger-bg);color:var(--danger);padding:14px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;}
+
+  .result-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px;margin-bottom:16px;}
+  .result-card.ok{border-color:var(--sage);}
+  .result-card.warn{border-color:var(--gold-light);background:var(--gold-light);}
+  .result-card.err{border-color:var(--danger);background:var(--danger-bg);}
+  .result-card .queue-number{font-family:'Fraunces',serif;font-size:40px;color:var(--sage-deep);line-height:1;margin-bottom:6px;}
+  .result-card .owner-name{font-size:18px;font-weight:600;margin-bottom:4px;}
+  .result-card .owner-phone{font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;}
+  .result-card .pet-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .result-card .pet-row{font-size:14px;padding:8px 10px;background:var(--sage-light);border-radius:8px;color:var(--sage-deep);}
+  .result-card .status-line{margin-top:12px;font-size:13.5px;font-weight:500;}
+  .result-card .status-line.warn{color:#5E4419;}
+  .result-card .status-line.err{color:var(--danger);}
+  .result-card .status-line.ok{color:var(--sage-deep);}
+
+  .count{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:8px;}
+  .again-btn{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <h1>Login panitia</h1>
+  <p>Halaman ini khusus panitia untuk scan check-in di tiap pos.</p>
+  <div class="field">
+    <label for="loginEmail">Username</label>
+    <input type="text" id="loginEmail" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+  </div>
+  <button type="button" id="loginBtn">Masuk</button>
+  <div class="login-error" id="loginError">Username atau password salah.</div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
+  <header>
+    <div class="top">
+      <a class="back" href="pendaftaran-masuk.html">&laquo; Rekap pendaftaran</a>
+      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+    </div>
+    <h1>Check-in hari-H</h1>
+  </header>
+
+  <div class="post-select" id="postSelect">
+    <button type="button" data-post="reg_ulang">Reg ulang</button>
+    <button type="button" data-post="pos1">Pos 1</button>
+    <button type="button" data-post="pos2">Pos 2</button>
+    <button type="button" data-post="pos3">Pos 3</button>
+  </div>
+  <div class="count" id="postCount"></div>
+
+  <div class="scan-box" id="scanBox" style="margin-top:16px;">
+    <video id="video" playsinline muted></video>
+    <div class="frame"></div>
+  </div>
+  <div class="scan-status" id="scanStatus">Arahkan kamera ke QR pendaftaran</div>
+  <div class="camera-error" id="cameraError" style="display:none;"></div>
+
+  <div id="resultArea"></div>
+</div>
+
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
+
+<script>
+(function(){
+  var API_URL = window.PETBLESSING_API_URL;
+  var TOKEN_KEY = 'petblessing_panitia_token';
+  var POST_KEY = 'petblessing_checkin_post';
+  if(!API_URL){
+    document.getElementById('loginWrap').innerHTML = '<div class="camera-error">API belum dikonfigurasi.</div>';
+    return;
+  }
+
+  var currentPost = localStorage.getItem(POST_KEY) || 'reg_ulang';
+  var scanning = false;
+  var paused = false;
+  var stream = null;
+
+  function token(){ return sessionStorage.getItem(TOKEN_KEY); }
+
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'block';
+    setPost(currentPost);
+    startCamera();
+  }
+  function showLogin(){
+    stopCamera();
+    document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+
+  function checkSession(){
+    if(token()) showApp(); else showLogin();
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var btn = this;
+    var username = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var err = document.getElementById('loginError');
+    err.classList.remove('show');
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    try{
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !data.token){ err.classList.add('show'); return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      showApp();
+    }catch(e){
+      err.classList.add('show');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Masuk';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  });
+
+  function setPost(post){
+    currentPost = post;
+    localStorage.setItem(POST_KEY, post);
+    document.querySelectorAll('#postSelect button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.post === post);
+    });
+    loadCount();
+  }
+  document.querySelectorAll('#postSelect button').forEach(function(b){
+    b.addEventListener('click', function(){ setPost(b.dataset.post); });
+  });
+
+  async function loadCount(){
+    var el = document.getElementById('postCount');
+    try{
+      var res = await fetch(API_URL + '/checkins?post=eq.' + currentPost + '&select=id', {
+        headers: { Authorization: 'Bearer ' + token(), Prefer: 'count=exact' }
+      });
+      var contentRange = res.headers.get('content-range');
+      var total = contentRange ? contentRange.split('/')[1] : (await res.json()).length;
+      el.textContent = total + ' orang sudah check-in di pos ini';
+    }catch(e){ el.textContent = ''; }
+  }
+
+  // --- Kamera + scan QR ---
+  async function startCamera(){
+    var video = document.getElementById('video');
+    var errBox = document.getElementById('cameraError');
+    errBox.style.display = 'none';
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      await video.play();
+      scanning = true;
+      requestAnimationFrame(scanLoop);
+    }catch(e){
+      errBox.textContent = 'Tidak bisa akses kamera: ' + e.message + '. Izinkan akses kamera di browser lalu muat ulang halaman.';
+      errBox.style.display = 'block';
+    }
+  }
+
+  function stopCamera(){
+    scanning = false;
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  }
+
+  function scanLoop(){
+    if(!scanning) return;
+    var video = document.getElementById('video');
+    var canvas = document.getElementById('hiddenCanvas');
+    if(video.readyState === video.HAVE_ENOUGH_DATA && !paused){
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(imageData.data, imageData.width, imageData.height);
+      if(code && code.data){
+        handleScan(code.data);
+      }
+    }
+    requestAnimationFrame(scanLoop);
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function isUuid(s){
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+  }
+
+  async function handleScan(ownerId){
+    if(!isUuid(ownerId)) return; // bukan QR pendaftaran kita, abaikan
+    paused = true;
+    document.getElementById('scanStatus').textContent = 'Memeriksa…';
+
+    try{
+      var res = await fetch(API_URL + '/owners?id=eq.' + ownerId + '&select=*,pets(*)', {
+        headers: { Authorization: 'Bearer ' + token() }
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      var rows = await res.json();
+      var owner = rows && rows[0];
+      if(!owner){
+        renderResult('err', null, 'QR tidak dikenali / bukan pendaftaran yang valid.');
+        return resumeAfterDelay();
+      }
+
+      var checkinRes = await fetch(API_URL + '/checkins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token(),
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({ owner_id: ownerId, post: currentPost })
+      });
+
+      if(checkinRes.status === 201){
+        renderResult('ok', owner, 'Check-in berhasil di ' + postLabel(currentPost) + '.');
+        loadCount();
+      } else if(checkinRes.status === 409){
+        renderResult('warn', owner, 'Sudah check-in sebelumnya di ' + postLabel(currentPost) + '.');
+      } else {
+        renderResult('err', owner, 'Gagal menyimpan check-in (' + checkinRes.status + ').');
+      }
+    }catch(e){
+      renderResult('err', null, 'Terjadi kesalahan: ' + e.message);
+    }
+
+    resumeAfterDelay();
+  }
+
+  function postLabel(post){
+    return { reg_ulang: 'Reg ulang', pos1: 'Pos 1', pos2: 'Pos 2', pos3: 'Pos 3' }[post] || post;
+  }
+
+  function renderResult(kind, owner, statusText){
+    var area = document.getElementById('resultArea');
+    if(!owner){
+      area.innerHTML = '<div class="result-card ' + kind + '"><div class="status-line ' + kind + '">' + escapeHtml(statusText) + '</div></div>';
+      return;
+    }
+    var petsHtml = (owner.pets || []).map(function(p){
+      return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
+    }).join('');
+    area.innerHTML =
+      '<div class="result-card ' + kind + '">' +
+        '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
+        '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
+        '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
+        '<div class="pet-list">' + petsHtml + '</div>' +
+        '<div class="status-line ' + kind + '">' + escapeHtml(statusText) + '</div>' +
+      '</div>';
+  }
+
+  function resumeAfterDelay(){
+    document.getElementById('scanStatus').textContent = 'Arahkan kamera ke QR pendaftaran';
+    setTimeout(function(){ paused = false; }, 2500);
+  }
+
+  checkSession();
+})();
+</script>
+</body>
+</html>
