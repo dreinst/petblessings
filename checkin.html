@@ -47,22 +47,29 @@
   .scan-status{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
   .camera-error{background:var(--danger-bg);color:var(--danger);padding:14px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;}
 
-  .result-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px;margin-bottom:16px;}
-  .result-card.ok{border-color:var(--sage);}
-  .result-card.warn{border-color:var(--gold-light);background:var(--gold-light);}
-  .result-card.err{border-color:var(--danger);background:var(--danger-bg);}
-  .result-card .queue-number{font-family:'Fraunces',serif;font-size:40px;color:var(--sage-deep);line-height:1;margin-bottom:6px;}
-  .result-card .owner-name{font-size:18px;font-weight:600;margin-bottom:4px;}
-  .result-card .owner-phone{font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;}
-  .result-card .pet-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
-  .result-card .pet-row{font-size:14px;padding:8px 10px;background:var(--sage-light);border-radius:8px;color:var(--sage-deep);}
-  .result-card .status-line{margin-top:12px;font-size:13.5px;font-weight:500;}
-  .result-card .status-line.warn{color:#5E4419;}
-  .result-card .status-line.err{color:var(--danger);}
-  .result-card .status-line.ok{color:var(--sage-deep);}
-
   .count{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:8px;}
-  .again-btn{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;}
+
+  /* Overlay hasil scan -- menutupi seluruh layar, harus ditutup manual oleh
+     panitia lewat tombol, supaya tidak mungkin terlewat tanpa disadari. */
+  .result-overlay{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(43,46,34,.55);padding:0;}
+  .result-overlay.show{display:flex;}
+  .result-sheet{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;padding:28px 22px 26px;text-align:center;box-shadow:0 -6px 30px rgba(0,0,0,.25);animation:slideUp .18s ease-out;max-height:88vh;overflow-y:auto;}
+  @keyframes slideUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .result-sheet .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;}
+  .result-sheet.ok .status-icon{background:var(--sage-light);color:var(--sage-deep);}
+  .result-sheet.warn .status-icon{background:var(--gold-light);color:#5E4419;}
+  .result-sheet.err .status-icon{background:var(--danger-bg);color:var(--danger);}
+  .result-sheet .status-title{font-family:'Fraunces',serif;font-size:22px;margin-bottom:4px;}
+  .result-sheet.ok .status-title{color:var(--sage-deep);}
+  .result-sheet.warn .status-title{color:#5E4419;}
+  .result-sheet.err .status-title{color:var(--danger);}
+  .result-sheet .queue-number{font-family:'Fraunces',serif;font-size:56px;color:var(--sage-deep);line-height:1;margin:14px 0 10px;}
+  .result-sheet .owner-name{font-size:19px;font-weight:600;margin-bottom:4px;}
+  .result-sheet .owner-phone{font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .result-sheet .pet-list{display:flex;flex-direction:column;gap:6px;margin:0 0 20px;text-align:left;}
+  .result-sheet .pet-row{font-size:14.5px;padding:10px 12px;background:var(--sage-light);border-radius:8px;color:var(--sage-deep);}
+  .result-sheet .continue-btn{width:100%;padding:16px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;}
+  .result-sheet.err .continue-btn, .result-sheet.warn .continue-btn{background:var(--ink);}
 </style>
 </head>
 <body>
@@ -105,8 +112,15 @@
   </div>
   <div class="scan-status" id="scanStatus">Arahkan kamera ke QR pendaftaran</div>
   <div class="camera-error" id="cameraError" style="display:none;"></div>
+</div>
 
-  <div id="resultArea"></div>
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-sheet" id="resultSheet">
+    <div class="status-icon" id="resultIcon"></div>
+    <div class="status-title" id="resultTitle"></div>
+    <div id="resultBody"></div>
+    <button type="button" class="continue-btn" id="continueBtn">Lanjut scan berikutnya</button>
+  </div>
 </div>
 
 <canvas id="hiddenCanvas" style="display:none;"></canvas>
@@ -285,7 +299,7 @@
       var owner = rows && rows[0];
       if(!owner){
         renderResult('err', null, 'QR tidak dikenali / bukan pendaftaran yang valid.');
-        return resumeAfterDelay();
+        return;
       }
 
       var checkinRes = await fetch(API_URL + '/checkins', {
@@ -309,37 +323,73 @@
     }catch(e){
       renderResult('err', null, 'Terjadi kesalahan: ' + e.message);
     }
-
-    resumeAfterDelay();
   }
 
   function postLabel(post){
     return { reg_ulang: 'Reg ulang', pos1: 'Pos 1', pos2: 'Pos 2', pos3: 'Pos 3' }[post] || post;
   }
 
+  // Beep pendek pakai Web Audio -- tidak butuh file suara. Nada beda per hasil
+  // supaya panitia bisa "dengar" hasilnya tanpa harus lihat layar terus.
+  function beep(freq, durationMs){
+    try{
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new Ctx();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      osc.start();
+      osc.stop(ctx.currentTime + durationMs / 1000);
+      osc.onended = function(){ ctx.close(); };
+    }catch(e){ /* audio tidak tersedia, abaikan */ }
+  }
+
+  function feedback(kind){
+    if(navigator.vibrate) navigator.vibrate(kind === 'ok' ? 120 : [80, 60, 80]);
+    if(kind === 'ok') beep(880, 150);
+    else if(kind === 'warn') beep(520, 220);
+    else beep(300, 300);
+  }
+
   function renderResult(kind, owner, statusText){
-    var area = document.getElementById('resultArea');
+    feedback(kind);
+    document.getElementById('scanStatus').textContent = 'Menunggu konfirmasi panitia…';
+
+    var sheet = document.getElementById('resultSheet');
+    sheet.className = 'result-sheet ' + kind;
+
+    var icon = document.getElementById('resultIcon');
+    icon.textContent = kind === 'ok' ? '✓' : (kind === 'warn' ? '!' : '✕');
+
+    var title = document.getElementById('resultTitle');
+    title.textContent = kind === 'ok' ? 'Check-in berhasil' : (kind === 'warn' ? 'Sudah check-in' : 'Tidak valid');
+
+    var body = document.getElementById('resultBody');
     if(!owner){
-      area.innerHTML = '<div class="result-card ' + kind + '"><div class="status-line ' + kind + '">' + escapeHtml(statusText) + '</div></div>';
-      return;
-    }
-    var petsHtml = (owner.pets || []).map(function(p){
-      return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
-    }).join('');
-    area.innerHTML =
-      '<div class="result-card ' + kind + '">' +
+      body.innerHTML = '<div class="owner-name">' + escapeHtml(statusText) + '</div>';
+    }else{
+      var petsHtml = (owner.pets || []).map(function(p){
+        return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
+      }).join('');
+      body.innerHTML =
         '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
         '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
         '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
-        '<div class="pet-list">' + petsHtml + '</div>' +
-        '<div class="status-line ' + kind + '">' + escapeHtml(statusText) + '</div>' +
-      '</div>';
+        '<div class="pet-list">' + petsHtml + '</div>';
+    }
+
+    document.getElementById('resultOverlay').classList.add('show');
   }
 
-  function resumeAfterDelay(){
+  document.getElementById('continueBtn').addEventListener('click', function(){
+    document.getElementById('resultOverlay').classList.remove('show');
     document.getElementById('scanStatus').textContent = 'Arahkan kamera ke QR pendaftaran';
-    setTimeout(function(){ paused = false; }, 2500);
-  }
+    paused = false;
+  });
 
   checkSession();
 })();
