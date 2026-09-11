@@ -70,11 +70,12 @@
   .conditional{max-height:0;overflow:hidden;transition:max-height .25s ease;}
   .conditional.open{max-height:200px;}
 
-  .file-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:var(--sage-light);color:var(--sage-deep);border:1px dashed var(--sage);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
+  label.file-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:var(--sage-light);color:var(--sage-deep);border:1px dashed var(--sage);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
   /* Input file sengaja tidak display:none. Di browser bawaan WhatsApp/Instagram (WebView)
      tap pada label sering tidak membuka pemilih file. Input dibuat transparan dan menutupi
      seluruh tombol supaya tap langsung mengenai input file itu sendiri. */
   .file-btn input{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;font-size:0;}
+  .file-btn svg{flex:none;width:18px;height:18px;}
   .file-preview{margin-top:10px;display:flex;align-items:center;gap:10px;}
   .file-preview img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);}
   .file-preview .remove-file{font-size:13px;color:var(--rose);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;}
@@ -183,7 +184,7 @@
         </div>
         <div class="field">
           <label>Bukti transfer (opsional)</label>
-          <label class="file-btn"><input type="file" id="donationProof" accept="image/*"> Unggah bukti transfer</label>
+          <label class="file-btn"><input type="file" id="donationProof" accept="image/*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Unggah bukti transfer</span></label>
           <div class="file-preview" id="donationProofPreview" style="display:none;"></div>
           <div class="hint">No. rekening panitia: <em>(isi di sini)</em></div>
         </div>
@@ -269,7 +270,7 @@
         (pet.type==='Lainnya' ? '<div class="field"><label>Sebutkan jenisnya<span class="req">*</span></label><input type="text" data-field="typeOther" value="'+escapeHtml(pet.typeOther)+'"><div class="field-error" data-error="typeOther">Mohon sebutkan jenis hewannya.</div></div>' : '')+
         '<div class="field">'+
           '<label>Foto hewan (opsional)</label>'+
-          '<label class="file-btn"><input type="file" accept="image/*" data-field="photo"> Ambil / unggah foto</label>'+
+          '<label class="file-btn"><input type="file" accept="image/*" data-field="photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>Ambil / unggah foto</span></label>'+
           '<div class="file-preview" data-preview style="display:'+(pet.photoPreview?'flex':'none')+';">'+
             (pet.photoPreview ? '<img src="'+pet.photoPreview+'"><button type="button" class="remove-file" data-action="removePhoto">Hapus foto</button>' : '')+
           '</div>'+
