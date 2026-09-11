@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: petblessing-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: petblessing
+      POSTGRES_USER: petblessing
+      POSTGRES_PASSWORD: ${DB_PW}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=40", "-c", "work_mem=4MB"]
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petblessing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: petblessing-api
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTH_PW}@db:5432/petblessing
+      PGRST_DB_SCHEMAS: api
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_JWT_ROLE_CLAIM_KEY: .role
+      PGRST_DB_POOL: "5"
+      PGRST_SERVER_PORT: "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.petblessing-api-http.rule=Host(`petblessing-api.187.53.129.205.sslip.io`)"
+      - "traefik.http.routers.petblessing-api-http.entrypoints=http"
+      - "traefik.http.routers.petblessing-api-http.middlewares=petblessing-api-https"
+      - "traefik.http.middlewares.petblessing-api-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.petblessing-api.rule=Host(`petblessing-api.187.53.129.205.sslip.io`)"
+      - "traefik.http.routers.petblessing-api.entrypoints=https"
+      - "traefik.http.routers.petblessing-api.tls=true"
+      - "traefik.http.routers.petblessing-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.petblessing-api.service=petblessing-api"
+      - "traefik.http.routers.petblessing-api.middlewares=petblessing-api-headers"
+      - "traefik.http.middlewares.petblessing-api-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.petblessing-api-headers.headers.customFrameOptionsValue=DENY"
+      - "traefik.http.middlewares.petblessing-api-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.petblessing-api-headers.headers.stsSeconds=31536000"
+      - "traefik.http.services.petblessing-api.loadbalancer.server.port=3000"
+
+networks:
+  internal:
+  coolify:
+    external: true

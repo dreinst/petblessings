@@ -7,9 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="supabase-config.js"></script>
+<script src="api-config.js"></script>
 <style>
   :root{
     --ink:#2B2E22; --ink-soft:#5B5F4E; --bg:#F4F1E4; --card:#FCFAF2;
@@ -65,9 +64,9 @@
 
 <div class="login-wrap" id="loginWrap">
   <h1>Login panitia</h1>
-  <p>Halaman ini khusus panitia. Login memakai akun yang sudah didaftarkan di Supabase Auth.</p>
+  <p>Halaman ini khusus panitia.</p>
   <div class="field">
-    <label for="loginEmail">Email</label>
+    <label for="loginEmail">Username</label>
     <input type="text" id="loginEmail" autocomplete="username">
   </div>
   <div class="field">
@@ -75,7 +74,7 @@
     <input type="password" id="loginPassword" autocomplete="current-password">
   </div>
   <button type="button" id="loginBtn">Masuk</button>
-  <div class="login-error" id="loginError">Email atau password salah.</div>
+  <div class="login-error" id="loginError">Username atau password salah.</div>
 </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
@@ -85,7 +84,7 @@
       <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
     </div>
     <h1>Pendaftaran masuk</h1>
-    <p>Data langsung dari database Supabase, khusus panitia yang sudah login.</p>
+    <p>Data langsung dari database, khusus panitia yang sudah login.</p>
   </header>
 
   <div class="toolbar">
@@ -102,10 +101,10 @@
 (function(){
   var allRegs = [];
 
-  var isConfigured = !!(window.supabase && /^https?:\/\//.test(window.SUPABASE_URL || '') && window.SUPABASE_ANON_KEY && window.SUPABASE_ANON_KEY.indexOf('REPLACE_WITH') !== 0);
-  var supabaseClient = isConfigured ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : null;
-  if(!isConfigured){
-    document.getElementById('loginWrap').innerHTML = '<div class="error">Supabase belum dikonfigurasi. Isi supabase-config.js dulu.</div>';
+  var API_URL = window.PETBLESSING_API_URL;
+  var TOKEN_KEY = 'petblessing_panitia_token';
+  if(!API_URL){
+    document.getElementById('loginWrap').innerHTML = '<div class="error">API belum dikonfigurasi. Isi api-config.js dulu.</div>';
     return;
   }
 
@@ -131,35 +130,53 @@
     document.getElementById('loginWrap').style.display = 'block';
   }
 
-  async function checkSession(){
-    if(!supabaseClient) return;
-    var res = await supabaseClient.auth.getSession();
-    if(res.data && res.data.session) showApp(); else showLogin();
+  function checkSession(){
+    if(sessionStorage.getItem(TOKEN_KEY)) showApp(); else showLogin();
   }
 
   document.getElementById('loginBtn').addEventListener('click', async function(){
     var btn = this;
-    var email = document.getElementById('loginEmail').value.trim();
+    var username = document.getElementById('loginEmail').value.trim();
     var password = document.getElementById('loginPassword').value;
     var err = document.getElementById('loginError');
     err.classList.remove('show');
     btn.disabled = true; btn.textContent = 'Memeriksa…';
-    var res = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
-    btn.disabled = false; btn.textContent = 'Masuk';
-    if(res.error){ err.classList.add('show'); return; }
-    showApp();
+    try{
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !data.token){ err.classList.add('show'); return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      showApp();
+    }catch(e){
+      err.classList.add('show');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Masuk';
+    }
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', async function(){
-    await supabaseClient.auth.signOut();
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(TOKEN_KEY);
     showLogin();
   });
 
   // --- Data ---
   async function listRegistrations(){
-    var res = await supabaseClient.from('owners').select('*, pets(*)').order('submitted_at', { ascending: false });
-    if(res.error) throw res.error;
-    return (res.data || []).map(function(row){
+    var token = sessionStorage.getItem(TOKEN_KEY);
+    var res = await fetch(API_URL + '/owners?select=*,pets(*)&order=submitted_at.desc', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if(res.status === 401){
+      sessionStorage.removeItem(TOKEN_KEY);
+      showLogin();
+      throw new Error('Sesi habis, silakan login lagi');
+    }
+    if(!res.ok) throw new Error('Gagal memuat data (' + res.status + ')');
+    var rows = await res.json();
+    return (rows || []).map(function(row){
       return {
         owner: {
           name: row.name,

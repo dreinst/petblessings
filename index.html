@@ -7,8 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-config.js"></script>
+<script src="api-config.js"></script>
 <style>
   :root{
     --ink:#2B2E22;
@@ -405,13 +404,27 @@
   // Data layer: saveRegistration() is the one place that talks to storage.
   // Nothing else in the form needs to change if this function's storage
   // backend changes again later.
-  var isSupabaseConfigured = !!(window.supabase && /^https?:\/\//.test(window.SUPABASE_URL || '') && window.SUPABASE_ANON_KEY && window.SUPABASE_ANON_KEY.indexOf('REPLACE_WITH') !== 0);
-  var supabaseClient = isSupabaseConfigured ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : null;
+  var API_URL = window.PETBLESSING_API_URL;
+
+  async function postJson(path, body){
+    var res = await fetch(API_URL + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){
+      var detail = await res.text().catch(function(){ return ''; });
+      throw new Error('Gagal menyimpan (' + res.status + '): ' + detail);
+    }
+  }
 
   async function saveRegistration(registration){
-    if(!supabaseClient) throw new Error('Supabase belum dikonfigurasi (lihat supabase-config.js)');
+    if(!API_URL) throw new Error('API belum dikonfigurasi (lihat api-config.js)');
 
-    var ownerInsert = await supabaseClient.from('owners').insert({
+    var ownerId = crypto.randomUUID();
+
+    await postJson('/owners', {
+      id: ownerId,
       name: registration.owner.name,
       phone: registration.owner.phone,
       is_parishioner: registration.owner.isParishioner,
@@ -420,24 +433,19 @@
       donation_has_proof: registration.donation.hasProof,
       agreed_tos: registration.agreedTos,
       submitted_at: registration.submittedAt
-    }).select().single();
+    });
 
-    if(ownerInsert.error) throw ownerInsert.error;
-    var ownerId = ownerInsert.data.id;
+    await postJson('/pets', registration.pets.map(function(p){
+      return {
+        id: crypto.randomUUID(),
+        owner_id: ownerId,
+        name: p.name,
+        type: p.type,
+        has_photo: p.hasPhoto,
+        notes: p.notes || null
+      };
+    }));
 
-    var petsInsert = await supabaseClient.from('pets').insert(
-      registration.pets.map(function(p){
-        return {
-          owner_id: ownerId,
-          name: p.name,
-          type: p.type,
-          has_photo: p.hasPhoto,
-          notes: p.notes || null
-        };
-      })
-    );
-
-    if(petsInsert.error) throw petsInsert.error;
     return ownerId;
   }
 

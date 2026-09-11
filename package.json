@@ -1,0 +1,10 @@
+{
+  "name": "petblessings",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pendaftaran Pet Blessing 2026, Paroki St. Vincentius a Paulo",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
