@@ -203,7 +203,12 @@
     var errBox = document.getElementById('cameraError');
     errBox.style.display = 'none';
     try{
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      }catch(e){
+        // Perangkat tanpa kamera belakang (laptop/Mac) -- pakai kamera apa saja yang ada.
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       video.srcObject = stream;
       await video.play();
       scanning = true;
@@ -224,12 +229,28 @@
     var video = document.getElementById('video');
     var canvas = document.getElementById('hiddenCanvas');
     if(video.readyState === video.HAVE_ENOUGH_DATA && !paused){
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      var w = video.videoWidth, h = video.videoHeight;
+      canvas.width = w;
+      canvas.height = h;
       var ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var code = jsQR(imageData.data, imageData.width, imageData.height);
+
+      ctx.drawImage(video, 0, 0, w, h);
+      var imageData = ctx.getImageData(0, 0, w, h);
+      var code = jsQR(imageData.data, w, h);
+
+      if(!code){
+        // Kamera depan (termasuk webcam laptop) sering mengirim gambar yang
+        // sudah di-mirror -- QR code tidak terbaca kalau di-mirror (beda
+        // dengan wajah manusia yang tetap kebaca walau kebalik). Coba lagi
+        // versi yang di-flip balik sebelum menyerah di frame ini.
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -w, 0, w, h);
+        ctx.restore();
+        var flippedData = ctx.getImageData(0, 0, w, h);
+        code = jsQR(flippedData.data, w, h);
+      }
+
       if(code && code.data){
         handleScan(code.data);
       }
