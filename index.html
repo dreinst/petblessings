@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root{
     --ink:#2B2E22;
@@ -187,6 +188,7 @@
       </section>
 
       <div class="form-error-banner" id="formErrorBanner">Ada data yang belum lengkap. Mohon periksa kembali bagian yang ditandai di atas.</div>
+      <div class="cf-turnstile" id="turnstileWidget" style="margin-top:16px;display:flex;justify-content:center;"></div>
       <button type="submit" class="submit-btn" id="submitBtn">Kirim pendaftaran</button>
     </form>
 
@@ -412,41 +414,44 @@
     return ok;
   }
 
-  // Data layer: saveRegistration() is the one place that talks to storage.
+  // Data layer: submitRegistration() is the one place that talks to storage.
   // Nothing else in the form needs to change if this function's storage
-  // backend changes again later.
+  // backend changes again later. Semua tulis data lewat /api/register
+  // (Vercel), bukan langsung ke database -- supaya captcha bisa diverifikasi
+  // dulu (lihat api/register.js).
   var API_URL = window.PETBLESSING_API_URL;
 
-  async function postJson(path, body){
-    var res = await fetch(API_URL + path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify(body)
-    });
-    if(!res.ok){
-      var detail = await res.text().catch(function(){ return ''; });
-      throw new Error('Gagal menyimpan (' + res.status + '): ' + detail);
+  // Widget captcha (Cloudflare Turnstile), dirender manual (bukan auto-render)
+  // supaya site key bisa diisi dari api-config.js.
+  var turnstileWidgetId = null;
+  (function initTurnstile(){
+    if(!window.TURNSTILE_SITE_KEY) return;
+    function render(){
+      if(typeof turnstile === 'undefined'){ setTimeout(render, 200); return; }
+      turnstileWidgetId = turnstile.render('#turnstileWidget', { sitekey: window.TURNSTILE_SITE_KEY });
     }
+    render();
+  })();
+
+  function buildQrDataUrl(text, size, colorDark, colorLight, correctLevel){
+    var hidden = document.createElement('div');
+    var opts = { text: text, width: size, height: size, colorDark: colorDark, colorLight: colorLight };
+    if(correctLevel !== undefined) opts.correctLevel = correctLevel;
+    new QRCode(hidden, opts);
+    var canvas = hidden.querySelector('canvas');
+    return canvas ? canvas.toDataURL('image/png') : null;
   }
 
-  async function saveRegistration(registration){
+  async function submitRegistration(registration){
     if(!API_URL) throw new Error('API belum dikonfigurasi (lihat api-config.js)');
+    var turnstileToken = (typeof turnstile !== 'undefined' && turnstileWidgetId !== null)
+      ? turnstile.getResponse(turnstileWidgetId) : null;
+    if(!turnstileToken) throw new Error('Mohon selesaikan verifikasi captcha dulu.');
 
     var ownerId = crypto.randomUUID();
+    var shortCode = ownerId.slice(0, 8).toUpperCase();
 
-    await postJson('/owners', {
-      id: ownerId,
-      name: registration.owner.name,
-      phone: registration.owner.phone,
-      is_parishioner: registration.owner.isParishioner,
-      parish_origin: registration.owner.parishOrigin || null,
-      donation_amount: registration.donation.amount || null,
-      donation_has_proof: registration.donation.hasProof,
-      agreed_tos: registration.agreedTos,
-      submitted_at: registration.submittedAt
-    });
-
-    await postJson('/pets', registration.pets.map(function(p){
+    var petsPayload = registration.pets.map(function(p){
       return {
         id: crypto.randomUUID(),
         owner_id: ownerId,
@@ -455,9 +460,52 @@
         has_photo: p.hasPhoto,
         notes: p.notes || null
       };
-    }));
+    });
 
-    return ownerId;
+    var waQueuePayload = null;
+    if(registration.owner.phone){
+      var petSummary = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
+      var qrForWa = buildQrDataUrl(ownerId, 512, '#000000', '#FFFFFF', QRCode.CorrectLevel.H);
+      if(qrForWa){
+        waQueuePayload = {
+          id: crypto.randomUUID(),
+          owner_id: ownerId,
+          phone: registration.owner.phone,
+          short_code: shortCode,
+          qr_image_base64: qrForWa,
+          owner_name: registration.owner.name,
+          pet_summary: petSummary
+        };
+      }
+    }
+
+    var res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        turnstileToken: turnstileToken,
+        owner: {
+          id: ownerId,
+          name: registration.owner.name,
+          phone: registration.owner.phone,
+          is_parishioner: registration.owner.isParishioner,
+          parish_origin: registration.owner.parishOrigin || null,
+          donation_amount: registration.donation.amount || null,
+          donation_has_proof: registration.donation.hasProof,
+          agreed_tos: registration.agreedTos,
+          submitted_at: registration.submittedAt
+        },
+        pets: petsPayload,
+        waQueue: waQueuePayload
+      })
+    });
+
+    var data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){
+      throw new Error(data.error || ('Gagal menyimpan (' + res.status + ')'));
+    }
+
+    return { ownerId: ownerId, shortCode: shortCode };
   }
 
   document.getElementById('regForm').addEventListener('submit', async function(e){
@@ -500,17 +548,19 @@
     };
 
     try{
-      var ownerId = await saveRegistration(registration);
-      await showConfirmation(registration, ownerId);
+      var result = await submitRegistration(registration);
+      await showConfirmation(registration, result.ownerId, result.shortCode);
     }catch(err){
       submitBtn.disabled = false;
       submitBtn.textContent = 'Kirim pendaftaran';
-      banner.textContent = 'Gagal menyimpan pendaftaran. Coba lagi sebentar lagi.';
+      banner.textContent = err.message || 'Gagal menyimpan pendaftaran. Coba lagi sebentar lagi.';
       banner.classList.add('show');
+    }finally{
+      if(typeof turnstile !== 'undefined' && turnstileWidgetId !== null) turnstile.reset(turnstileWidgetId);
     }
   });
 
-  async function showConfirmation(registration, ownerId){
+  async function showConfirmation(registration, ownerId, shortCode){
     document.getElementById('regForm').style.display = 'none';
     var wrap = document.getElementById('confirmWrap');
     wrap.classList.add('show');
@@ -520,7 +570,6 @@
       escapeHtml(registration.owner.phone)+'<br>'+
       registration.pets.length+' hewan: '+escapeHtml(petLines);
 
-    var shortCode = ownerId.slice(0, 8).toUpperCase();
     var qrBox = document.getElementById('confirmQrBox');
     document.getElementById('confirmQrCode').textContent = shortCode;
     qrBox.innerHTML = '';
@@ -528,43 +577,6 @@
       new QRCode(qrBox, { text: ownerId, width: 180, height: 180, colorDark: '#2E4433', colorLight: '#FCFAF2' });
     }catch(e){
       qrBox.style.display = 'none';
-    }
-
-    enqueueWhatsApp(registration, ownerId, shortCode);
-  }
-
-  // Antrian pengiriman QR lewat WhatsApp (diproses bot terpisah di VPS, dengan
-  // delay acak supaya tidak terdeteksi spam). Best-effort -- gagal di sini
-  // tidak boleh menggagalkan pendaftaran yang sudah tersimpan.
-  async function enqueueWhatsApp(registration, ownerId, shortCode){
-    if(!registration.owner.phone || !API_URL) return;
-    try{
-      var hidden = document.createElement('div');
-      new QRCode(hidden, {
-        text: ownerId, width: 512, height: 512,
-        colorDark: '#000000', colorLight: '#FFFFFF',
-        correctLevel: QRCode.CorrectLevel.H
-      });
-      var canvas = hidden.querySelector('canvas');
-      if(!canvas) return;
-      var dataUrl = canvas.toDataURL('image/png');
-      var petSummary = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
-
-      await fetch(API_URL + '/wa_queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
-          id: crypto.randomUUID(),
-          owner_id: ownerId,
-          phone: registration.owner.phone,
-          short_code: shortCode,
-          qr_image_base64: dataUrl,
-          owner_name: registration.owner.name,
-          pet_summary: petSummary
-        })
-      });
-    }catch(e){
-      // Diamkan -- pendaftaran tetap dianggap berhasil walau antrian WA gagal.
     }
   }
 
