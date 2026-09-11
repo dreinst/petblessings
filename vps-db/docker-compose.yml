@@ -49,11 +49,18 @@ services:
       - "traefik.http.routers.petblessing-api.tls=true"
       - "traefik.http.routers.petblessing-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.petblessing-api.service=petblessing-api"
-      - "traefik.http.routers.petblessing-api.middlewares=petblessing-api-headers"
+      - "traefik.http.routers.petblessing-api.middlewares=petblessing-api-headers,petblessing-api-ratelimit"
       - "traefik.http.middlewares.petblessing-api-headers.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.petblessing-api-headers.headers.customFrameOptionsValue=DENY"
       - "traefik.http.middlewares.petblessing-api-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
       - "traefik.http.middlewares.petblessing-api-headers.headers.stsSeconds=31536000"
+      # Rate limit per IP -- endpoint insert publik (owners/pets/wa_queue) kena
+      # akses langsung dari internet tanpa lewat form, jadi perlu dibatasi
+      # supaya tidak disalahgunakan untuk banjir data sampah / spam WhatsApp
+      # lewat nomor telepon siapa saja.
+      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.average=15"
+      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.burst=30"
+      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.period=1m"
       - "traefik.http.services.petblessing-api.loadbalancer.server.port=3000"
 
 networks:
