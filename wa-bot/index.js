@@ -171,12 +171,15 @@ async function runWorkerLoop(sock) {
     }
 
     // Delay acak antar pengiriman -- inti dari "tidak dianggap spam".
-    var delay = randomBetween(8000, 40000);
-    // Sesekali kasih jeda lebih panjang, meniru pola istirahat manusia.
+    // 2-5 menit per pesan, supaya pola kirim beruntun (misal 10+ pendaftar
+    // sekaligus) tetap terlihat seperti orang membalas satu-satu, bukan bot.
+    var delay = randomBetween(120000, 300000);
+    // Sesekali kasih jeda lebih panjang lagi, meniru pola istirahat manusia.
     if (sentCount > 0 && sentCount % 10 === 0) {
-      delay = randomBetween(60000, 180000);
+      delay = randomBetween(600000, 1200000);
       logger.info('jeda panjang setelah 10 pesan berturut-turut');
     }
+    logger.info({ delayMs: delay }, 'jeda sebelum pesan berikutnya');
     await sleep(delay);
   }
 }
