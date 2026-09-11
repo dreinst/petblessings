@@ -18,7 +18,9 @@ const pool = new Pool({
 // Banyak variasi caption + potongan sapaan/penutup yang dikombinasikan acak,
 // supaya tidak ada dua pesan yang identik persis -- baik dari sisi pola kalimat
 // maupun byte teksnya sendiri.
-const GREETINGS = ['Halo', 'Hai', 'Hai halo', 'Selamat siang', 'Halo halo'];
+// Sapaan netral saja, tanpa 'Selamat siang/malam': bot kirim dengan delay
+// acak, jadi sapaan berdasarkan waktu bisa meleset dari jam pesan terkirim.
+const GREETINGS = ['Halo', 'Hai', 'Hai halo', 'Halo halo'];
 const CLOSERS = [
   'Terima kasih sudah mendaftar 🙏',
   'Sampai ketemu di acaranya ya 🐾',

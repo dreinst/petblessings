@@ -50,6 +50,23 @@
   .scan-status{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
   .camera-error{background:var(--danger-bg);color:var(--danger);padding:14px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;}
 
+  /* Pencarian manual -- untuk pemilik yang QR-nya tidak terbaca atau tidak
+     menerima WhatsApp. Hasilnya tombol per pemilik, tap = check-in lewat
+     jalur yang sama dengan scan. */
+  .manual{margin-top:8px;padding-top:18px;border-top:1px solid var(--line);}
+  .manual h2{font-size:16px;color:var(--sage-deep);margin-bottom:4px;}
+  .manual p{font-size:13px;color:var(--ink-soft);margin:0 0 10px;}
+  .manual form{display:flex;gap:8px;}
+  .manual input{flex:1;min-width:0;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
+  .manual form button{padding:11px 16px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+  .manual-results{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .manual-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;font-family:inherit;cursor:pointer;color:var(--ink);}
+  .manual-row .num{font-family:'Fraunces',serif;font-size:22px;color:var(--sage-deep);min-width:44px;}
+  .manual-row .info{flex:1;min-width:0;}
+  .manual-row .name{display:block;font-size:15px;font-weight:600;}
+  .manual-row .meta{display:block;font-size:12.5px;color:var(--ink-soft);}
+  .manual-empty{font-size:13px;color:var(--ink-soft);margin-top:12px;}
+
   .count{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:8px;}
 
   /* Overlay hasil scan -- menutupi seluruh layar, harus ditutup manual oleh
@@ -115,6 +132,16 @@
   </div>
   <div class="scan-status" id="scanStatus">Arahkan kamera ke QR pendaftaran</div>
   <div class="camera-error" id="cameraError" style="display:none;"></div>
+
+  <section class="manual">
+    <h2>Tanpa QR? Cari manual</h2>
+    <p>Untuk pemilik yang QR-nya tidak terbaca atau tidak menerima WhatsApp. Cari, lalu tekan namanya untuk check-in.</p>
+    <form id="manualForm" autocomplete="off">
+      <input type="text" id="manualQuery" placeholder="Kode 8 karakter, nama, atau no. HP">
+      <button type="submit">Cari</button>
+    </form>
+    <div id="manualResults"></div>
+  </section>
 </div>
 
 <div class="result-overlay" id="resultOverlay">
@@ -331,6 +358,57 @@
   function postLabel(post){
     return { reg_ulang: 'Reg ulang', pos1: 'Pos 1', pos2: 'Pos 2', pos3: 'Pos 3' }[post] || post;
   }
+
+  // --- Pencarian manual (QR rusak / WhatsApp tidak masuk) ---
+  // Cocokkan nama atau no. HP (sebagian), atau kode 8 karakter = awalan
+  // UUID pemilik. Tap hasil -> handleScan(id), jalur yang sama dengan scan QR.
+  document.getElementById('manualForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var box = document.getElementById('manualResults');
+    // Karakter yang punya arti khusus di filter PostgREST dibuang saja.
+    var q = document.getElementById('manualQuery').value.replace(/[,()"\\*]/g, ' ').replace(/\s+/g, ' ').trim();
+    if(q.length < 2){ box.innerHTML = '<div class="manual-empty">Ketik minimal 2 karakter.</div>'; return; }
+    box.innerHTML = '<div class="manual-empty">Mencari…</div>';
+    var parts = ['name.ilike.*' + q + '*', 'phone.ilike.*' + q + '*'];
+    if(/^[0-9a-f]{8}$/i.test(q)){
+      var c = q.toLowerCase();
+      parts.push('and(id.gte.' + c + '-0000-0000-0000-000000000000,id.lte.' + c + '-ffff-ffff-ffff-ffffffffffff)');
+    }
+    try{
+      var res = await fetch(API_URL + '/owners?select=*,pets(*)&order=queue_number.asc&limit=10&or=' + encodeURIComponent('(' + parts.join(',') + ')'), {
+        headers: { Authorization: 'Bearer ' + token() }
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      renderManual(await res.json());
+    }catch(err){
+      box.innerHTML = '<div class="manual-empty">Gagal mencari: ' + escapeHtml(err.message) + '. Cek koneksi lalu coba lagi.</div>';
+    }
+  });
+  function renderManual(rows){
+    var box = document.getElementById('manualResults');
+    if(!rows.length){
+      box.innerHTML = '<div class="manual-empty">Tidak ada pendaftaran yang cocok. Coba ejaan lain, atau cek di halaman rekap.</div>';
+      return;
+    }
+    box.innerHTML = '<div class="manual-results">' + rows.map(function(o){
+      var pets = (o.pets || []).map(function(p){ return p.name; }).join(', ');
+      return '<button type="button" class="manual-row" data-id="' + escapeHtml(o.id) + '">' +
+        '<span class="num">#' + escapeHtml(String(o.queue_number)) + '</span>' +
+        '<span class="info"><span class="name">' + escapeHtml(o.name) + '</span>' +
+        '<span class="meta">' + escapeHtml(o.phone) + ' &middot; ' + escapeHtml(pets) + '</span></span>' +
+        '</button>';
+    }).join('') + '</div>';
+  }
+  document.getElementById('manualResults').addEventListener('click', function(e){
+    var row = e.target.closest('.manual-row');
+    if(!row || paused) return;
+    var id = row.dataset.id;
+    if(!isUuid(id)) return;
+    document.getElementById('manualQuery').value = '';
+    document.getElementById('manualResults').innerHTML = '';
+    handleScan(id);
+  });
 
   // Beep pendek pakai Web Audio -- tidak butuh file suara. Nada beda per hasil
   // supaya panitia bisa "dengar" hasilnya tanpa harus lihat layar terus.

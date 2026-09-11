@@ -6,7 +6,7 @@ Form pendaftaran untuk acara Pet Blessing 2026, Paroki St. Vincentius a Paulo, M
 
 - `index.html`, form pendaftaran publik. Satu pemilik bisa mendaftarkan beberapa hewan dalam satu submission (satu record pemilik, satu record per hewan, terhubung lewat ID pendaftaran). Setelah submit, tampil QR + kode pendek sebagai bukti pendaftaran (untuk di-screenshot), dan otomatis dikirim juga lewat WhatsApp.
 - `pendaftaran-masuk.html`, halaman rekap panitia (login diperlukan), dengan export `.xlsx`.
-- `checkin.html`, halaman scan check-in hari-H (kamera live, login diperlukan) untuk 4 pos: reg ulang, pos 1-3.
+- `checkin.html`, halaman scan check-in hari-H (kamera live, login diperlukan) untuk 4 pos: reg ulang, pos 1-3. Ada pencarian manual (kode 8 karakter, nama, atau no. HP) untuk pemilik yang QR-nya tidak terbaca atau tidak menerima WhatsApp.
 - `api/register.js`, satu-satunya jalur menulis data pendaftaran -- verifikasi captcha (Cloudflare Turnstile) dulu sebelum insert ke database.
 - `api/login.js`, login panitia.
 - `wa-bot/`, bot WhatsApp (Baileys) yang jalan terus-menerus di VPS, kirim QR bukti pendaftaran dengan delay acak.
