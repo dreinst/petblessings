@@ -291,7 +291,7 @@
     document.getElementById('scanStatus').textContent = 'Memeriksa…';
 
     try{
-      var res = await fetch(API_URL + '/owners?id=eq.' + ownerId + '&select=*,pets(*)', {
+      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(ownerId) + '&select=*,pets(*)', {
         headers: { Authorization: 'Bearer ' + token() }
       });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
