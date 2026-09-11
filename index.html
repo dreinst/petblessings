@@ -529,6 +529,43 @@
     }catch(e){
       qrBox.style.display = 'none';
     }
+
+    enqueueWhatsApp(registration, ownerId, shortCode);
+  }
+
+  // Antrian pengiriman QR lewat WhatsApp (diproses bot terpisah di VPS, dengan
+  // delay acak supaya tidak terdeteksi spam). Best-effort -- gagal di sini
+  // tidak boleh menggagalkan pendaftaran yang sudah tersimpan.
+  async function enqueueWhatsApp(registration, ownerId, shortCode){
+    if(!registration.owner.phone || !API_URL) return;
+    try{
+      var hidden = document.createElement('div');
+      new QRCode(hidden, {
+        text: ownerId, width: 512, height: 512,
+        colorDark: '#000000', colorLight: '#FFFFFF',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      var canvas = hidden.querySelector('canvas');
+      if(!canvas) return;
+      var dataUrl = canvas.toDataURL('image/png');
+      var petSummary = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
+
+      await fetch(API_URL + '/wa_queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          owner_id: ownerId,
+          phone: registration.owner.phone,
+          short_code: shortCode,
+          qr_image_base64: dataUrl,
+          owner_name: registration.owner.name,
+          pet_summary: petSummary
+        })
+      });
+    }catch(e){
+      // Diamkan -- pendaftaran tetap dianggap berhasil walau antrian WA gagal.
+    }
   }
 
   document.getElementById('againBtn').addEventListener('click', function(){

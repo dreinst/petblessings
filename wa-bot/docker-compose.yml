@@ -1,0 +1,20 @@
+services:
+  wa-bot:
+    build: .
+    container_name: petblessing-wa-bot
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: petblessing
+      PGUSER: wa_worker
+      PGPASSWORD: ${WA_WORKER_PW}
+    volumes:
+      - ./data:/data
+    networks:
+      - petblessing_db_net
+
+networks:
+  petblessing_db_net:
+    name: petblessing-db_internal
+    external: true
