@@ -26,8 +26,6 @@ Database Postgres + PostgREST ringan (bukan Supabase, lihat `vps-db/README.md` u
 
 Foto (hewan, pemilik, bukti transfer) masih hanya dipratinjau di browser, belum diunggah ke storage — tahap ini sengaja dilewati dulu, menyusul di fase sertifikat.
 
-Nomor rekening di bagian donasi masih placeholder di `index.html` dan perlu diisi manual.
-
 ## Rencana eskalasi
 
 Langkah berikutnya, sesuai urutan prioritas: upload foto sungguhan (dengan kompresi di sisi browser), integrasi photobooth (mcfbooth, lewat `POST /api/sessions` dengan kode referensi yang disisipkan di `guest_name`), lalu sertifikat digital per hewan.
