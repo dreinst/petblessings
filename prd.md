@@ -75,7 +75,7 @@ Untuk 2026, target pendaftar diperkirakan 500 pemilik (belum termasuk jumlah hew
 | NFR2 | Input di form berukuran cukup besar untuk disentuh dan tidak memicu auto-zoom di browser HP |
 | NFR3 | Lapisan penyimpanan data terisolasi dalam satu fungsi, supaya gampang diganti ke backend produksi tanpa mengubah bagian form lain |
 | NFR4 | Form tidak memerlukan akun atau login untuk pet owner |
-| NFR5 | Kode sumber siap dipindahkan ke repositori git dan dilanjutkan lewat Claude Code untuk tahap integrasi backend dan deployment |
+| NFR5 | Kode sumber siap dipindahkan ke repositori git dan dilanjutkan lewat asisten pengkodean untuk tahap integrasi backend dan deployment |
 
 ## 8. Alur Pengguna
 
@@ -99,7 +99,7 @@ Untuk 2026, target pendaftar diperkirakan 500 pemilik (belum termasuk jumlah hew
 - Sebagian besar pet owner mengisi form dari HP mereka sendiri, bukan dibantu panitia
 - Panitia menyediakan nomor rekening untuk field donasi, saat ini masih placeholder di kode
 - mcfbooth sudah berjalan dan siap diintegrasikan pada tahap berikutnya
-- Perpindahan ke backend produksi (Supabase) dan deployment (Vercel) dilakukan lewat Claude Code karena butuh kredensial yang hanya ada di perangkat Donny
+- Perpindahan ke backend produksi (Supabase) dan deployment (Vercel) dilakukan lewat asisten pengkodean karena butuh kredensial yang hanya ada di perangkat Donny
 
 ## 11. Keputusan yang sudah diambil
 

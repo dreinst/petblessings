@@ -133,7 +133,7 @@ petblessings/
 
 ## 7. Rencana Eskalasi
 
-Urutan yang disepakati, dikerjakan lewat Claude Code karena butuh kredensial GitHub, Supabase, dan Vercel yang ada di perangkat Donny:
+Urutan yang disepakati, dikerjakan lewat asisten pengkodean karena butuh kredensial GitHub, Supabase, dan Vercel yang ada di perangkat Donny:
 
 1. Push kode ke `dreinst/petblessings`
 2. Bikin proyek Supabase, tabel `owners` dan `pets` sesuai skema di atas
