@@ -96,7 +96,7 @@
 
 <div class="login-wrap" id="loginWrap">
   <h1>Login panitia</h1>
-  <p>Halaman ini khusus panitia untuk scan check-in di tiap pos.</p>
+  <p>Halaman ini khusus superadmin untuk scan check-in di tiap pos.</p>
   <div class="field">
     <label for="loginEmail">Username</label>
     <input type="text" id="loginEmail" autocomplete="username">
@@ -171,6 +171,13 @@
   var stream = null;
 
   function token(){ return sessionStorage.getItem(TOKEN_KEY); }
+  // Level akun dibaca dari isi JWT (klaim "level"), tanpa verifikasi di
+  // client -- hak sebenarnya tetap dijaga PostgREST lewat klaim role.
+  function tokenLevel(){
+    try{ var p = token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))).level || null; }catch(e){ return null; }
+  }
+  var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
+  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman check-in. Akun admin cukup untuk halaman rekap.';
 
   function showApp(){
     document.getElementById('loginWrap').style.display = 'none';
@@ -185,7 +192,11 @@
   }
 
   function checkSession(){
-    if(token()) showApp(); else showLogin();
+    if(token() && tokenLevel() === 'superadmin'){ showApp(); return; }
+    var err = document.getElementById('loginError');
+    if(token()){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); }
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
   }
 
   document.getElementById('loginBtn').addEventListener('click', async function(){
@@ -193,7 +204,7 @@
     var username = document.getElementById('loginEmail').value.trim();
     var password = document.getElementById('loginPassword').value;
     var err = document.getElementById('loginError');
-    err.classList.remove('show');
+    err.classList.remove('show'); err.textContent = LOGIN_ERR_DEFAULT;
     btn.disabled = true; btn.textContent = 'Memeriksa…';
     try{
       var res = await fetch('/api/login', {
@@ -203,6 +214,7 @@
       });
       var data = await res.json().catch(function(){ return {}; });
       if(!res.ok || !data.token){ err.classList.add('show'); return; }
+      if(data.level !== 'superadmin'){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); return; }
       sessionStorage.setItem(TOKEN_KEY, data.token);
       showApp();
     }catch(e){
@@ -321,7 +333,7 @@
     document.getElementById('scanStatus').textContent = 'Memeriksa…';
 
     try{
-      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(ownerId) + '&select=*,pets(*)', {
+      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(ownerId) + '&select=id,queue_number,name,phone,companions,pets(name,type)', {
         headers: { Authorization: 'Bearer ' + token() }
       });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
@@ -375,7 +387,7 @@
       parts.push('and(id.gte.' + c + '-0000-0000-0000-000000000000,id.lte.' + c + '-ffff-ffff-ffff-ffffffffffff)');
     }
     try{
-      var res = await fetch(API_URL + '/owners?select=*,pets(*)&order=queue_number.asc&limit=10&or=' + encodeURIComponent('(' + parts.join(',') + ')'), {
+      var res = await fetch(API_URL + '/owners?select=id,queue_number,name,phone,companions,pets(name)&order=queue_number.asc&limit=10&or=' + encodeURIComponent('(' + parts.join(',') + ')'), {
         headers: { Authorization: 'Bearer ' + token() }
       });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }

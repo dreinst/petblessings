@@ -62,6 +62,53 @@
   .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
   .export-btn{padding:10px 14px;font-size:13px;font-family:inherit;border:1px solid var(--sage);border-radius:10px;background:var(--sage);color:#fff;cursor:pointer;white-space:nowrap;}
   .export-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .notice{font-size:13px;color:var(--sage-deep);background:var(--sage-light);padding:8px 12px;border-radius:8px;margin-bottom:12px;display:none;}
+  .notice.show{display:block;}
+
+  /* Tombol per kartu: ubah data, lihat bukti transfer */
+  .entry .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .entry .actions button{padding:7px 12px;font-size:12.5px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;}
+  .entry .actions button.primary{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .entry .actions button:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* Form ubah data, menggantikan isi kartu selama diedit */
+  .edit-form .edit-title{font-weight:500;font-size:15px;}
+  .edit-form label{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:10px;}
+  .edit-form input,.edit-form select{width:100%;padding:9px 11px;font-size:14px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:#fff;margin-top:4px;}
+  .edit-form .edit-pet{margin-top:12px;padding:10px 12px;background:var(--sage-light);border-radius:8px;}
+  .edit-form .edit-pet .pet-title{font-size:12.5px;font-weight:500;color:var(--sage-deep);}
+  .edit-form .edit-error{color:#A6423A;font-size:13px;margin-top:8px;display:none;}
+  .edit-form .edit-error.show{display:block;}
+
+  /* Log login (superadmin): siapa masuk dari perangkat apa, setujui/tolak */
+  .log{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px;}
+  .log-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .log h2{font-size:16px;color:var(--sage-deep);}
+  .log-pending{font-size:12.5px;color:#5E4419;background:#F3E6C8;padding:2px 10px;border-radius:6px;}
+  .log-pending:empty{display:none;}
+  .log-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px;flex-wrap:wrap;}
+  .log-row:first-child{border-top:none;}
+  .log-row .who{flex:1;min-width:180px;}
+  .log-row .meta{display:block;color:var(--ink-soft);font-size:12px;}
+  .log-row .st{font-size:12px;padding:2px 8px;border-radius:6px;white-space:nowrap;}
+  .st-pending{background:#F3E6C8;color:#5E4419;}
+  .st-approved{background:var(--sage-light);color:var(--sage-deep);}
+  .st-rejected{background:#F6E7E5;color:#A6423A;}
+  .log-row button{padding:6px 10px;font-size:12px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:4px;}
+  .log-row button[data-log="approved"]{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .log-row button:disabled{opacity:.5;cursor:not-allowed;}
+  .wait-device{font-size:13px;color:var(--sage-deep);background:var(--sage-light);padding:8px 12px;border-radius:8px;margin-bottom:16px;}
+  .wait-device:empty{display:none;}
+
+  /* Pratinjau bukti transfer */
+  .modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(43,46,34,.6);padding:20px;}
+  .modal.show{display:flex;}
+  .modal .sheet{background:var(--card);border-radius:14px;padding:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;text-align:center;}
+  .modal .sheet h2{font-size:17px;color:var(--sage-deep);margin-bottom:10px;}
+  .modal img{max-width:100%;max-height:72vh;border-radius:8px;}
+  .modal p{font-size:13.5px;color:var(--ink-soft);}
+  .modal .close{margin-top:12px;padding:10px 16px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -79,13 +126,20 @@
   </div>
   <button type="button" id="loginBtn">Masuk</button>
   <div class="login-error" id="loginError">Username atau password salah.</div>
-</div>
+  </div>
+
+  <div class="login-wrap" id="waitWrap" style="display:none;">
+    <h1>Menunggu verifikasi superadmin</h1>
+    <p>Login admin harus disetujui superadmin dulu. Halaman ini lanjut otomatis begitu disetujui.</p>
+    <div class="wait-device" id="waitDevice"></div>
+    <button type="button" id="waitCancel">Batal</button>
+  </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
   <header>
     <div class="toolbar-top">
       <a class="back" href="index.html">&laquo; Kembali ke form</a>
-      <a class="back" href="checkin.html">Scan check-in &raquo;</a>
+      <a class="back" href="checkin.html" id="checkinLink">Scan check-in &raquo;</a>
       <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
     </div>
     <h1>Pendaftaran masuk</h1>
@@ -97,10 +151,23 @@
     <button type="button" id="refreshBtn">Muat ulang</button>
     <button type="button" class="export-btn" id="exportBtn">Export xlsx</button>
   </div>
+  <section class="log" id="loginLog" style="display:none;">
+    <div class="log-head"><h2>Log login</h2><span class="log-pending" id="logPending"></span></div>
+    <div id="logList"></div>
+  </section>
+  <div class="notice" id="notice"></div>
   <div class="count" id="count"></div>
 
   <div id="list"><div class="loading">Memuat pendaftaran…</div></div>
-</div>
+  </div>
+
+  <div class="modal" id="proofModal">
+    <div class="sheet">
+      <h2 id="proofTitle">Bukti transfer</h2>
+      <div id="proofBody"></div>
+      <button type="button" class="close" id="proofClose">Tutup</button>
+    </div>
+  </div>
 
 <script>
 (function(){
@@ -125,18 +192,122 @@
   }
 
   // --- Login gate ---
+  // Level akun dibaca dari isi JWT (klaim "level"), tanpa verifikasi di
+  // client -- hak sebenarnya tetap dijaga PostgREST lewat klaim role.
+  function tokenClaims(){
+    try{ var p = sessionStorage.getItem(TOKEN_KEY).split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))); }catch(e){ return {}; }
+  }
+  function tokenLevel(){ return tokenClaims().level || null; }
+  var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
+  var logTimer = null;
   function showApp(){
+    var superadmin = tokenLevel() === 'superadmin';
     document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('waitWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
+    document.getElementById('checkinLink').style.display = superadmin ? '' : 'none';
+    document.getElementById('loginLog').style.display = superadmin ? '' : 'none';
+    clearInterval(logTimer);
+    if(superadmin){ loadLog(); logTimer = setInterval(loadLog, 15000); }
     load();
   }
+
+  // --- Verifikasi login admin oleh superadmin ---
+  // Status sesi (klaim "sid" di JWT) dibaca dari api.admin_sessions. Admin
+  // hanya bisa masuk kalau approved; policy database juga menolak selain itu.
+  var lastSession = null;
+  var waitTimer = null;
+  async function fetchSessionStatus(){
+    var sid = tokenClaims().sid;
+    if(!sid) return 'rejected';
+    var res = await fetch(API_URL + '/admin_sessions?id=eq.' + encodeURIComponent(sid) + '&select=status,device,ip', { headers: authHeaders() });
+    if(res.status === 401) return 'expired';
+    var rows = await res.json();
+    if(!rows || !rows[0]) return 'rejected';
+    lastSession = rows[0];
+    return rows[0].status;
+  }
+  function showWaiting(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('waitWrap').style.display = 'block';
+    document.getElementById('waitDevice').textContent = lastSession ? ('Perangkat ini: ' + lastSession.device + (lastSession.ip ? ', IP ' + lastSession.ip : '')) : '';
+    clearInterval(waitTimer);
+    waitTimer = setInterval(async function(){
+      var st = await fetchSessionStatus().catch(function(){ return 'pending'; });
+      if(st === 'approved'){ clearInterval(waitTimer); showApp(); }
+      else if(st !== 'pending'){ clearInterval(waitTimer); denyLogin(st); }
+    }, 5000);
+  }
+  function denyLogin(st){
+    clearInterval(waitTimer); clearInterval(logTimer);
+    sessionStorage.removeItem(TOKEN_KEY);
+    var err = document.getElementById('loginError');
+    err.textContent = st === 'expired' ? 'Sesi habis, silakan login lagi.' : 'Akses ditolak atau dicabut oleh superadmin.';
+    err.classList.add('show');
+    showLogin();
+  }
+  async function enter(){
+    if(tokenLevel() === 'superadmin'){ showApp(); return; }
+    var st = await fetchSessionStatus().catch(function(){ return 'pending'; });
+    if(st === 'approved') showApp(); else if(st === 'pending') showWaiting(); else denyLogin(st);
+  }
+  document.getElementById('waitCancel').addEventListener('click', function(){
+    clearInterval(waitTimer);
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  });
+
+  // --- Panel log login (superadmin) ---
+  async function loadLog(){
+    if(tokenLevel() !== 'superadmin') return;
+    var box = document.getElementById('logList');
+    try{
+      var res = await fetch(API_URL + '/admin_sessions?select=id,level,device,ip,status,created_at&order=created_at.desc&limit=50', { headers: authHeaders() });
+      if(res.status === 401){ denyLogin('expired'); return; }
+      if(!res.ok) throw new Error(res.status);
+      var rows = await res.json();
+      var pending = rows.filter(function(r){ return r.status === 'pending'; }).length;
+      document.getElementById('logPending').textContent = pending ? pending + ' menunggu persetujuan' : '';
+      var LABEL = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+      box.innerHTML = rows.length ? rows.map(function(r){
+        var btns = r.level === 'superadmin' ? ''
+          : r.status === 'pending' ? '<button type="button" data-log="approved">Setujui</button><button type="button" data-log="rejected">Tolak</button>'
+          : r.status === 'approved' ? '<button type="button" data-log="rejected">Cabut</button>'
+          : '<button type="button" data-log="approved">Setujui</button>';
+        return '<div class="log-row" data-sid="'+escapeHtml(r.id)+'">'+
+          '<div class="who">'+escapeHtml(r.level)+' &middot; '+escapeHtml(r.device)+
+          '<span class="meta">'+formatTime(r.created_at)+(r.ip ? ' &middot; IP '+escapeHtml(r.ip) : '')+'</span></div>'+
+          '<span class="st st-'+escapeHtml(r.status)+'">'+(LABEL[r.status] || escapeHtml(r.status))+'</span>'+
+          '<span>'+btns+'</span></div>';
+      }).join('') : '<div class="log-row">Belum ada login tercatat.</div>';
+    }catch(e){
+      box.innerHTML = '<div class="log-row">Gagal memuat log login.</div>';
+    }
+  }
+  document.getElementById('logList').addEventListener('click', async function(e){
+    var btn = e.target.closest('button[data-log]');
+    if(!btn) return;
+    var sid = btn.closest('.log-row').dataset.sid;
+    btn.disabled = true;
+    try{
+      await fetch(API_URL + '/admin_sessions?id=eq.' + encodeURIComponent(sid), {
+        method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ status: btn.dataset.log, decided_at: new Date().toISOString() })
+      });
+    }catch(err){ /* muat ulang di bawah akan menampilkan status sebenarnya */ }
+    loadLog();
+  });
   function showLogin(){
     document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('waitWrap').style.display = 'none';
     document.getElementById('loginWrap').style.display = 'block';
   }
 
   function checkSession(){
-    if(sessionStorage.getItem(TOKEN_KEY)) showApp(); else showLogin();
+    if(sessionStorage.getItem(TOKEN_KEY) && tokenLevel()){ enter(); return; }
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
   }
 
   document.getElementById('loginBtn').addEventListener('click', async function(){
@@ -144,7 +315,7 @@
     var username = document.getElementById('loginEmail').value.trim();
     var password = document.getElementById('loginPassword').value;
     var err = document.getElementById('loginError');
-    err.classList.remove('show');
+    err.classList.remove('show'); err.textContent = LOGIN_ERR_DEFAULT;
     btn.disabled = true; btn.textContent = 'Memeriksa…';
     try{
       var res = await fetch('/api/login', {
@@ -153,9 +324,10 @@
         body: JSON.stringify({ username: username, password: password })
       });
       var data = await res.json().catch(function(){ return {}; });
-      if(!res.ok || !data.token){ err.classList.add('show'); return; }
+      if(!res.ok || !data.token){ err.textContent = data.error || LOGIN_ERR_DEFAULT; err.classList.add('show'); return; }
       sessionStorage.setItem(TOKEN_KEY, data.token);
-      showApp();
+      lastSession = { device: data.device, ip: data.ip };
+      enter();
     }catch(e){
       err.classList.add('show');
     }finally{
@@ -164,6 +336,7 @@
   });
 
   document.getElementById('logoutBtn').addEventListener('click', function(){
+    clearInterval(logTimer); clearInterval(waitTimer);
     sessionStorage.removeItem(TOKEN_KEY);
     showLogin();
   });
@@ -171,7 +344,7 @@
   // --- Data ---
   async function listRegistrations(){
     var token = sessionStorage.getItem(TOKEN_KEY);
-    var res = await fetch(API_URL + '/owners?select=*,pets(*)&order=submitted_at.desc', {
+    var res = await fetch(API_URL + '/owners?select=id,name,phone,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pets(id,name,type,has_photo,notes)&order=submitted_at.desc', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if(res.status === 401){
@@ -196,7 +369,7 @@
           hasProof: row.donation_has_proof
         },
         pets: (row.pets || []).map(function(p){
-          return { name: p.name, type: p.type, hasPhoto: p.has_photo, notes: p.notes };
+          return { id: p.id, name: p.name, type: p.type, hasPhoto: p.has_photo, notes: p.notes };
         }),
         submittedAt: row.submitted_at
       };
@@ -225,7 +398,11 @@
       var donationLine = (r.donation && (r.donation.amount || r.donation.hasProof))
         ? '<div class="donation-row">Donasi: '+escapeHtml(r.donation.amount || 'tanpa jumlah')+(r.donation.hasProof ? ', ada bukti transfer' : '')+'</div>' : '';
       var shortCode = r.id ? r.id.slice(0, 8).toUpperCase() : '';
-      return '<div class="entry">'+
+      var actionsHtml = '<div class=\"actions\">'+
+        '<button type=\"button\" data-action=\"edit\">Ubah data</button>'+
+        (r.donation && r.donation.hasProof ? '<button type=\"button\" data-action=\"proof\">Lihat bukti transfer</button>' : '')+
+        '</div>';
+      return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
         '<div class="owner"><span class="owner-name">'+escapeHtml(r.owner.name)+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
         (shortCode ? '<div class="reg-code">Kode: '+escapeHtml(shortCode)+'</div>' : '')+
         '<div class="phone">'+escapeHtml(r.owner.phone)+'</div>'+
@@ -233,8 +410,125 @@
         companionLine+
         '<div class="pet-list">'+petsHtml+'</div>'+
         donationLine+
+      actionsHtml+
       '</div>';
     }).join('');
+  }
+
+  // --- Ubah data pendaftaran (admin & superadmin) ---
+  function authHeaders(extra){
+    var h = { 'Authorization': 'Bearer ' + sessionStorage.getItem(TOKEN_KEY) };
+    for(var k in (extra || {})) h[k] = extra[k];
+    return h;
+  }
+  function showNotice(text){
+    var n = document.getElementById('notice');
+    n.textContent = text; n.classList.add('show');
+    setTimeout(function(){ n.classList.remove('show'); }, 4000);
+  }
+  function renderEditForm(entryEl, r){
+    var petsHtml = r.pets.map(function(p, i){
+      return '<div class="edit-pet" data-pet-id="'+escapeHtml(p.id)+'">'+
+        '<div class="pet-title">Hewan '+(i+1)+'</div>'+
+        '<label>Nama hewan<input data-pf="name" value="'+escapeHtml(p.name)+'"></label>'+
+        '<label>Jenis hewan<input data-pf="type" value="'+escapeHtml(p.type)+'"></label>'+
+        '<label>Catatan<input data-pf="notes" value="'+escapeHtml(p.notes || '')+'"></label>'+
+        '</div>';
+    }).join('');
+    entryEl.innerHTML = '<div class="edit-form">'+
+      '<div class="edit-title">Ubah data: '+escapeHtml(r.owner.name)+'</div>'+
+      '<label>Nama pemilik<input data-f="name" value="'+escapeHtml(r.owner.name)+'"></label>'+
+      '<label>No. HP<input data-f="phone" value="'+escapeHtml(r.owner.phone)+'"></label>'+
+      '<label>Umat Paroki St. Vincentius?<select data-f="is_parishioner">'+
+        '<option value="ya"'+(r.owner.isParishioner === 'ya' ? ' selected' : '')+'>Ya</option>'+
+        '<option value="bukan"'+(r.owner.isParishioner === 'bukan' ? ' selected' : '')+'>Bukan</option></select></label>'+
+      '<label>Asal paroki / daerah (kalau bukan umat)<input data-f="parish_origin" value="'+escapeHtml(r.owner.parishOrigin || '')+'"></label>'+
+      '<label>Jumlah pendamping<input type="number" min="0" max="20" data-f="companions" value="'+escapeHtml(String(r.owner.companions || 0))+'"></label>'+
+      '<label>Donasi<input data-f="donation_amount" value="'+escapeHtml(r.donation.amount || '')+'"></label>'+
+      petsHtml+
+      '<div class="actions"><button type="button" class="primary" data-action="save">Simpan</button><button type="button" data-action="cancel">Batal</button></div>'+
+      '<div class="edit-error"></div>'+
+      '</div>';
+  }
+  async function saveEdit(entryEl, r){
+    var errEl = entryEl.querySelector('.edit-error');
+    var v = function(sel){ return entryEl.querySelector('[data-f="'+sel+'"]').value.trim(); };
+    var owner = {
+      name: v('name'), phone: v('phone'), is_parishioner: v('is_parishioner'),
+      parish_origin: v('parish_origin') || null,
+      companions: parseInt(v('companions') || '0', 10),
+      donation_amount: v('donation_amount') || null
+    };
+    var petsPatch = Array.from(entryEl.querySelectorAll('.edit-pet')).map(function(el){
+      var pv = function(sel){ return el.querySelector('[data-pf="'+sel+'"]').value.trim(); };
+      return { id: el.dataset.petId, name: pv('name'), type: pv('type'), notes: pv('notes') || null };
+    });
+    var problem = !owner.name ? 'Nama pemilik wajib diisi.' :
+      !owner.phone ? 'Nomor HP wajib diisi.' :
+      (owner.is_parishioner === 'bukan' && !owner.parish_origin) ? 'Isi asal paroki untuk yang bukan umat.' :
+      !(owner.companions >= 0 && owner.companions <= 20) ? 'Jumlah pendamping harus 0 sampai 20.' :
+      petsPatch.some(function(p){ return !p.name || !p.type; }) ? 'Nama dan jenis tiap hewan wajib diisi.' : null;
+    if(problem){ errEl.textContent = problem; errEl.classList.add('show'); return; }
+    var saveBtn = entryEl.querySelector('[data-action="save"]');
+    saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan…';
+    try{
+      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(r.id), {
+        method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify(owner)
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('data pemilik (' + res.status + ')');
+      for(var i = 0; i < petsPatch.length; i++){
+        var p = petsPatch[i];
+        var pr = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(p.id), {
+          method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify({ name: p.name, type: p.type, notes: p.notes })
+        });
+        if(!pr.ok) throw new Error('data hewan (' + pr.status + ')');
+      }
+      await load();
+      showNotice('Perubahan untuk ' + owner.name + ' tersimpan.');
+    }catch(e){
+      errEl.textContent = 'Gagal menyimpan ' + e.message + '. Coba lagi.'; errEl.classList.add('show');
+      saveBtn.disabled = false; saveBtn.textContent = 'Simpan';
+    }
+  }
+  // --- Bukti transfer: gambar diambil per pendaftar saat diminta ---
+  async function showProof(r){
+    var modal = document.getElementById('proofModal');
+    var body = document.getElementById('proofBody');
+    document.getElementById('proofTitle').textContent = 'Bukti transfer: ' + r.owner.name;
+    body.innerHTML = '<p>Memuat gambar…</p>';
+    modal.classList.add('show');
+    try{
+      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(r.id) + '&select=donation_proof_base64', { headers: authHeaders() });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      var rows = await res.json();
+      var img = rows && rows[0] && rows[0].donation_proof_base64;
+      if(img && img.indexOf('data:image/') === 0){
+        var el = document.createElement('img'); el.src = img; el.alt = 'Bukti transfer';
+        body.innerHTML = ''; body.appendChild(el);
+      }else{
+        body.innerHTML = '<p>Tidak ada gambar tersimpan. Pendaftar menandai ada bukti transfer, tetapi gambarnya tidak terunggah (misalnya mendaftar sebelum fitur ini ada).</p>';
+      }
+    }catch(e){
+      body.innerHTML = '<p>Gagal memuat gambar. Cek koneksi lalu coba lagi.</p>';
+    }
+  }
+  document.getElementById('proofClose').addEventListener('click', function(){ document.getElementById('proofModal').classList.remove('show'); });
+  document.getElementById('proofModal').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('show'); });
+  document.getElementById('list').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    var entryEl = btn.closest('.entry');
+    var r = allRegs.find(function(x){ return x.id === entryEl.dataset.id; });
+    if(!r) return;
+    if(btn.dataset.action === 'edit') renderEditForm(entryEl, r);
+    else if(btn.dataset.action === 'cancel') render(currentView());
+    else if(btn.dataset.action === 'save') saveEdit(entryEl, r);
+    else if(btn.dataset.action === 'proof') showProof(r);
+  });
+  function currentView(){
+    var q = document.getElementById('search').value.trim().toLowerCase();
+    return q ? allRegs.filter(function(x){ return searchBlob(x).indexOf(q) !== -1; }) : allRegs;
   }
 
   function searchBlob(r){
@@ -249,6 +543,11 @@
   }
 
   async function load(){
+    if(tokenLevel() === 'admin'){
+      var st = await fetchSessionStatus().catch(function(){ return 'approved'; });
+      if(st === 'pending'){ showWaiting(); return; }
+      if(st !== 'approved'){ denyLogin(st); return; }
+    }
     document.getElementById('list').innerHTML = '<div class="loading">Memuat pendaftaran…</div>';
     try{
       allRegs = await listRegistrations();

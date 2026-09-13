@@ -388,10 +388,33 @@
     if(e.target.checked) document.getElementById('err-agreedTos').classList.remove('show');
   });
 
-  // Donation proof preview
+  // Donation proof preview + versi terkompres yang dikirim ke server
+  // (maks 1280 px, JPEG), supaya panitia bisa mengecek bukti transfer di
+  // rekap tanpa membebani database dengan foto ukuran asli.
+  var donationProofDataUrl = null;
+  function compressImage(file){
+    return new Promise(function(resolve){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){
+        try{
+          var max = 1280, w = img.width, h = img.height;
+          if(w > max || h > max){ var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        }catch(e){ resolve(null); }
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
   document.getElementById('donationProof').addEventListener('change', function(e){
     var file = e.target.files[0];
     var box = document.getElementById('donationProofPreview');
+    donationProofDataUrl = null;
     if(!file) return;
     var reader = new FileReader();
     reader.onload = function(ev){
@@ -399,10 +422,12 @@
       box.innerHTML = '<img src="'+ev.target.result+'"><button type="button" class="remove-file" id="removeDonationProof">Hapus</button>';
       document.getElementById('removeDonationProof').addEventListener('click', function(){
         document.getElementById('donationProof').value = '';
+        donationProofDataUrl = null;
         box.style.display = 'none'; box.innerHTML = '';
       });
     };
     reader.readAsDataURL(file);
+    compressImage(file).then(function(dataUrl){ donationProofDataUrl = dataUrl; });
   });
 
   function clearFieldError(el){
@@ -549,6 +574,7 @@
           companions: registration.owner.companions,
           donation_amount: registration.donation.amount || null,
           donation_has_proof: registration.donation.hasProof,
+          donation_proof_base64: registration.donation.proofDataUrl || null,
           agreed_tos: registration.agreedTos,
           submitted_at: registration.submittedAt
         },
@@ -600,7 +626,8 @@
       }),
       donation: {
         amount: document.getElementById('donationAmount').value.trim(),
-        hasProof: !!document.getElementById('donationProof').files[0]
+        hasProof: !!document.getElementById('donationProof').files[0],
+        proofDataUrl: donationProofDataUrl
       },
       agreedTos: true,
       submittedAt: new Date().toISOString()
@@ -647,6 +674,7 @@
     parishOriginWrap.classList.remove('open');
     companionWrap.classList.remove('open');
     document.getElementById('donationProofPreview').style.display = 'none';
+    donationProofDataUrl = null;
     document.getElementById('confirmWrap').classList.remove('show');
     document.getElementById('regForm').style.display = 'block';
     var submitBtn = document.getElementById('submitBtn');

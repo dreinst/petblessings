@@ -41,6 +41,10 @@ function validatePayload(body) {
   if (owner.is_parishioner !== 'ya' && owner.is_parishioner !== 'bukan') return 'Status umat tidak valid';
   var companions = owner.companions == null ? 0 : owner.companions;
   if (!Number.isInteger(companions) || companions < 0 || companions > 20) return 'Jumlah pendamping tidak valid';
+  var proof = owner.donation_proof_base64;
+  if (proof != null && proof !== '') {
+    if (typeof proof !== 'string' || proof.length > 2000000 || proof.indexOf('data:image/') !== 0) return 'Bukti transfer tidak valid';
+  }
 
   if (!Array.isArray(pets) || pets.length < 1 || pets.length > 20) return 'Data hewan tidak valid';
   for (var i = 0; i < pets.length; i++) {
@@ -122,6 +126,7 @@ module.exports = async function handler(req, res) {
       companions: body.owner.companions || 0,
       donation_amount: body.owner.donation_amount || null,
       donation_has_proof: !!body.owner.donation_has_proof,
+      donation_proof_base64: body.owner.donation_proof_base64 || null,
       agreed_tos: !!body.owner.agreed_tos,
       submitted_at: body.owner.submitted_at,
     });

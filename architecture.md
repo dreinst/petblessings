@@ -49,7 +49,7 @@ Satu fungsi, `saveRegistration()`, adalah satu-satunya tempat yang bicara ke pen
 
 Fungsi ini sekarang memanggil Supabase (`supabase-js`, project terpisah dari sistem 14-agent EO/WO yang sudah berjalan, supaya dua sistem tidak saling mengganggu): insert satu baris ke `owners`, ambil `id`-nya, lalu insert N baris ke `pets` dengan `owner_id` itu. Kredensial (Project URL + anon key) ada di `supabase-config.js`, dimuat lewat `<script>` sebelum kode form. anon key aman ditaruh di sisi klien karena akses dibatasi lewat Row Level Security (lihat `supabase/schema.sql`): anon cuma boleh insert, tidak boleh membaca data pemilik/hewan lain.
 
-Foto (hewan, pemilik, bukti transfer) saat ini hanya dipratinjau di browser lewat FileReader, belum diunggah ke penyimpanan berkas mana pun. Di versi produksi, ini perlu diunggah ke Supabase Storage dan disimpan sebagai link, bukan sebagai data mentah di tabel.
+Bukti transfer donasi dikompres di browser (canvas, maks 1280 px, JPEG) dan disimpan sebagai data URL di kolom `owners.donation_proof_base64`; panitia melihatnya per pendaftar dari halaman rekap. Foto hewan dan pemilik masih hanya dipratinjau di browser lewat FileReader, belum diunggah. Di versi produksi, ini perlu diunggah ke Supabase Storage dan disimpan sebagai link, bukan sebagai data mentah di tabel.
 
 ### 3.3 Halaman pendaftaran masuk (sudah dibangun)
 
