@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard superadmin, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="api-config.js"></script>
+<style>
+  :root{
+    --ink:#2B2E22; --ink-soft:#5B5F4E; --bg:#F4F1E4; --card:#FCFAF2;
+    --sage:#3F5B44; --sage-deep:#2E4433; --sage-light:#E7ECE1;
+    --line:#DDD6C1; --danger:#A6423A; --danger-bg:#F6E7E5; --gold-light:#F3E6C8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:620px;margin:0 auto;padding:24px 20px 64px;}
+  a{color:var(--sage-deep);}
+
+  .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
+  .login-wrap h1{font-size:22px;color:var(--sage-deep);margin-bottom:6px;}
+  .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
+  .login-wrap .field{margin-bottom:14px;}
+  .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
+  .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
+  .login-wrap button{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-wrap button:disabled{opacity:.6;cursor:not-allowed;}
+  .login-error{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
+  .login-error.show{display:block;}
+
+  header{margin-bottom:16px;}
+  header .top{display:flex;justify-content:space-between;align-items:center;}
+  header .who{font-size:12.5px;color:var(--ink-soft);}
+  .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
+  header h1{font-size:24px;color:var(--sage-deep);margin-top:8px;}
+  header p{font-size:13.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .nav{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px;}
+  .nav a{flex:1;min-width:140px;text-align:center;padding:12px 14px;background:var(--sage);color:#fff;border-radius:10px;text-decoration:none;font-size:14px;font-weight:600;}
+
+  h2.section{font-size:16px;color:var(--sage-deep);margin:0 0 10px;}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+  .stats.posts{grid-template-columns:repeat(4,1fr);}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
+  .stat .num{font-family:'Fraunces',serif;font-size:28px;color:var(--sage-deep);line-height:1.1;}
+  .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .refresh-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-soft);margin-bottom:18px;}
+  .refresh-line button{padding:8px 12px;font-size:12.5px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;}
+  .error{background:var(--danger-bg);color:var(--danger);padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;}
+
+  /* Log login: siapa masuk dari perangkat apa, setujui/tolak login admin */
+  .log{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .log-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .log h2{font-size:16px;color:var(--sage-deep);}
+  .log-pending{font-size:12.5px;color:#5E4419;background:var(--gold-light);padding:2px 10px;border-radius:6px;}
+  .log-pending:empty{display:none;}
+  .log-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px;flex-wrap:wrap;}
+  .log-row:first-child{border-top:none;}
+  .log-row .who{flex:1;min-width:180px;}
+  .log-row .meta{display:block;color:var(--ink-soft);font-size:12px;}
+  .log-row .st{font-size:12px;padding:2px 8px;border-radius:6px;white-space:nowrap;}
+  .st-pending{background:var(--gold-light);color:#5E4419;}
+  .st-approved{background:var(--sage-light);color:var(--sage-deep);}
+  .st-rejected{background:var(--danger-bg);color:var(--danger);}
+  .log-row button{padding:6px 10px;font-size:12px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:4px;}
+  .log-row button[data-log="approved"]{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .log-row button:disabled{opacity:.5;cursor:not-allowed;}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <h1>Login superadmin</h1>
+  <p>Halaman ini khusus superadmin: ringkasan pendaftaran, check-in, dan log login panitia.</p>
+  <div class="field">
+    <label for="loginEmail">Username</label>
+    <input type="text" id="loginEmail" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+  </div>
+  <button type="button" id="loginBtn">Masuk</button>
+  <div class="login-error" id="loginError">Username atau password salah.</div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
+  <header>
+    <div class="top">
+      <span class="who">Masuk sebagai superadmin</span>
+      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+    </div>
+    <h1>Dashboard superadmin</h1>
+    <p>Angka langsung dari database, memuat ulang sendiri tiap 15 detik.</p>
+  </header>
+
+  <nav class="nav">
+    <a href="pendaftaran-masuk.html">Rekap pendaftaran &raquo;</a>
+    <a href="checkin.html">Scan check-in &raquo;</a>
+  </nav>
+
+  <div class="error" id="statsError" style="display:none;"></div>
+  <h2 class="section">Pendaftaran</h2>
+  <div class="stats" id="statsReg"></div>
+  <h2 class="section">Check-in hari-H (pemilik per pos)</h2>
+  <div class="stats posts" id="statsPosts"></div>
+  <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
+
+  <section class="log" id="loginLog">
+    <div class="log-head"><h2>Log login</h2><span class="log-pending" id="logPending"></span></div>
+    <div id="logList"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var API_URL = window.PETBLESSING_API_URL;
+  var TOKEN_KEY = 'petblessing_panitia_token';
+  if(!API_URL){
+    document.getElementById('loginWrap').innerHTML = '<div class="error">API belum dikonfigurasi. Isi api-config.js dulu.</div>';
+    return;
+  }
+  var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
+  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka dashboard ini. Akun admin memakai halaman rekap.';
+  var timer = null;
+
+  function token(){ return sessionStorage.getItem(TOKEN_KEY); }
+  // Level akun dibaca dari isi JWT (klaim "level"), tanpa verifikasi di
+  // client -- hak sebenarnya tetap dijaga PostgREST lewat klaim role.
+  function tokenLevel(){
+    try{ var p = token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))).level || null; }catch(e){ return null; }
+  }
+  function authHeaders(extra){
+    var h = { 'Authorization': 'Bearer ' + token() };
+    for(var k in (extra || {})) h[k] = extra[k];
+    return h;
+  }
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function formatTime(iso){
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : d.toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  // --- Login gate (superadmin saja) ---
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'block';
+    clearInterval(timer);
+    loadAll();
+    timer = setInterval(loadAll, 15000);
+  }
+  function showLogin(){
+    clearInterval(timer);
+    document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+  function expired(){
+    sessionStorage.removeItem(TOKEN_KEY);
+    var err = document.getElementById('loginError');
+    err.textContent = 'Sesi habis, silakan login lagi.'; err.classList.add('show');
+    showLogin();
+  }
+  function checkSession(){
+    if(token() && tokenLevel() === 'superadmin'){ showApp(); return; }
+    var err = document.getElementById('loginError');
+    if(token()){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); }
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var btn = this;
+    var username = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var err = document.getElementById('loginError');
+    err.classList.remove('show'); err.textContent = LOGIN_ERR_DEFAULT;
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    try{
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !data.token){ err.textContent = data.error || LOGIN_ERR_DEFAULT; err.classList.add('show'); return; }
+      if(data.level !== 'superadmin'){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      showApp();
+    }catch(e){
+      err.classList.add('show');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Masuk';
+    }
+  });
+  ['loginEmail','loginPassword'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginBtn').click(); }
+    });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  });
+
+  // --- Ringkasan angka ---
+  function card(label, num){
+    return '<div class="stat"><div class="num">' + num + '</div><div class="lbl">' + escapeHtml(label) + '</div></div>';
+  }
+  async function loadStats(){
+    var errBox = document.getElementById('statsError');
+    try{
+      var results = await Promise.all([
+        fetch(API_URL + '/owners?select=companions,pets(id)', { headers: authHeaders() }),
+        fetch(API_URL + '/checkins?select=post', { headers: authHeaders() })
+      ]);
+      if(results[0].status === 401 || results[1].status === 401){ expired(); return; }
+      if(!results[0].ok || !results[1].ok) throw new Error('HTTP ' + (results[0].ok ? results[1].status : results[0].status));
+      var owners = await results[0].json();
+      var checkins = await results[1].json();
+      var pets = 0, companions = 0;
+      owners.forEach(function(o){ pets += (o.pets || []).length; companions += o.companions || 0; });
+      var perPost = {};
+      checkins.forEach(function(c){ perPost[c.post] = (perPost[c.post] || 0) + 1; });
+      document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions);
+      document.getElementById('statsPosts').innerHTML = [['Reg ulang','reg_ulang'],['Pos 1','pos1'],['Pos 2','pos2'],['Pos 3','pos3']].map(function(p){
+        return card(p[0], perPost[p[1]] || 0);
+      }).join('');
+      document.getElementById('updatedAt').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      errBox.style.display = 'none';
+    }catch(e){
+      errBox.textContent = 'Gagal memuat ringkasan (' + e.message + '). Cek koneksi lalu muat ulang.';
+      errBox.style.display = 'block';
+    }
+  }
+
+  // --- Log login: setujui/tolak login admin ---
+  async function loadLog(){
+    var box = document.getElementById('logList');
+    try{
+      var res = await fetch(API_URL + '/admin_sessions?select=id,level,device,ip,status,created_at&order=created_at.desc&limit=50', { headers: authHeaders() });
+      if(res.status === 401){ expired(); return; }
+      if(!res.ok) throw new Error(res.status);
+      var rows = await res.json();
+      var pending = rows.filter(function(r){ return r.status === 'pending'; }).length;
+      document.getElementById('logPending').textContent = pending ? pending + ' menunggu persetujuan' : '';
+      var LABEL = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+      box.innerHTML = rows.length ? rows.map(function(r){
+        var btns = r.level === 'superadmin' ? ''
+          : r.status === 'pending' ? '<button type="button" data-log="approved">Setujui</button><button type="button" data-log="rejected">Tolak</button>'
+          : r.status === 'approved' ? '<button type="button" data-log="rejected">Cabut</button>'
+          : '<button type="button" data-log="approved">Setujui</button>';
+        return '<div class="log-row" data-sid="'+escapeHtml(r.id)+'">'+
+          '<div class="who">'+escapeHtml(r.level)+' &middot; '+escapeHtml(r.device)+
+          '<span class="meta">'+formatTime(r.created_at)+(r.ip ? ' &middot; IP '+escapeHtml(r.ip) : '')+'</span></div>'+
+          '<span class="st st-'+escapeHtml(r.status)+'">'+(LABEL[r.status] || escapeHtml(r.status))+'</span>'+
+          '<span>'+btns+'</span></div>';
+      }).join('') : '<div class="log-row">Belum ada login tercatat.</div>';
+    }catch(e){
+      box.innerHTML = '<div class="log-row">Gagal memuat log login.</div>';
+    }
+  }
+  document.getElementById('logList').addEventListener('click', async function(e){
+    var btn = e.target.closest('button[data-log]');
+    if(!btn) return;
+    var sid = btn.closest('.log-row').dataset.sid;
+    btn.disabled = true;
+    try{
+      await fetch(API_URL + '/admin_sessions?id=eq.' + encodeURIComponent(sid), {
+        method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ status: btn.dataset.log, decided_at: new Date().toISOString() })
+      });
+    }catch(err){ /* muat ulang di bawah menampilkan status sebenarnya */ }
+    loadLog();
+  });
+
+  function loadAll(){ loadStats(); loadLog(); }
+  document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+  checkSession();
+})();
+</script>
+</body>
+</html>

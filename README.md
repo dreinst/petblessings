@@ -6,6 +6,7 @@ Form pendaftaran untuk acara Pet Blessing 2026, Paroki St. Vincentius a Paulo, M
 
 - `index.html`, form pendaftaran publik. Satu pemilik bisa mendaftarkan beberapa hewan dalam satu submission (satu record pemilik, satu record per hewan, terhubung lewat ID pendaftaran). Setelah submit, tampil QR + kode pendek sebagai bukti pendaftaran (untuk di-screenshot), dan otomatis dikirim juga lewat WhatsApp.
 - `pendaftaran-masuk.html`, halaman rekap panitia (login `admin` atau `superadmin`): daftar pendaftar, ubah data, lihat bukti transfer, export `.xlsx`.
+- `superadmin.html`, dashboard superadmin: ringkasan angka (pemilik, hewan, pendamping, check-in per pos), log login panitia dengan tombol setujui/tolak login admin, tautan ke rekap dan check-in.
 - `checkin.html`, halaman scan check-in hari-H (kamera live, khusus login `superadmin`) untuk 4 pos: reg ulang, pos 1-3. Ada pencarian manual (kode 8 karakter, nama, atau no. HP) untuk pemilik yang QR-nya tidak terbaca atau tidak menerima WhatsApp.
 - `api/register.js`, satu-satunya jalur menulis data pendaftaran -- verifikasi captcha (Cloudflare Turnstile) dulu sebelum insert ke database.
 - `api/login.js`, login panitia: dua akun dari env Vercel (`PANITIA_*` = admin, `SUPERADMIN_*` = superadmin), JWT membawa role Postgres `web_admin` / `web_superadmin`.

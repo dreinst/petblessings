@@ -112,7 +112,7 @@
 <div class="wrap" id="appWrap" style="display:none;">
   <header>
     <div class="top">
-      <a class="back" href="pendaftaran-masuk.html">&laquo; Rekap pendaftaran</a>
+      <a class="back" href="superadmin.html">&laquo; Dashboard</a>
       <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
     </div>
     <h1>Check-in hari-H</h1>
@@ -224,6 +224,11 @@
     }
   });
 
+  ['loginEmail','loginPassword'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginBtn').click(); }
+    });
+  });
   document.getElementById('logoutBtn').addEventListener('click', function(){
     sessionStorage.removeItem(TOKEN_KEY);
     showLogin();
