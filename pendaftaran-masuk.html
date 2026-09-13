@@ -188,7 +188,8 @@
           name: row.name,
           phone: row.phone,
           isParishioner: row.is_parishioner,
-          parishOrigin: row.parish_origin
+          parishOrigin: row.parish_origin,
+          companions: row.companions || 0
         },
         donation: {
           amount: row.donation_amount,
@@ -211,7 +212,8 @@
       return;
     }
     var totalPets = regs.reduce(function(sum,r){ return sum + r.pets.length; }, 0);
-    count.textContent = regs.length + ' pemilik, ' + totalPets + ' hewan';
+    var totalCompanions = regs.reduce(function(sum,r){ return sum + (r.owner.companions || 0); }, 0);
+    count.textContent = regs.length + ' pemilik, ' + totalPets + ' hewan, ' + totalCompanions + ' pendamping';
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
@@ -219,6 +221,7 @@
       }).join('');
       var originLine = r.owner.isParishioner === 'bukan' && r.owner.parishOrigin
         ? '<div class="origin">Dari '+escapeHtml(r.owner.parishOrigin)+'</div>' : '';
+      var companionLine = r.owner.companions > 0 ? '<div class=\"origin\">'+r.owner.companions+' pendamping</div>' : '';
       var donationLine = (r.donation && (r.donation.amount || r.donation.hasProof))
         ? '<div class="donation-row">Donasi: '+escapeHtml(r.donation.amount || 'tanpa jumlah')+(r.donation.hasProof ? ', ada bukti transfer' : '')+'</div>' : '';
       var shortCode = r.id ? r.id.slice(0, 8).toUpperCase() : '';
@@ -227,6 +230,7 @@
         (shortCode ? '<div class="reg-code">Kode: '+escapeHtml(shortCode)+'</div>' : '')+
         '<div class="phone">'+escapeHtml(r.owner.phone)+'</div>'+
         originLine+
+        companionLine+
         '<div class="pet-list">'+petsHtml+'</div>'+
         donationLine+
       '</div>';
@@ -271,6 +275,7 @@
         'No. HP': r.owner.phone,
         'Status umat': r.owner.isParishioner === 'ya' ? 'Umat paroki' : 'Bukan umat paroki',
         'Asal paroki/daerah': r.owner.parishOrigin || '',
+        'Pendamping': r.owner.companions || 0,
         'Nama hewan': p ? p.name : '',
         'Jenis hewan': p ? p.type : '',
         'Ada foto': p ? (p.hasPhoto ? 'Ya' : 'Tidak') : '',
@@ -283,7 +288,7 @@
 
     var ws = XLSX.utils.json_to_sheet(rows);
     ws['!cols'] = [
-      {wch:22},{wch:16},{wch:16},{wch:20},{wch:18},{wch:14},{wch:9},{wch:30},{wch:12},{wch:14},{wch:20}
+      {wch:22},{wch:16},{wch:16},{wch:20},{wch:11},{wch:18},{wch:14},{wch:9},{wch:30},{wch:12},{wch:14},{wch:20}
     ];
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Pendaftaran');

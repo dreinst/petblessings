@@ -460,6 +460,7 @@
         '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
         '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
         '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
+          (owner.companions > 0 ? '<div class="owner-phone">' + escapeHtml(String(owner.companions)) + ' pendamping</div>' : '') +
         '<div class="pet-list">' + petsHtml + '</div>';
     }
 

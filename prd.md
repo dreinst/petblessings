@@ -55,7 +55,7 @@ Untuk 2026, target pendaftar diperkirakan 500 pemilik (belum termasuk jumlah hew
 
 | ID | Requirement |
 |---|---|
-| FR1 | Pet owner dapat mengisi data diri (nama, no. HP, status umat paroki) dalam satu form |
+| FR1 | Pet owner dapat mengisi data diri (nama, no. HP, status umat paroki, jumlah pendamping yang ikut) dalam satu form |
 | FR2 | Jika bukan umat Paroki St. Vincentius, form menampilkan field asal paroki/daerah |
 | FR3 | Pet owner dapat menambah kartu hewan sebanyak yang dibutuhkan lewat tombol "Tambah hewan" |
 | FR4 | Tiap kartu hewan berisi nama, jenis (pilihan atau isi manual lewat opsi Lainnya), foto opsional, dan catatan |

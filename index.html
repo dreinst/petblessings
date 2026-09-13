@@ -166,6 +166,21 @@
             <div class="field-error" id="err-parishOrigin">Mohon isi asal paroki Anda.</div>
           </div>
         </div>
+        <div class="field">
+          <label>Apakah Anda membawa pendamping (pet handler, keluarga, teman)?<span class="req">*</span></label>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="hasCompanion" value="ya"><span>Ya</span></label>
+            <label class="radio-opt"><input type="radio" name="hasCompanion" value="tidak"><span>Tidak</span></label>
+          </div>
+          <div class="field-error" id="err-hasCompanion">Silakan pilih salah satu.</div>
+        </div>
+        <div class="conditional" id="companionWrap">
+          <div class="field" style="margin-top:2px;">
+            <label for="companionCount">Jumlah pendamping<span class="req">*</span></label>
+            <input type="number" id="companionCount" inputmode="numeric" min="1" max="20" placeholder="misal 1">
+            <div class="field-error" id="err-companionCount">Mohon isi jumlah pendamping (minimal 1).</div>
+          </div>
+        </div>
       </section>
 
       <section class="block">
@@ -359,6 +374,16 @@
     });
   });
 
+  var companionRadios = document.querySelectorAll('input[name="hasCompanion"]');
+  var companionWrap = document.getElementById('companionWrap');
+  companionRadios.forEach(function(r){
+    r.addEventListener('change', function(){
+      document.getElementById('err-hasCompanion').classList.remove('show');
+      if(r.value === 'ya' && r.checked){ companionWrap.classList.add('open'); }
+      if(r.value === 'tidak' && r.checked){ companionWrap.classList.remove('open'); clearFieldError(document.getElementById('companionCount')); }
+    });
+  });
+
   document.getElementById('agreedTos').addEventListener('change', function(e){
     if(e.target.checked) document.getElementById('err-agreedTos').classList.remove('show');
   });
@@ -413,6 +438,15 @@
     if(isParishioner && isParishioner.value === 'bukan' && !parishOrigin.value.trim()){
       setError(parishOrigin, document.getElementById('err-parishOrigin'), true); ok = false;
     } else setError(parishOrigin, document.getElementById('err-parishOrigin'), false);
+
+    var hasCompanion = document.querySelector('input[name="hasCompanion"]:checked');
+    if(!hasCompanion){ document.getElementById('err-hasCompanion').classList.add('show'); ok = false; }
+    else document.getElementById('err-hasCompanion').classList.remove('show');
+
+    var companionCount = document.getElementById('companionCount');
+    if(hasCompanion && hasCompanion.value === 'ya' && !(parseInt(companionCount.value, 10) >= 1)){
+      setError(companionCount, document.getElementById('err-companionCount'), true); ok = false;
+    } else setError(companionCount, document.getElementById('err-companionCount'), false);
 
     pets.forEach(function(pet){
       var card = document.querySelector('.pet-card[data-id="'+pet.id+'"]');
@@ -512,6 +546,7 @@
           phone: registration.owner.phone,
           is_parishioner: registration.owner.isParishioner,
           parish_origin: registration.owner.parishOrigin || null,
+          companions: registration.owner.companions,
           donation_amount: registration.donation.amount || null,
           donation_has_proof: registration.donation.hasProof,
           agreed_tos: registration.agreedTos,
@@ -546,12 +581,14 @@
     submitBtn.textContent = 'Mengirim…';
 
     var isParishioner = document.querySelector('input[name="isParishioner"]:checked').value;
+    var hasCompanion = document.querySelector('input[name="hasCompanion"]:checked').value;
     var registration = {
       owner: {
         name: document.getElementById('ownerName').value.trim(),
         phone: document.getElementById('ownerPhone').value.trim(),
         isParishioner: isParishioner,
-        parishOrigin: isParishioner === 'bukan' ? document.getElementById('parishOrigin').value.trim() : ''
+        parishOrigin: isParishioner === 'bukan' ? document.getElementById('parishOrigin').value.trim() : '',
+        companions: hasCompanion === 'ya' ? parseInt(document.getElementById('companionCount').value, 10) : 0
       },
       pets: pets.map(function(p){
         return {
@@ -590,7 +627,8 @@
     document.getElementById('confirmSummary').innerHTML =
       '<b>'+escapeHtml(registration.owner.name)+'</b>'+
       escapeHtml(registration.owner.phone)+'<br>'+
-      registration.pets.length+' hewan: '+escapeHtml(petLines);
+      registration.pets.length+' hewan: '+escapeHtml(petLines)+
+      (registration.owner.companions > 0 ? '<br>'+registration.owner.companions+' pendamping' : '');
 
     var qrBox = document.getElementById('confirmQrBox');
     document.getElementById('confirmQrCode').textContent = shortCode;
@@ -607,6 +645,7 @@
     pets = [newPet()];
     renderPetCards();
     parishOriginWrap.classList.remove('open');
+    companionWrap.classList.remove('open');
     document.getElementById('donationProofPreview').style.display = 'none';
     document.getElementById('confirmWrap').classList.remove('show');
     document.getElementById('regForm').style.display = 'block';

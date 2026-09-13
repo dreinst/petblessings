@@ -39,6 +39,8 @@ function validatePayload(body) {
   if (!isNonEmptyString(owner.name, 200)) return 'Nama pemilik wajib diisi';
   if (!isNonEmptyString(owner.phone, 30)) return 'Nomor HP wajib diisi';
   if (owner.is_parishioner !== 'ya' && owner.is_parishioner !== 'bukan') return 'Status umat tidak valid';
+  var companions = owner.companions == null ? 0 : owner.companions;
+  if (!Number.isInteger(companions) || companions < 0 || companions > 20) return 'Jumlah pendamping tidak valid';
 
   if (!Array.isArray(pets) || pets.length < 1 || pets.length > 20) return 'Data hewan tidak valid';
   for (var i = 0; i < pets.length; i++) {
@@ -117,6 +119,7 @@ module.exports = async function handler(req, res) {
       phone: body.owner.phone,
       is_parishioner: body.owner.is_parishioner,
       parish_origin: body.owner.parish_origin || null,
+      companions: body.owner.companions || 0,
       donation_amount: body.owner.donation_amount || null,
       donation_has_proof: !!body.owner.donation_has_proof,
       agreed_tos: !!body.owner.agreed_tos,

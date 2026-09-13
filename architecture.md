@@ -39,7 +39,7 @@ Satu fungsi, `saveRegistration()`, adalah satu-satunya tempat yang bicara ke pen
 ```
 {
   id,
-  owner: { name, phone, isParishioner, parishOrigin },
+  owner: { name, phone, isParishioner, parishOrigin, companions },
   pets: [ { name, type, hasPhoto, notes }, ... ],
   donation: { amount, hasProof },
   agreedTos,
