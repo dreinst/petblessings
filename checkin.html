@@ -14,44 +14,47 @@
 <script src="api-config.js"></script>
 <style>
   :root{
-    --ink:#2B2E22; --ink-soft:#5B5F4E; --bg:#F4F1E4; --card:#FCFAF2;
-    --sage:#3F5B44; --sage-deep:#2E4433; --sage-light:#E7ECE1;
-    --line:#DDD6C1; --danger:#A6423A; --danger-bg:#F6E7E5; --gold-light:#F3E6C8;
+    --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
+    --brand:#00A3B8; --brand-deep:#3B1052; --brand-light:#DFF4F6;
+    --accent:#C97F1F; --accent-light:#FCE9C5; --pink:#E0357B;
+    --line:#E8DCC8; --danger:#A6423A; --danger-bg:#F6E7E5;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
   .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
   .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.28;}
-  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--sage-light);}
-  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:var(--gold-light);}
+  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--pink);opacity:.18;}
+  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:var(--brand);opacity:.18;}
   h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
   .wrap{max-width:480px;margin:0 auto;padding:20px 16px 64px;position:relative;z-index:1;}
   .login-wrap{position:relative;z-index:1;}
-  a{color:var(--sage-deep);}
+  a{color:var(--brand-deep);}
 
   @media (min-width:880px){
     .wrap{max-width:640px;}
   }
 
   .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
-  .login-wrap h1{font-size:22px;color:var(--sage-deep);margin-bottom:6px;}
+  .login-wrap h1{font-size:22px;color:var(--brand-deep);margin-bottom:6px;}
   .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
   .login-wrap .field{margin-bottom:14px;}
   .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
   .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);box-sizing:border-box;}
-  .login-wrap button{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-wrap button{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
   .login-error{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
   .login-error.show{display:block;}
 
+  .brand-badge{width:40px;height:40px;display:block;margin:0 0 14px;}
+  .login-wrap .brand-badge{margin:0 auto 16px;}
   header{margin-bottom:16px;}
   header .top{display:flex;justify-content:space-between;align-items:center;}
   header a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;}
   .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
-  header h1{font-size:22px;color:var(--sage-deep);margin-top:8px;}
+  header h1{font-size:22px;color:var(--brand-deep);margin-top:8px;}
 
   .post-select{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
   .post-select button{padding:12px 8px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;}
-  .post-select button.active{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .post-select button.active{background:var(--brand);border-color:var(--brand);color:#fff;}
 
   .scan-box{position:relative;width:100%;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px;}
   .scan-box video{width:100%;height:100%;object-fit:cover;}
@@ -63,14 +66,14 @@
      menerima WhatsApp. Hasilnya tombol per pemilik, tap = check-in lewat
      jalur yang sama dengan scan. */
   .manual{margin-top:8px;padding-top:18px;border-top:1px solid var(--line);}
-  .manual h2{font-size:16px;color:var(--sage-deep);margin-bottom:4px;}
+  .manual h2{font-size:16px;color:var(--brand-deep);margin-bottom:4px;}
   .manual p{font-size:13px;color:var(--ink-soft);margin:0 0 10px;}
   .manual form{display:flex;gap:8px;}
   .manual input{flex:1;min-width:0;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
-  .manual form button{padding:11px 16px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+  .manual form button{padding:11px 16px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
   .manual-results{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
   .manual-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;font-family:inherit;cursor:pointer;color:var(--ink);}
-  .manual-row .num{font-family:'Fraunces',serif;font-size:22px;color:var(--sage-deep);min-width:44px;}
+  .manual-row .num{font-family:'Fraunces',serif;font-size:22px;color:var(--brand-deep);min-width:44px;}
   .manual-row .info{flex:1;min-width:0;}
   .manual-row .name{display:block;font-size:15px;font-weight:600;}
   .manual-row .meta{display:block;font-size:12.5px;color:var(--ink-soft);}
@@ -85,19 +88,19 @@
   .result-sheet{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;padding:28px 22px 26px;text-align:center;box-shadow:0 -6px 30px rgba(0,0,0,.25);animation:slideUp .18s ease-out;max-height:88vh;overflow-y:auto;}
   @keyframes slideUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
   .result-sheet .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;}
-  .result-sheet.ok .status-icon{background:var(--sage-light);color:var(--sage-deep);}
-  .result-sheet.warn .status-icon{background:var(--gold-light);color:#5E4419;}
+  .result-sheet.ok .status-icon{background:var(--brand-light);color:var(--brand-deep);}
+  .result-sheet.warn .status-icon{background:var(--accent-light);color:#5E4419;}
   .result-sheet.err .status-icon{background:var(--danger-bg);color:var(--danger);}
   .result-sheet .status-title{font-family:'Fraunces',serif;font-size:22px;margin-bottom:4px;}
-  .result-sheet.ok .status-title{color:var(--sage-deep);}
+  .result-sheet.ok .status-title{color:var(--brand-deep);}
   .result-sheet.warn .status-title{color:#5E4419;}
   .result-sheet.err .status-title{color:var(--danger);}
-  .result-sheet .queue-number{font-family:'Fraunces',serif;font-size:56px;color:var(--sage-deep);line-height:1;margin:14px 0 10px;}
+  .result-sheet .queue-number{font-family:'Fraunces',serif;font-size:56px;color:var(--brand-deep);line-height:1;margin:14px 0 10px;}
   .result-sheet .owner-name{font-size:19px;font-weight:600;margin-bottom:4px;}
   .result-sheet .owner-phone{font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;}
   .result-sheet .pet-list{display:flex;flex-direction:column;gap:6px;margin:0 0 20px;text-align:left;}
-  .result-sheet .pet-row{font-size:14.5px;padding:10px 12px;background:var(--sage-light);border-radius:8px;color:var(--sage-deep);}
-  .result-sheet .continue-btn{width:100%;padding:16px;background:var(--sage);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;}
+  .result-sheet .pet-row{font-size:14.5px;padding:10px 12px;background:var(--brand-light);border-radius:8px;color:var(--brand-deep);}
+  .result-sheet .continue-btn{width:100%;padding:16px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;}
   .result-sheet.err .continue-btn, .result-sheet.warn .continue-btn{background:var(--ink);}
 </style>
 </head>
@@ -105,6 +108,7 @@
 <div class="aurora"><span></span><span></span></div>
 
 <div class="login-wrap" id="loginWrap">
+  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
   <h1>Login panitia</h1>
   <p>Halaman ini khusus superadmin untuk scan check-in di tiap pos.</p>
   <div class="field">
@@ -125,6 +129,7 @@
       <a class="back" href="superadmin.html">&laquo; Dashboard</a>
       <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
     </div>
+    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
     <h1>Check-in hari-H</h1>
   </header>
 
