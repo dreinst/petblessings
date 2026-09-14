@@ -19,9 +19,14 @@
     --line:#DDD6C1;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.28;}
+  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--sage-light);}
+  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:#F3E6C8;}
   h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
-  .wrap{max-width:620px;margin:0 auto;padding:32px 20px 64px;}
+  .wrap{max-width:620px;margin:0 auto;padding:32px 20px 64px;position:relative;z-index:1;}
+  .login-wrap{position:relative;z-index:1;}
   a{color:var(--sage-deep);}
   header{margin-bottom:24px;}
   header a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;}
@@ -92,9 +97,16 @@
   .modal img{max-width:100%;max-height:72vh;border-radius:8px;}
   .modal p{font-size:13.5px;color:var(--ink-soft);}
   .modal .close{margin-top:12px;padding:10px 16px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;cursor:pointer;}
+
+  @media (min-width:880px){
+    .wrap{max-width:1020px;}
+    #list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start;}
+    .entry{margin-bottom:0;}
+  }
 </style>
 </head>
 <body>
+<div class="aurora"><span></span><span></span></div>
 
 <div class="login-wrap" id="loginWrap">
   <h1>Login panitia</h1>

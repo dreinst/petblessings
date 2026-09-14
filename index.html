@@ -32,18 +32,28 @@
     --radius:14px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+
+  /* Auralis: soft blurred glow ambience, fixed behind content */
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.32;}
+  .aurora span:nth-child(1){width:340px;height:340px;top:-110px;right:-90px;background:var(--pink);}
+  .aurora span:nth-child(2){width:380px;height:380px;bottom:-140px;left:-120px;background:var(--brand);}
+  .aurora span:nth-child(3){width:280px;height:280px;top:38%;left:50%;transform:translateX(-50%);background:var(--accent);opacity:.16;}
+
   h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;margin:0;}
-  .wrap{max-width:560px;margin:0 auto;padding-bottom:64px;}
+  .wrap{max-width:560px;margin:0 auto;padding-bottom:64px;position:relative;z-index:1;}
 
-  header.hero{position:relative;background:var(--gradient-warm);color:#fff;padding:92px 24px 32px;border-radius:0 0 28px 28px;text-align:center;}
-  .hero-logo{position:absolute;top:16px;left:16px;width:60px;height:60px;}
-  .hero-logo.parish-logo{left:auto;right:16px;width:auto;height:60px;}
-  header.hero h1{font-size:28px;line-height:1.2;color:#fff;text-shadow:0 1px 6px rgb(0 0 0 / .18);}
-  header.hero .parish{margin-top:8px;font-size:15px;color:#fff;text-shadow:0 1px 4px rgb(0 0 0 / .15);}
-  header.hero .tagline{margin:16px auto 0;font-size:15px;color:#FFF7EE;max-width:42ch;text-shadow:0 1px 4px rgb(0 0 0 / .12);}
+  header.hero{position:relative;background:#fff;color:var(--ink);padding:20px 20px 28px;border-radius:0 0 28px 28px;text-align:center;box-shadow:0 1px 0 var(--line);}
+  .hero-logos{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .hero-logo{width:52px;height:52px;flex:none;}
+  .hero-logo.center-logo{width:auto;height:58px;}
+  .hero-logo.parish-logo{width:auto;height:52px;}
+  header.hero h1{margin-top:22px;font-size:26px;line-height:1.2;color:var(--brand-deep);}
+  header.hero .parish{margin-top:8px;font-size:15px;color:var(--ink-soft);}
+  header.hero .tagline{margin:16px auto 0;font-size:15px;color:var(--ink-soft);max-width:42ch;}
 
-  main{padding:0 20px;}
+  main{padding:0 20px;position:relative;z-index:1;}
   section.block{margin-top:32px;}
   section.block h2{font-size:20px;color:var(--brand-deep);margin-bottom:4px;}
   section.block .block-note{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
@@ -127,20 +137,50 @@
   .site-footer .ig-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--brand-deep);font-size:13px;font-weight:500;text-decoration:none;transition:.15s ease;}
   .site-footer .ig-btn:hover{background:var(--brand-light);border-color:var(--brand);}
 
+  /* Desktop: bento-style grid. Mobile keeps the normal single-column layout above. */
+  @media (min-width:880px){
+    .wrap{max-width:980px;}
+    header.hero{padding:28px 40px 34px;}
+    .hero-logo{width:60px;height:60px;}
+    .hero-logo.center-logo{height:70px;}
+    .hero-logo.parish-logo{height:60px;}
+    main{padding:0 40px;}
+
+    #regForm{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:20px 24px;align-items:start;}
+    #regForm > section.block{margin-top:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px 26px;box-shadow:var(--shadow-soft, 0 10px 30px -18px rgb(42 32 36 / .25));}
+    #regForm > section.block:nth-of-type(1){grid-column:1;grid-row:1 / 3;}
+    #regForm > section.block:nth-of-type(2){grid-column:2;grid-row:1;}
+    #regForm > section.block:nth-of-type(3){grid-column:2;grid-row:2;}
+    #regForm > section.block:nth-of-type(4){grid-column:1 / -1;}
+    #regForm > .form-error-banner,
+    #regForm > .cf-turnstile,
+    #regForm > .submit-btn{grid-column:1 / -1;}
+    .submit-btn{max-width:420px;margin-left:auto;margin-right:auto;}
+
+    .confirm-wrap{max-width:520px;margin:0 auto;}
+  }
+
 </style>
 </head>
 <body>
+<div class="aurora"><span></span><span></span><span></span></div>
 <div class="wrap">
 
   <header class="hero">
-    <picture>
-      <source srcset="assets/pet-blessing-badge.webp" type="image/webp">
-      <img class="hero-logo" src="assets/pet-blessing-badge.png" alt="Pet Blessing, Paroki SVAP Malang" width="240" height="240">
-    </picture>
-    <picture>
-      <source srcset="assets/paroki-badge.webp" type="image/webp">
-      <img class="hero-logo parish-logo" src="assets/paroki-badge.png" alt="Paroki St. Vincentius a Paulo, Malang" width="366" height="440">
-    </picture>
+    <div class="hero-logos">
+      <picture>
+        <source srcset="assets/pet-blessing-badge.webp" type="image/webp">
+        <img class="hero-logo" src="assets/pet-blessing-badge.png" alt="Pet Blessing, Paroki SVAP Malang" width="240" height="240">
+      </picture>
+      <picture>
+        <source srcset="assets/pet-blessing-carnival.webp" type="image/webp">
+        <img class="hero-logo center-logo" src="assets/pet-blessing-carnival.png" alt="Pet Blessing and Colorful Carnival 2026" width="1070" height="688">
+      </picture>
+      <picture>
+        <source srcset="assets/paroki-badge.webp" type="image/webp">
+        <img class="hero-logo parish-logo" src="assets/paroki-badge.png" alt="Paroki St. Vincentius a Paulo, Malang" width="366" height="440">
+      </picture>
+    </div>
     <h1>Pendaftaran Pet Blessing 2026</h1>
     <div class="parish">Paroki St. Vincentius a Paulo, Malang, Jawa Timur</div>
     <p class="tagline">Ajak hewan kesayangan Anda menerima berkat bersama umat paroki. Isi data di bawah untuk mendaftar.</p>
