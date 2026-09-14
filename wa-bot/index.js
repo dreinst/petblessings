@@ -30,6 +30,20 @@ const CLOSERS = [
 ];
 const EMOJI_SETS = ['🐾', '🐶🐱', '✅', '👋', ''];
 
+// Kontak panitia, disisipkan di setiap blast supaya pendaftar yang butuh bantuan
+// tidak membalas ke nomor ini (nomor ini cuma untuk kirim, bukan tanya jawab).
+const COMMITTEE_CONTACTS = [
+  { name: 'Lala', phone: '6281234320977' },
+  { name: 'Livvy', phone: '6281130588892' },
+];
+
+function committeeContactBlock() {
+  var lines = COMMITTEE_CONTACTS.map(function (c) {
+    return '- ' + c.name + ': https://wa.me/' + c.phone;
+  });
+  return 'Ada kendala atau pertanyaan seputar pendaftaran? Hubungi panitia:\n' + lines.join('\n');
+}
+
 const CAPTION_TEMPLATES = [
   (name, code, g, c, e) => `${g} ${name} ${e}\n\nIni QR bukti pendaftaran Pet Blessing 2026 kamu.\nKode: *${code}*\n\nSimpan gambar ini, nanti ditunjukkan ke panitia saat reg ulang di lokasi acara ya.${c ? '\n\n' + c : ''}`,
   (name, code, g, c, e) => `${g} ${name}! ${e}\n\nBerikut QR pendaftaran Pet Blessing 2026 kamu (kode ${code}). Mohon disimpan untuk ditunjukkan saat check-in di hari acara.${c ? '\n' + c : ''}`,
@@ -48,6 +62,7 @@ function buildCaption(name, code, queueNumber) {
   if (queueNumber) {
     text += `\n\nNomor urut pendaftaran: *${queueNumber}*\n(cocokkan dengan stiker nomor saat reg ulang)`;
   }
+  text += '\n\n' + committeeContactBlock();
   // Variasi kecil whitespace di akhir, supaya byte teks tidak pernah identik
   // persis walau template & isi kebetulan sama.
   return text + (Math.random() < 0.5 ? ' ' : '');
@@ -91,6 +106,48 @@ async function markAttemptFailed(id, attempts, errMessage) {
     `update api.wa_queue set attempts = $2, status = $3, error = $4 where id = $1`,
     [id, attempts + 1, status, errMessage]
   );
+}
+
+// Antrian susulan: pesan singkat berisi info kontak panitia saja (tanpa QR ulang),
+// dipakai sekali untuk pendaftar yang sudah menerima blast QR sebelum info kontak
+// ditambahkan ke caption utama.
+const FOLLOWUP_INTROS = [
+  'Ada info tambahan untuk pendaftaran Pet Blessing 2026 kamu.',
+  'Sedikit tambahan info untuk pendaftaran Pet Blessing 2026 kamu kemarin.',
+  'Menyusul info untuk pendaftaran Pet Blessing 2026 kamu.',
+];
+
+function buildFollowupCaption(name) {
+  var greeting = pick(GREETINGS) + ' ' + name + ',';
+  var intro = pick(FOLLOWUP_INTROS);
+  var text = greeting + '\n\n' + intro + '\n\n' + committeeContactBlock();
+  return text + (Math.random() < 0.5 ? ' ' : '');
+}
+
+async function fetchNextFollowup() {
+  var res = await pool.query(
+    `select * from api.wa_followup_queue where status = 'pending' and attempts < 3 order by created_at asc limit 1`
+  );
+  return res.rows[0] || null;
+}
+
+async function markFollowupSent(id) {
+  await pool.query(`update api.wa_followup_queue set status = 'sent', sent_at = now() where id = $1`, [id]);
+}
+
+async function markFollowupAttemptFailed(id, attempts, errMessage) {
+  var status = attempts + 1 >= 3 ? 'failed' : 'pending';
+  await pool.query(
+    `update api.wa_followup_queue set attempts = $2, status = $3, error = $4 where id = $1`,
+    [id, attempts + 1, status, errMessage]
+  );
+}
+
+async function sendFollowup(sock, row) {
+  var jid = normalizePhone(row.phone);
+  var caption = buildFollowupCaption(row.owner_name);
+  await typingPause(sock, jid);
+  await sock.sendMessage(jid, { text: caption });
 }
 
 async function fetchQueueNumber(ownerId) {
@@ -150,10 +207,15 @@ async function runWorkerLoop(sock) {
   var sentCount = 0;
   while (true) {
     var row = null;
+    var isFollowup = false;
     try {
       row = await fetchNextPending();
+      if (!row) {
+        row = await fetchNextFollowup();
+        isFollowup = Boolean(row);
+      }
     } catch (e) {
-      logger.error({ err: e.message }, 'gagal query wa_queue');
+      logger.error({ err: e.message }, 'gagal query antrian');
     }
 
     if (!row) {
@@ -162,14 +224,20 @@ async function runWorkerLoop(sock) {
     }
 
     try {
-      logger.info({ id: row.id, phone: row.phone }, 'mengirim QR WhatsApp');
-      await sendOne(sock, row);
-      await markSent(row.id);
+      logger.info({ id: row.id, phone: row.phone, followup: isFollowup }, 'mengirim pesan WhatsApp');
+      if (isFollowup) {
+        await sendFollowup(sock, row);
+        await markFollowupSent(row.id);
+      } else {
+        await sendOne(sock, row);
+        await markSent(row.id);
+      }
       sentCount++;
       logger.info({ id: row.id }, 'terkirim');
     } catch (e) {
       logger.error({ id: row.id, err: e.message }, 'gagal kirim, akan dicoba lagi');
-      await markAttemptFailed(row.id, row.attempts, e.message);
+      if (isFollowup) await markFollowupAttemptFailed(row.id, row.attempts, e.message);
+      else await markAttemptFailed(row.id, row.attempts, e.message);
     }
 
     // Delay acak antar pengiriman -- inti dari "tidak dianggap spam".
