@@ -90,7 +90,7 @@
   .add-pet-btn:hover{background:var(--sage-light);}
 
   .notice{background:var(--gold-light);border-radius:10px;padding:14px 16px;font-size:13.5px;color:#5E4419;margin-top:14px;}
-  .fill-reminder{opacity:0.5;font-size:12.5px;line-height:1.5;color:var(--ink-soft);text-align:center;margin:20px 20px 0;}
+  .field .fill-hint{opacity:0.5;font-size:12px;line-height:1.4;color:var(--ink-soft);margin-top:5px;}
 
   .checkbox-row{display:flex;align-items:flex-start;gap:10px;margin-top:6px;}
   .checkbox-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--sage);flex-shrink:0;}
@@ -143,18 +143,18 @@
   <main>
     <form id="regForm" novalidate>
 
-      <p class="fill-reminder">Mohon isi nama pemilik dan nama hewan dengan Huruf Kapital Di Awal Kata (contoh: Budi Santoso, bukan budi santoso atau BUDI SANTOSO) dan periksa ejaannya sebelum mengirim. Data tidak bisa diubah sendiri setelah disubmit.</p>
-
       <section class="block">
         <h2>Data pemilik</h2>
         <div class="field">
           <label for="ownerName">Nama pet owner<span class="req">*</span></label>
           <input type="text" id="ownerName" autocomplete="name">
+          <div class="fill-hint">Pastikan jangan sampai salah input nama. Gunakan Huruf Kapital Di Awal Kata (contoh: Budi Santoso).</div>
           <div class="field-error" id="err-ownerName">Nama pemilik wajib diisi.</div>
         </div>
         <div class="field">
           <label for="ownerPhone">Kontak / no. HP (WhatsApp)<span class="req">*</span></label>
           <input type="tel" id="ownerPhone" autocomplete="tel" placeholder="08xx xxxx xxxx">
+          <div class="fill-hint">Pastikan nomor benar dan aktif di WhatsApp, dipakai untuk mengirim QR pendaftaran.</div>
           <div class="field-error" id="err-ownerPhone">Nomor HP wajib diisi.</div>
         </div>
         <div class="field">
@@ -169,6 +169,7 @@
           <div class="field" style="margin-top:2px;">
             <label for="parishOrigin">Asal paroki / gereja / daerah<span class="req">*</span></label>
             <input type="text" id="parishOrigin">
+            <div class="fill-hint">Pastikan penulisan nama paroki/gereja/daerah sudah benar.</div>
             <div class="field-error" id="err-parishOrigin">Mohon isi asal paroki Anda.</div>
           </div>
         </div>
@@ -281,6 +282,7 @@
         '<div class="field">'+
           '<label>Nama hewan<span class="req">*</span></label>'+
           '<input type="text" data-field="name" value="'+escapeHtml(pet.name)+'">'+
+          '<div class="fill-hint">Pastikan jangan sampai salah input nama hewan. Gunakan Huruf Kapital Di Awal Kata.</div>'+
           '<div class="field-error" data-error="name">Nama hewan wajib diisi.</div>'+
         '</div>'+
         '<div class="field">'+
