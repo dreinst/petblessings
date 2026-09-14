@@ -163,6 +163,16 @@
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Rapikan tampilan nama yang diketik pendaftar sembarang huruf besar/kecil
+  // (BUDI SANTOSO, budi santoso, dll) jadi Huruf Kapital Di Awal Kata, tanpa
+  // mengubah data aslinya di database -- ini cuma untuk tampilan dan ekspor.
+  function titleCase(s){
+    if(!s) return s;
+    return String(s).toLowerCase().replace(/(^|[\s'\-\/.])([a-zà-ÿ])/gi, function(_, sep, ch){
+      return sep + ch.toUpperCase();
+    });
+  }
+
   function formatTime(iso){
     if(!iso) return '';
     var d = new Date(iso);
@@ -329,10 +339,10 @@
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
-        return '<div class="pet-row">'+escapeHtml(p.name)+' &middot; '+escapeHtml(p.type)+(p.hasPhoto ? ' &middot; ada foto' : '')+notes+'</div>';
+        return '<div class="pet-row">'+escapeHtml(titleCase(p.name))+' &middot; '+escapeHtml(p.type)+(p.hasPhoto ? ' &middot; ada foto' : '')+notes+'</div>';
       }).join('');
       var originLine = r.owner.isParishioner === 'bukan' && r.owner.parishOrigin
-        ? '<div class="origin">Dari '+escapeHtml(r.owner.parishOrigin)+'</div>' : '';
+        ? '<div class="origin">Dari '+escapeHtml(titleCase(r.owner.parishOrigin))+'</div>' : '';
       var companionLine = r.owner.companions > 0 ? '<div class=\"origin\">'+r.owner.companions+' pendamping</div>' : '';
       var donationLine = (r.donation && (r.donation.amount || r.donation.hasProof))
         ? '<div class="donation-row">Donasi: '+escapeHtml(r.donation.amount || 'tanpa jumlah')+(r.donation.hasProof ? ', ada bukti transfer' : '')+'</div>' : '';
@@ -342,7 +352,7 @@
         (r.donation && r.donation.hasProof ? '<button type=\"button\" data-action=\"proof\">Lihat bukti transfer</button>' : '')+
         '</div>';
       return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
-        '<div class="owner"><span class="owner-name">'+escapeHtml(r.owner.name)+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
+        '<div class="owner"><span class="owner-name">'+escapeHtml(titleCase(r.owner.name))+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
         (shortCode ? '<div class="reg-code">Kode: '+escapeHtml(shortCode)+'</div>' : '')+
         '<div class="phone">'+escapeHtml(r.owner.phone)+'</div>'+
         originLine+
@@ -434,7 +444,7 @@
   async function showProof(r){
     var modal = document.getElementById('proofModal');
     var body = document.getElementById('proofBody');
-    document.getElementById('proofTitle').textContent = 'Bukti transfer: ' + r.owner.name;
+    document.getElementById('proofTitle').textContent = 'Bukti transfer: ' + titleCase(r.owner.name);
     body.innerHTML = '<p>Memuat gambar…</p>';
     modal.classList.add('show');
     try{
@@ -509,12 +519,12 @@
 
     function baseRow(r, p){
       return {
-        'Nama pemilik': r.owner.name,
+        'Nama pemilik': titleCase(r.owner.name),
         'No. HP': r.owner.phone,
         'Status umat': r.owner.isParishioner === 'ya' ? 'Umat paroki' : 'Bukan umat paroki',
-        'Asal paroki/daerah': r.owner.parishOrigin || '',
+        'Asal paroki/daerah': titleCase(r.owner.parishOrigin) || '',
         'Pendamping': r.owner.companions || 0,
-        'Nama hewan': p ? p.name : '',
+        'Nama hewan': p ? titleCase(p.name) : '',
         'Jenis hewan': p ? p.type : '',
         'Ada foto': p ? (p.hasPhoto ? 'Ya' : 'Tidak') : '',
         'Catatan hewan': p ? (p.notes || '') : '',
