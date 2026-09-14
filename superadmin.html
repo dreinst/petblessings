@@ -18,9 +18,14 @@
     --line:#DDD6C1; --danger:#A6423A; --danger-bg:#F6E7E5; --gold-light:#F3E6C8;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.28;}
+  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--sage-light);}
+  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:var(--gold-light);}
   h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
-  .wrap{max-width:620px;margin:0 auto;padding:24px 20px 64px;}
+  .wrap{max-width:620px;margin:0 auto;padding:24px 20px 64px;position:relative;z-index:1;}
+  .login-wrap{position:relative;z-index:1;}
   a{color:var(--sage-deep);}
 
   .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
@@ -71,9 +76,20 @@
   .log-row button{padding:6px 10px;font-size:12px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:4px;}
   .log-row button[data-log="approved"]{background:var(--sage);border-color:var(--sage);color:#fff;}
   .log-row button:disabled{opacity:.5;cursor:not-allowed;}
+
+  @media (min-width:880px){
+    .wrap{max-width:960px;}
+    #appWrap{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start;}
+    #appWrap > header,
+    #appWrap > .nav,
+    #appWrap > .error{grid-column:1 / -1;}
+    .stats-col{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;}
+    .log{align-self:start;}
+  }
 </style>
 </head>
 <body>
+<div class="aurora"><span></span><span></span></div>
 
 <div class="login-wrap" id="loginWrap">
   <h1>Login superadmin</h1>
@@ -106,11 +122,13 @@
   </nav>
 
   <div class="error" id="statsError" style="display:none;"></div>
-  <h2 class="section">Pendaftaran</h2>
-  <div class="stats" id="statsReg"></div>
-  <h2 class="section">Check-in hari-H (pemilik per pos)</h2>
-  <div class="stats posts" id="statsPosts"></div>
-  <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
+  <div class="stats-col">
+    <h2 class="section">Pendaftaran</h2>
+    <div class="stats" id="statsReg"></div>
+    <h2 class="section">Check-in hari-H (pemilik per pos)</h2>
+    <div class="stats posts" id="statsPosts"></div>
+    <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
+  </div>
 
   <section class="log" id="loginLog">
     <div class="log-head"><h2>Log login</h2><span class="log-pending" id="logPending"></span></div>

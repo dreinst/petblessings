@@ -19,10 +19,19 @@
     --line:#DDD6C1; --danger:#A6423A; --danger-bg:#F6E7E5; --gold-light:#F3E6C8;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.28;}
+  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--sage-light);}
+  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:var(--gold-light);}
   h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
-  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 64px;}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 64px;position:relative;z-index:1;}
+  .login-wrap{position:relative;z-index:1;}
   a{color:var(--sage-deep);}
+
+  @media (min-width:880px){
+    .wrap{max-width:640px;}
+  }
 
   .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
   .login-wrap h1{font-size:22px;color:var(--sage-deep);margin-bottom:6px;}
@@ -93,6 +102,7 @@
 </style>
 </head>
 <body>
+<div class="aurora"><span></span><span></span></div>
 
 <div class="login-wrap" id="loginWrap">
   <h1>Login panitia</h1>
