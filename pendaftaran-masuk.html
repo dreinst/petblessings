@@ -349,7 +349,9 @@
       var shortCode = r.id ? r.id.slice(0, 8).toUpperCase() : '';
       var actionsHtml = '<div class=\"actions\">'+
         '<button type=\"button\" data-action=\"edit\">Ubah data</button>'+
-        (r.donation && r.donation.hasProof ? '<button type=\"button\" data-action=\"proof\">Lihat bukti transfer</button>' : '')+
+        (r.donation && r.donation.hasProof
+          ? '<button type=\"button\" data-action=\"proof\">Lihat bukti transfer</button>'
+          : '<button type=\"button\" disabled title=\"Belum ada bukti transfer diunggah\">Lihat bukti transfer</button>')+
         '</div>';
       return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
         '<div class="owner"><span class="owner-name">'+escapeHtml(titleCase(r.owner.name))+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
