@@ -59,6 +59,9 @@
   .pet-row .pet-notes{display:block;width:100%;color:var(--ink-soft);margin-top:2px;font-size:12.5px;}
   .pet-photo-btn{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;font-size:12px;font-family:inherit;border:1px solid var(--brand);border-radius:6px;background:var(--card);color:var(--brand-deep);cursor:pointer;}
   .modal .dl-btn{display:inline-flex;align-items:center;gap:6px;margin:12px 8px 0 0;padding:10px 16px;border:1px solid var(--brand);border-radius:10px;background:var(--card);color:var(--brand-deep);text-decoration:none;font-size:14px;font-weight:500;}
+  .modal .upload-btn{position:relative;display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;padding:10px 16px;border:none;border-radius:10px;background:var(--brand);color:#fff;font-size:14px;font-weight:500;cursor:pointer;overflow:hidden;}
+  .modal .upload-btn input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;}
+  .modal .upload-note{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:10px;}
   .donation-row{margin-top:10px;font-size:12.5px;color:var(--ink-soft);}
 
   .empty,.loading,.error{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:14px;}
@@ -380,7 +383,7 @@
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
-        var photoBtn = p.hasPhoto ? '<button type="button" class="pet-photo-btn" data-action="photo" data-pet="'+escapeHtml(p.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto</button>' : '';
+        var photoBtn = '<button type="button" class="pet-photo-btn" data-action="photo" data-pet="'+escapeHtml(p.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto</button>';
         return '<div class="pet-row"><span>'+escapeHtml(titleCase(p.name))+' &middot; '+escapeHtml(p.type)+'</span>'+photoBtn+notes+'</div>';
       }).join('');
       var originLine = r.owner.isParishioner === 'bukan' && r.owner.parishOrigin
@@ -555,7 +558,33 @@
       body.innerHTML = '<p>Gagal memuat gambar. Cek koneksi lalu coba lagi.</p>';
     }
   }
-  // --- Foto hewan: diambil per hewan saat diminta, bisa diunduh ---
+  // --- Foto hewan: diambil per hewan saat diminta, bisa diunduh/diunggah ---
+  function uploadBtnEl(petId){
+    var wrap = document.createElement('label'); wrap.className = 'upload-btn';
+    wrap.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Unggah foto<input type="file" accept="image/*">';
+    wrap.querySelector('input').addEventListener('change', function(e){ uploadPetPhoto(petId, e.target.files[0]); });
+    return wrap;
+  }
+  async function uploadPetPhoto(petId, file){
+    if(!file) return;
+    var body = document.getElementById('proofBody');
+    body.innerHTML = '<p>Mengompres dan mengunggah foto…</p>';
+    try{
+      var dataUrl = await compressImage(file, 1024);
+      if(!dataUrl) throw new Error('gagal membaca file ini');
+      var res = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(petId), {
+        method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ photo_base64: dataUrl, has_photo: true })
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      var r = allRegs.find(function(x){ return x.pets.some(function(p){ return p.id === petId; }); });
+      if(r) await showPetPhoto(r, petId);
+      showNotice('Foto tersimpan.');
+    }catch(e){
+      body.innerHTML = '<p>Gagal mengunggah foto: ' + escapeHtml(e.message) + '. Coba lagi.</p>';
+    }
+  }
   function slug(t){ return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'foto'; }
   async function showPetPhoto(r, petId){
     var pet = r.pets.find(function(p){ return p.id === petId; }) || { name: '' };
@@ -577,8 +606,14 @@
         dl.download = 'foto-' + slug(pet.name) + '-' + slug(r.owner.name) + '.' + ext;
         dl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh foto';
         body.innerHTML = ''; body.appendChild(el); body.appendChild(dl);
+        body.appendChild(uploadBtnEl(petId));
+        var note1 = document.createElement('span'); note1.className = 'upload-note'; note1.textContent = 'Sudah terupload. Untuk ganti foto, silakan unggah ulang.';
+        body.appendChild(note1);
       }else{
         body.innerHTML = '<p>Tidak ada foto tersimpan. Pendaftar menandai ada foto, tetapi gambarnya tidak terunggah (misalnya mendaftar sebelum fitur ini ada).</p>';
+        body.appendChild(uploadBtnEl(petId));
+        var note2 = document.createElement('span'); note2.className = 'upload-note'; note2.textContent = 'Belum ada foto. Pilih file untuk mengunggah.';
+        body.appendChild(note2);
       }
     }catch(e){
       body.innerHTML = '<p>Gagal memuat foto. Cek koneksi lalu coba lagi.</p>';
