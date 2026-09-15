@@ -7,7 +7,6 @@ Sistem ini terdiri dari beberapa halaman web. Semuanya dibuka lewat browser bias
 | Halaman | Alamat | Dipakai oleh |
 |---|---|---|
 | Form pendaftaran | https://petblessings.vercel.app | Pet owner (umum) |
-| Bukti pendaftaran (tiket) | https://petblessings.vercel.app/tiket.html?id=... | Pet owner, terbuka otomatis saat QR dipindai kamera HP |
 | Rekap pendaftaran | https://petblessings.vercel.app/pendaftaran-masuk.html | Admin dan superadmin |
 | Dashboard superadmin | https://petblessings.vercel.app/superadmin.html | Superadmin saja |
 | Check-in hari-H | https://petblessings.vercel.app/checkin.html | Superadmin saja |
@@ -37,11 +36,10 @@ Prinsip dasarnya: satu pendaftaran untuk satu pemilik, berapa pun jumlah hewanny
 
 ### Setelah berhasil
 
-Layar berganti ke **Pendaftaran diterima**, berisi ringkasan data, gambar QR berlogo Pet Blessing, dan kode pendek 8 karakter. Screenshot halaman ini, termasuk QR-nya. Ini bukti pendaftaran yang ditunjukkan ke panitia saat reg ulang di lokasi acara.
+Layar berganti ke **Pendaftaran diterima**, berisi ringkasan data, gambar QR, dan kode pendek 8 karakter. Screenshot halaman ini, termasuk QR-nya. Ini bukti pendaftaran yang ditunjukkan ke panitia saat reg ulang di lokasi acara.
 
 Beberapa menit kemudian QR yang sama dikirim ke WhatsApp Anda dari nomor khusus panitia, lengkap dengan kode pendek, nomor urut pendaftaran, dan kontak panitia. Nomor urut ini nanti dicocokkan dengan stiker nomor saat reg ulang.
 
-Kalau QR itu dipindai dengan kamera HP biasa, yang terbuka adalah halaman bukti pendaftaran berisi QR dan kode yang sama. Halaman itu bisa disimpan atau di-screenshot sebagai cadangan.
 
 Kalau mau mendaftarkan pemilik lain dari HP yang sama, tekan **Daftarkan pemilik lain**. Form kosong lagi dan pendaftaran sebelumnya tetap tersimpan.
 
@@ -159,7 +157,7 @@ Di bawah tombol pos tampil angka "X orang sudah check-in di pos ini". Angka ini 
 ### Alur scan
 
 1. Minta pemilik menunjukkan QR-nya (dari screenshot, dari pesan WhatsApp, atau dari halaman bukti pendaftaran).
-2. Arahkan kamera ke QR sampai masuk kotak putih di layar. Tidak ada tombol yang perlu ditekan, pembacaan berjalan otomatis. QR versi lama maupun versi baru berlogo sama-sama terbaca.
+2. Arahkan kamera ke QR sampai masuk kotak putih di layar. Tidak ada tombol yang perlu ditekan, pembacaan berjalan otomatis. 
 3. Begitu terbaca, sistem memeriksa data dan mencatat check-in. Hasilnya muncul sebagai lembar di bagian bawah layar, disertai bunyi dan getar:
    - Hijau, tanda centang, "Check-in berhasil". Tampil nomor urut (#), nama pemilik, nomor HP, jumlah pendamping kalau ada, dan daftar hewannya. Bunyi beep tinggi pendek.
    - Kuning, tanda seru, "Sudah check-in". Pemilik ini sudah pernah di-scan di pos yang sama sebelumnya. Tidak dicatat dua kali. Bunyi beep sedang.

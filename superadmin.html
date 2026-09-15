@@ -54,9 +54,11 @@
 
   h2.section{font-size:16px;color:var(--brand-deep);margin:0 0 10px;}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+  .stats.stats-reg{grid-template-columns:repeat(4,1fr);}
   .stats.posts{grid-template-columns:repeat(4,1fr);}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
   .stat .num{font-family:'Fraunces',serif;font-size:28px;color:var(--brand-deep);line-height:1.1;}
+  .stat .num.money{font-size:19px;}
   .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:4px;}
   .refresh-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-soft);margin-bottom:18px;}
   .refresh-line button{padding:8px 12px;font-size:12.5px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;}
@@ -129,7 +131,7 @@
   <div class="error" id="statsError" style="display:none;"></div>
   <div class="stats-col">
     <h2 class="section">Pendaftaran</h2>
-    <div class="stats" id="statsReg"></div>
+    <div class="stats stats-reg" id="statsReg"></div>
     <h2 class="section">Check-in hari-H (pemilik per pos)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
@@ -233,25 +235,31 @@
   });
 
   // --- Ringkasan angka ---
-  function card(label, num){
-    return '<div class="stat"><div class="num">' + num + '</div><div class="lbl">' + escapeHtml(label) + '</div></div>';
+  function card(label, num, cssClass){
+    return '<div class="stat"><div class="num' + (cssClass ? ' ' + cssClass : '') + '">' + num + '</div><div class="lbl">' + escapeHtml(label) + '</div></div>';
   }
   async function loadStats(){
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=companions,pets(id)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=companions,donation_amount,pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/checkins?select=post', { headers: authHeaders() })
       ]);
       if(results[0].status === 401 || results[1].status === 401){ expired(); return; }
       if(!results[0].ok || !results[1].ok) throw new Error('HTTP ' + (results[0].ok ? results[1].status : results[0].status));
       var owners = await results[0].json();
       var checkins = await results[1].json();
-      var pets = 0, companions = 0;
-      owners.forEach(function(o){ pets += (o.pets || []).length; companions += o.companions || 0; });
+      var pets = 0, companions = 0, donation = 0;
+      owners.forEach(function(o){
+        pets += (o.pets || []).length;
+        companions += o.companions || 0;
+        // Jumlah donasi ditulis bebas oleh pendaftar, jadi diambil digitnya saja.
+        var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
+        donation += digits ? parseInt(digits, 10) : 0;
+      });
       var perPost = {};
       checkins.forEach(function(c){ perPost[c.post] = (perPost[c.post] || 0) + 1; });
-      document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions);
+      document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
       document.getElementById('statsPosts').innerHTML = [['Reg ulang','reg_ulang'],['Pos 1','pos1'],['Pos 2','pos2'],['Pos 3','pos3']].map(function(p){
         return card(p[0], perPost[p[1]] || 0);
       }).join('');

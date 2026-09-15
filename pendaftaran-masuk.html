@@ -354,7 +354,14 @@
     }
     var totalPets = regs.reduce(function(sum,r){ return sum + r.pets.length; }, 0);
     var totalCompanions = regs.reduce(function(sum,r){ return sum + (r.owner.companions || 0); }, 0);
-    count.textContent = regs.length + ' pemilik, ' + totalPets + ' hewan, ' + totalCompanions + ' pendamping';
+    // Jumlah donasi ditulis bebas oleh pendaftar ("50000", "50.000", "Rp 50rb"),
+    // jadi diambil digitnya saja untuk dijumlahkan. Angka non-rupiah (misal "1"
+    // bekas data uji) tetap ikut terhitung apa adanya.
+    var totalDonation = regs.reduce(function(sum,r){
+      var digits = String((r.donation && r.donation.amount) || '').replace(/[^0-9]/g, '');
+      return sum + (digits ? parseInt(digits, 10) : 0);
+    }, 0);
+    count.textContent = regs.length + ' pemilik, ' + totalPets + ' hewan, ' + totalCompanions + ' pendamping, total donasi Rp' + totalDonation.toLocaleString('id-ID');
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
