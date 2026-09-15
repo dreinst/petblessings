@@ -13,6 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="api-config.js"></script>
+<script src="panitia-nav.js"></script>
 <style>
   :root{
     --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
@@ -44,7 +45,7 @@
   .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
   .stat .num{font-family:'Fraunces',serif;font-size:24px;color:var(--brand-deep);line-height:1.1;}
   .stat .num.money{font-size:16px;}
-  .stat .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .stat .lbl{font-size:12.5px;color:var(--ink-soft);margin-top:4px;line-height:1.35;}
   @media (max-width:420px){ .stats{grid-template-columns:repeat(2,1fr);} }
 
   .entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
@@ -150,15 +151,13 @@
   </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
+  <div id="panitiaNav"></div>
   <header>
     <div class="toolbar-top">
-      <a class="back" href="petblessing.html">&laquo; Kembali ke form</a>
-      <a class="back" href="pawrade-rekap.html">Rekap Pawrade &raquo;</a>
-      <span id="superLinks" style="display:none;"><a class="back" href="superadmin.html">Dashboard &raquo;</a>&nbsp;&nbsp;<a class="back" href="checkin.html">Scan check-in &raquo;</a></span>
-      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+      <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
-    <h1>Pendaftaran masuk</h1>
+    <h1>Rekap Pet Blessing</h1>
     <p>Data langsung dari database, khusus panitia yang sudah login.</p>
   </header>
 
@@ -222,10 +221,10 @@
   function tokenLevel(){ return tokenClaims().level || null; }
   var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
   function showApp(){
+    if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('waitWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
-    document.getElementById('superLinks').style.display = tokenLevel() === 'superadmin' ? '' : 'none';
     load();
   }
 
