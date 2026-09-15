@@ -28,7 +28,9 @@ Bagian yang sudah dibangun dan berjalan hanyalah langkah pertama, form pendaftar
 
 ### 3.1 Form pendaftaran (sudah dibangun)
 
-Web app satu halaman (`index.html`), mobile-first. Terdiri atas empat bagian: data pemilik, data hewan (kartu dinamis), donasi, dan syarat & ketentuan. Detail lengkap field ada di `prd.md`.
+Sejak Pawrade ditambahkan, `index.html` jadi halaman pilihan acara (Pet Blessing / Pawrade), dan form Pet Blessing sendiri pindah ke `petblessing.html`. Lomba Pawrade (costume parade, bagian dari Colorful Carnival 2026) memakai struktur data dan kode yang sama persis (form, rekap, check-in) tapi tabel terpisah (`api.pawrade_*`, lihat `vps-db/init/12-pawrade.sql`) dan check-in satu titik saja (bukan 4 pos). Bot WhatsApp yang sama memproses kedua antrian.
+
+Web app satu halaman (`petblessing.html`), mobile-first. Terdiri atas empat bagian: data pemilik, data hewan (kartu dinamis), donasi, dan syarat & ketentuan. Detail lengkap field ada di `prd.md`.
 
 Validasi berjalan di sisi klien sebelum submit, dengan pesan kesalahan di dekat field yang bermasalah dan pembersihan pesan itu begitu pengguna memperbaiki isian.
 

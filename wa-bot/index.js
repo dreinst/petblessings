@@ -150,6 +150,73 @@ async function sendFollowup(sock, row) {
   await sock.sendMessage(jid, { text: caption });
 }
 
+const PAWRADE_CAPTION_TEMPLATES = [
+  (name, code, g, c, e) => `${g} ${name} ${e}\n\nIni QR bukti pendaftaran lomba Pawrade (Colorful Carnival 2026) kamu.\nKode: *${code}*\n\nSimpan gambar ini, nanti ditunjukkan ke panitia saat check-in di lokasi lomba ya.${c ? '\n\n' + c : ''}`,
+  (name, code, g, c, e) => `${g} ${name}! ${e}\n\nBerikut QR pendaftaran lomba Pawrade kamu (kode ${code}). Mohon disimpan untuk ditunjukkan saat check-in di hari lomba.${c ? '\n' + c : ''}`,
+  (name, code, g, c, e) => `${g} ${name},\n\nPendaftaran lomba Pawrade kamu sudah tercatat. QR di atas adalah bukti pendaftaran, kode: ${code}.\nJangan lupa dibawa/ditunjukkan saat check-in di lokasi ya${e ? ' ' + e : ''}`,
+  (name, code, g, c, e) => `${g} ${name} ${e}\n\nQR ini bukti kamu sudah terdaftar di lomba Pawrade (kode: ${code}). Simpan baik-baik dan tunjukkan ke panitia saat kedatangan.${c ? '\n\n' + c : ''}`,
+  (name, code, g, c, e) => `${name}, pendaftaran lomba Pawrade kamu berhasil ${e}\n\nKode pendaftaran: ${code}\nQR di atas mewakili kamu dan semua hewan yang didaftarkan.${c ? '\n' + c : ''}`,
+];
+
+function buildPawradeCaption(name, code, queueNumber) {
+  var template = pick(PAWRADE_CAPTION_TEMPLATES);
+  var text = template(name, code, pick(GREETINGS), pick(CLOSERS), pick(EMOJI_SETS));
+  if (queueNumber) {
+    text += `\n\nNomor urut pendaftaran: *${queueNumber}*\n(cocokkan dengan stiker nomor saat check-in)`;
+  }
+  text += '\n\n' + committeeContactBlock();
+  return text + (Math.random() < 0.5 ? ' ' : '');
+}
+
+async function fetchNextPawrade() {
+  var res = await pool.query(
+    `select * from api.pawrade_wa_queue where status = 'pending' and attempts < 3 order by created_at asc limit 1`
+  );
+  return res.rows[0] || null;
+}
+
+async function markPawradeSent(id) {
+  await pool.query(`update api.pawrade_wa_queue set status = 'sent', sent_at = now() where id = $1`, [id]);
+}
+
+async function markPawradeAttemptFailed(id, attempts, errMessage) {
+  var status = attempts + 1 >= 3 ? 'failed' : 'pending';
+  await pool.query(
+    `update api.pawrade_wa_queue set attempts = $2, status = $3, error = $4 where id = $1`,
+    [id, attempts + 1, status, errMessage]
+  );
+}
+
+async function fetchPawradeQueueNumber(ownerId) {
+  var res = await pool.query(`select queue_number from api.pawrade_owners where id = $1`, [ownerId]);
+  return res.rows[0] ? res.rows[0].queue_number : null;
+}
+
+async function sendPawrade(sock, row) {
+  var jid = normalizePhone(row.phone);
+  var queueNumber = await fetchPawradeQueueNumber(row.owner_id);
+  var caption = buildPawradeCaption(row.owner_name, row.short_code, queueNumber);
+
+  var base64 = row.qr_image_base64.replace(/^data:image\/\w+;base64,/, '');
+  var buffer = Buffer.from(base64, 'base64');
+  var fileName = `QR-Pawrade-${row.short_code}.png`;
+
+  var useTwoStep = Math.random() < 0.35;
+  await typingPause(sock, jid);
+
+  if (useTwoStep) {
+    await sock.sendMessage(jid, { text: pick(SHORT_INTROS) });
+    await sleep(randomBetween(2500, 7000));
+    await typingPause(sock, jid);
+  }
+  await sock.sendMessage(jid, {
+    document: buffer,
+    mimetype: 'image/png',
+    fileName: fileName,
+    caption: caption,
+  });
+}
+
 async function fetchQueueNumber(ownerId) {
   var res = await pool.query(`select queue_number from api.owners where id = $1`, [ownerId]);
   return res.rows[0] ? res.rows[0].queue_number : null;
@@ -222,8 +289,13 @@ async function runWorkerLoop() {
     var sock = currentSock;
     var row = null;
     var isFollowup = false;
+    var isPawrade = false;
     try {
       row = await fetchNextPending();
+      if (!row) {
+        row = await fetchNextPawrade();
+        isPawrade = Boolean(row);
+      }
       if (!row) {
         row = await fetchNextFollowup();
         isFollowup = Boolean(row);
@@ -238,10 +310,13 @@ async function runWorkerLoop() {
     }
 
     try {
-      logger.info({ id: row.id, phone: row.phone, followup: isFollowup }, 'mengirim pesan WhatsApp');
+      logger.info({ id: row.id, phone: row.phone, followup: isFollowup, pawrade: isPawrade }, 'mengirim pesan WhatsApp');
       if (isFollowup) {
         await sendFollowup(sock, row);
         await markFollowupSent(row.id);
+      } else if (isPawrade) {
+        await sendPawrade(sock, row);
+        await markPawradeSent(row.id);
       } else {
         await sendOne(sock, row);
         await markSent(row.id);
@@ -258,6 +333,7 @@ async function runWorkerLoop() {
       }
       logger.error({ id: row.id, err: e.message }, 'gagal kirim, akan dicoba lagi');
       if (isFollowup) await markFollowupAttemptFailed(row.id, row.attempts, e.message);
+      else if (isPawrade) await markPawradeAttemptFailed(row.id, row.attempts, e.message);
       else await markAttemptFailed(row.id, row.attempts, e.message);
     }
 

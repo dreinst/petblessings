@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check-in, Pawrade 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="api-config.js"></script>
+<style>
+  :root{
+    --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
+    --brand:#00A3B8; --brand-deep:#3B1052; --brand-light:#DFF4F6;
+    --accent:#C97F1F; --accent-light:#FCE9C5; --pink:#E0357B;
+    --line:#E8DCC8; --danger:#A6423A; --danger-bg:#F6E7E5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.28;}
+  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--pink);opacity:.18;}
+  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:var(--brand);opacity:.18;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 64px;position:relative;z-index:1;}
+  .login-wrap{position:relative;z-index:1;}
+  a{color:var(--brand-deep);}
+
+  @media (min-width:880px){
+    .wrap{max-width:640px;}
+  }
+
+  .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
+  .login-wrap h1{font-size:22px;color:var(--brand-deep);margin-bottom:6px;}
+  .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
+  .login-wrap .field{margin-bottom:14px;}
+  .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
+  .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);box-sizing:border-box;}
+  .login-wrap button{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-error{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
+  .login-error.show{display:block;}
+
+  .brand-badge{width:40px;height:40px;display:block;margin:0 0 14px;}
+  .login-wrap .brand-badge{margin:0 auto 16px;}
+  header{margin-bottom:16px;}
+  header .top{display:flex;justify-content:space-between;align-items:center;}
+  header a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;}
+  .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
+  header h1{font-size:22px;color:var(--brand-deep);margin-top:8px;}
+
+  .scan-box{position:relative;width:100%;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px;}
+  .scan-box video{width:100%;height:100%;object-fit:cover;}
+  .scan-box .frame{position:absolute;inset:12%;border:3px solid rgba(255,255,255,.85);border-radius:16px;pointer-events:none;}
+  .scan-status{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+  .camera-error{background:var(--danger-bg);color:var(--danger);padding:14px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;}
+
+  /* Pencarian manual -- untuk pemilik yang QR-nya tidak terbaca atau tidak
+     menerima WhatsApp. Hasilnya tombol per pemilik, tap = check-in lewat
+     jalur yang sama dengan scan. */
+  .manual{margin-top:8px;padding-top:18px;border-top:1px solid var(--line);}
+  .manual h2{font-size:16px;color:var(--brand-deep);margin-bottom:4px;}
+  .manual p{font-size:13px;color:var(--ink-soft);margin:0 0 10px;}
+  .manual form{display:flex;gap:8px;}
+  .manual input{flex:1;min-width:0;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
+  .manual form button{padding:11px 16px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+  .manual-results{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .manual-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;font-family:inherit;cursor:pointer;color:var(--ink);}
+  .manual-row .num{font-family:'Fraunces',serif;font-size:22px;color:var(--brand-deep);min-width:44px;}
+  .manual-row .info{flex:1;min-width:0;}
+  .manual-row .name{display:block;font-size:15px;font-weight:600;}
+  .manual-row .meta{display:block;font-size:12.5px;color:var(--ink-soft);}
+  .manual-empty{font-size:13px;color:var(--ink-soft);margin-top:12px;}
+
+  .count{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:8px;margin-bottom:16px;}
+
+  /* Overlay hasil scan -- menutupi seluruh layar, harus ditutup manual oleh
+     panitia lewat tombol, supaya tidak mungkin terlewat tanpa disadari. */
+  .result-overlay{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(43,46,34,.55);padding:0;}
+  .result-overlay.show{display:flex;}
+  .result-sheet{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;padding:28px 22px 26px;text-align:center;box-shadow:0 -6px 30px rgba(0,0,0,.25);animation:slideUp .18s ease-out;max-height:88vh;overflow-y:auto;}
+  @keyframes slideUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .result-sheet .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;}
+  .result-sheet.ok .status-icon{background:var(--brand-light);color:var(--brand-deep);}
+  .result-sheet.warn .status-icon{background:var(--accent-light);color:#5E4419;}
+  .result-sheet.err .status-icon{background:var(--danger-bg);color:var(--danger);}
+  .result-sheet .status-title{font-family:'Fraunces',serif;font-size:22px;margin-bottom:4px;}
+  .result-sheet.ok .status-title{color:var(--brand-deep);}
+  .result-sheet.warn .status-title{color:#5E4419;}
+  .result-sheet.err .status-title{color:var(--danger);}
+  .result-sheet .queue-number{font-family:'Fraunces',serif;font-size:56px;color:var(--brand-deep);line-height:1;margin:14px 0 10px;}
+  .result-sheet .owner-name{font-size:19px;font-weight:600;margin-bottom:4px;}
+  .result-sheet .owner-phone{font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .result-sheet .pet-list{display:flex;flex-direction:column;gap:6px;margin:0 0 20px;text-align:left;}
+  .result-sheet .pet-row{font-size:14.5px;padding:10px 12px;background:var(--brand-light);border-radius:8px;color:var(--brand-deep);}
+  .result-sheet .continue-btn{width:100%;padding:16px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;}
+  .result-sheet.err .continue-btn, .result-sheet.warn .continue-btn{background:var(--ink);}
+</style>
+</head>
+<body>
+<div class="aurora"><span></span><span></span></div>
+
+<div class="login-wrap" id="loginWrap">
+  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
+  <h1>Login panitia</h1>
+  <p>Halaman ini khusus superadmin untuk scan check-in lomba Pawrade.</p>
+  <div class="field">
+    <label for="loginEmail">Username</label>
+    <input type="text" id="loginEmail" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+  </div>
+  <button type="button" id="loginBtn">Masuk</button>
+  <div class="login-error" id="loginError">Username atau password salah.</div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
+  <header>
+    <div class="top">
+      <a class="back" href="superadmin.html">&laquo; Dashboard</a>
+      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+    </div>
+    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
+    <h1>Check-in lomba Pawrade</h1>
+  </header>
+
+  <div class="count" id="postCount"></div>
+
+  <div class="scan-box" id="scanBox">
+    <video id="video" playsinline muted></video>
+    <div class="frame"></div>
+  </div>
+  <div class="scan-status" id="scanStatus">Arahkan kamera ke QR pendaftaran</div>
+  <div class="camera-error" id="cameraError" style="display:none;"></div>
+
+  <section class="manual">
+    <h2>Tanpa QR? Cari manual</h2>
+    <p>Untuk peserta yang QR-nya tidak terbaca atau tidak menerima WhatsApp. Cari, lalu tekan namanya untuk check-in.</p>
+    <form id="manualForm" autocomplete="off">
+      <input type="text" id="manualQuery" placeholder="Kode 8 karakter, nama, atau no. HP">
+      <button type="submit">Cari</button>
+    </form>
+    <div id="manualResults"></div>
+  </section>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-sheet" id="resultSheet">
+    <div class="status-icon" id="resultIcon"></div>
+    <div class="status-title" id="resultTitle"></div>
+    <div id="resultBody"></div>
+    <button type="button" class="continue-btn" id="continueBtn">Lanjut scan berikutnya</button>
+  </div>
+</div>
+
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
+
+<script>
+(function(){
+  var API_URL = window.PETBLESSING_API_URL;
+  var TOKEN_KEY = 'petblessing_panitia_token';
+  if(!API_URL){
+    document.getElementById('loginWrap').innerHTML = '<div class="camera-error">API belum dikonfigurasi.</div>';
+    return;
+  }
+
+  var scanning = false;
+  var paused = false;
+  var stream = null;
+  var barcodeDetector = null;
+  if('BarcodeDetector' in window){
+    try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }catch(e){ barcodeDetector = null; }
+  }
+
+  function token(){ return sessionStorage.getItem(TOKEN_KEY); }
+  // Level akun dibaca dari isi JWT (klaim "level"), tanpa verifikasi di
+  // client -- hak sebenarnya tetap dijaga PostgREST lewat klaim role.
+  function tokenLevel(){
+    try{ var p = token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))).level || null; }catch(e){ return null; }
+  }
+  var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
+  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman check-in. Akun admin cukup untuk halaman rekap.';
+
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'block';
+    loadCount();
+    startCamera();
+  }
+  function showLogin(){
+    stopCamera();
+    document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+
+  function checkSession(){
+    if(token() && tokenLevel() === 'superadmin'){ showApp(); return; }
+    var err = document.getElementById('loginError');
+    if(token()){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); }
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var btn = this;
+    var username = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var err = document.getElementById('loginError');
+    err.classList.remove('show'); err.textContent = LOGIN_ERR_DEFAULT;
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    try{
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !data.token){ err.classList.add('show'); return; }
+      if(data.level !== 'superadmin'){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      showApp();
+    }catch(e){
+      err.classList.add('show');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Masuk';
+    }
+  });
+
+  ['loginEmail','loginPassword'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginBtn').click(); }
+    });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  });
+
+  // Pawrade cuma satu titik check-in, jadi tidak ada pilihan pos seperti
+  // Pet Blessing -- cukup total yang sudah check-in secara keseluruhan.
+  async function loadCount(){
+    var el = document.getElementById('postCount');
+    try{
+      var res = await fetch(API_URL + '/pawrade_checkins?select=id', {
+        headers: { Authorization: 'Bearer ' + token(), Prefer: 'count=exact' }
+      });
+      var contentRange = res.headers.get('content-range');
+      var total = contentRange ? contentRange.split('/')[1] : (await res.json()).length;
+      el.textContent = total + ' peserta sudah check-in';
+    }catch(e){ el.textContent = ''; }
+  }
+
+  // --- Kamera + scan QR ---
+  async function startCamera(){
+    var video = document.getElementById('video');
+    var errBox = document.getElementById('cameraError');
+    errBox.style.display = 'none';
+    if(typeof jsQR === 'undefined'){
+      errBox.textContent = 'Library pembaca QR gagal dimuat (cek koneksi internet lalu muat ulang halaman).';
+      errBox.style.display = 'block';
+      return;
+    }
+    try{
+      var wantRes = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ facingMode: 'environment' }, wantRes) });
+      }catch(e){
+        // Perangkat tanpa kamera belakang (laptop/Mac) -- pakai kamera apa saja yang ada.
+        stream = await navigator.mediaDevices.getUserMedia({ video: wantRes });
+      }
+      video.srcObject = stream;
+      await video.play();
+      scanning = true;
+      requestAnimationFrame(scanLoop);
+    }catch(e){
+      errBox.textContent = 'Tidak bisa akses kamera: ' + e.message + '. Izinkan akses kamera di browser lalu muat ulang halaman.';
+      errBox.style.display = 'block';
+    }
+  }
+
+  function stopCamera(){
+    scanning = false;
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  }
+
+  async function scanLoop(){
+    if(!scanning) return;
+    var video = document.getElementById('video');
+    if(video.readyState === video.HAVE_ENOUGH_DATA && !paused){
+      var handled = false;
+      if(barcodeDetector){
+        try{
+          var codes = await barcodeDetector.detect(video);
+          if(codes && codes.length && codes[0].rawValue){ handleScan(codes[0].rawValue); handled = true; }
+        }catch(e){
+          // Detektor native gagal/format tidak didukung sepenuhnya -- pindah
+          // permanen ke jsQR untuk sisa sesi ini.
+          barcodeDetector = null;
+        }
+      }
+      if(!handled && !barcodeDetector){
+        var canvas = document.getElementById('hiddenCanvas');
+        var w = video.videoWidth, h = video.videoHeight;
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+
+        ctx.drawImage(video, 0, 0, w, h);
+        var imageData = ctx.getImageData(0, 0, w, h);
+        var code = jsQR(imageData.data, w, h);
+
+        if(!code){
+          // Kamera depan (termasuk webcam laptop) sering mengirim gambar yang
+          // sudah di-mirror -- QR code tidak terbaca kalau di-mirror (beda
+          // dengan wajah manusia yang tetap kebaca walau kebalik). Coba lagi
+          // versi yang di-flip balik sebelum menyerah di frame ini.
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, -w, 0, w, h);
+          ctx.restore();
+          var flippedData = ctx.getImageData(0, 0, w, h);
+          code = jsQR(flippedData.data, w, h);
+        }
+
+        if(code && code.data){
+          handleScan(code.data);
+        }
+      }
+    }
+    requestAnimationFrame(scanLoop);
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function isUuid(s){
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+  }
+
+  async function handleScan(ownerId){
+    if(!isUuid(ownerId)) return; // bukan QR pendaftaran kita, abaikan
+    paused = true;
+    document.getElementById('scanStatus').textContent = 'Memeriksa…';
+
+    try{
+      var res = await fetch(API_URL + '/pawrade_owners?id=eq.' + encodeURIComponent(ownerId) + '&select=id,queue_number,name,phone,companions,pawrade_pets(name,type)', {
+        headers: { Authorization: 'Bearer ' + token() }
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      var rows = await res.json();
+      var owner = rows && rows[0];
+      if(!owner){
+        renderResult('err', null, 'QR tidak dikenali / bukan pendaftaran Pawrade yang valid.');
+        return;
+      }
+
+      var checkinRes = await fetch(API_URL + '/pawrade_checkins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token(),
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({ owner_id: ownerId })
+      });
+
+      if(checkinRes.status === 201){
+        renderResult('ok', owner, 'Check-in berhasil.');
+        loadCount();
+      } else if(checkinRes.status === 409){
+        renderResult('warn', owner, 'Sudah check-in sebelumnya.');
+      } else {
+        renderResult('err', owner, 'Gagal menyimpan check-in (' + checkinRes.status + ').');
+      }
+    }catch(e){
+      renderResult('err', null, 'Terjadi kesalahan: ' + e.message);
+    }
+  }
+
+  // --- Pencarian manual (QR rusak / WhatsApp tidak masuk) ---
+  // Cocokkan nama atau no. HP (sebagian), atau kode 8 karakter = awalan
+  // UUID pemilik. Tap hasil -> handleScan(id), jalur yang sama dengan scan QR.
+  document.getElementById('manualForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var box = document.getElementById('manualResults');
+    // Karakter yang punya arti khusus di filter PostgREST dibuang saja.
+    var q = document.getElementById('manualQuery').value.replace(/[,()"\\*]/g, ' ').replace(/\s+/g, ' ').trim();
+    if(q.length < 2){ box.innerHTML = '<div class="manual-empty">Ketik minimal 2 karakter.</div>'; return; }
+    box.innerHTML = '<div class="manual-empty">Mencari…</div>';
+    var parts = ['name.ilike.*' + q + '*', 'phone.ilike.*' + q + '*'];
+    if(/^[0-9a-f]{8}$/i.test(q)){
+      var c = q.toLowerCase();
+      parts.push('and(id.gte.' + c + '-0000-0000-0000-000000000000,id.lte.' + c + '-ffff-ffff-ffff-ffffffffffff)');
+    }
+    try{
+      var res = await fetch(API_URL + '/pawrade_owners?select=id,queue_number,name,phone,companions,pawrade_pets(name)&order=queue_number.asc&limit=10&or=' + encodeURIComponent('(' + parts.join(',') + ')'), {
+        headers: { Authorization: 'Bearer ' + token() }
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      renderManual(await res.json());
+    }catch(err){
+      box.innerHTML = '<div class="manual-empty">Gagal mencari: ' + escapeHtml(err.message) + '. Cek koneksi lalu coba lagi.</div>';
+    }
+  });
+  function renderManual(rows){
+    var box = document.getElementById('manualResults');
+    if(!rows.length){
+      box.innerHTML = '<div class="manual-empty">Tidak ada pendaftaran yang cocok. Coba ejaan lain, atau cek di halaman rekap.</div>';
+      return;
+    }
+    box.innerHTML = '<div class="manual-results">' + rows.map(function(o){
+      var pets = (o.pawrade_pets || []).map(function(p){ return p.name; }).join(', ');
+      return '<button type="button" class="manual-row" data-id="' + escapeHtml(o.id) + '">' +
+        '<span class="num">#' + escapeHtml(String(o.queue_number)) + '</span>' +
+        '<span class="info"><span class="name">' + escapeHtml(o.name) + '</span>' +
+        '<span class="meta">' + escapeHtml(o.phone) + ' &middot; ' + escapeHtml(pets) + '</span></span>' +
+        '</button>';
+    }).join('') + '</div>';
+  }
+  document.getElementById('manualResults').addEventListener('click', function(e){
+    var row = e.target.closest('.manual-row');
+    if(!row || paused) return;
+    var id = row.dataset.id;
+    if(!isUuid(id)) return;
+    document.getElementById('manualQuery').value = '';
+    document.getElementById('manualResults').innerHTML = '';
+    handleScan(id);
+  });
+
+  // Beep pendek pakai Web Audio -- tidak butuh file suara. Nada beda per hasil
+  // supaya panitia bisa "dengar" hasilnya tanpa harus lihat layar terus.
+  function beep(freq, durationMs){
+    try{
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new Ctx();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      osc.start();
+      osc.stop(ctx.currentTime + durationMs / 1000);
+      osc.onended = function(){ ctx.close(); };
+    }catch(e){ /* audio tidak tersedia, abaikan */ }
+  }
+
+  function feedback(kind){
+    if(navigator.vibrate) navigator.vibrate(kind === 'ok' ? 120 : [80, 60, 80]);
+    if(kind === 'ok') beep(880, 150);
+    else if(kind === 'warn') beep(520, 220);
+    else beep(300, 300);
+  }
+
+  function renderResult(kind, owner, statusText){
+    feedback(kind);
+    document.getElementById('scanStatus').textContent = 'Menunggu konfirmasi panitia…';
+
+    var sheet = document.getElementById('resultSheet');
+    sheet.className = 'result-sheet ' + kind;
+
+    var icon = document.getElementById('resultIcon');
+    icon.textContent = kind === 'ok' ? '✓' : (kind === 'warn' ? '!' : '✕');
+
+    var title = document.getElementById('resultTitle');
+    title.textContent = kind === 'ok' ? 'Check-in berhasil' : (kind === 'warn' ? 'Sudah check-in' : 'Tidak valid');
+
+    var body = document.getElementById('resultBody');
+    if(!owner){
+      body.innerHTML = '<div class="owner-name">' + escapeHtml(statusText) + '</div>';
+    }else{
+      var petsHtml = (owner.pawrade_pets || []).map(function(p){
+        return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
+      }).join('');
+      body.innerHTML =
+        '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
+        '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
+        '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
+          (owner.companions > 0 ? '<div class="owner-phone">' + escapeHtml(String(owner.companions)) + ' pendamping</div>' : '') +
+        '<div class="pet-list">' + petsHtml + '</div>';
+    }
+
+    document.getElementById('resultOverlay').classList.add('show');
+  }
+
+  document.getElementById('continueBtn').addEventListener('click', function(){
+    document.getElementById('resultOverlay').classList.remove('show');
+    document.getElementById('scanStatus').textContent = 'Arahkan kamera ke QR pendaftaran';
+    paused = false;
+  });
+
+  checkSession();
+})();
+</script>
+</body>
+</html>

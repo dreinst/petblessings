@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendaftaran Pawrade, Colorful Carnival 2026, Paroki St. Vincentius a Paulo, Malang, Jawa Timur</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="api-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<style>
+  :root{
+    --ink:#2A2024;
+    --ink-soft:#6E6266;
+    --bg:#FBF3E7;
+    --card:#FFFDF8;
+    --brand:#00A3B8;
+    --brand-deep:#3B1052;
+    --brand-light:#DFF4F6;
+    --accent:#C97F1F;
+    --accent-light:#FCE9C5;
+    --pink:#E0357B;
+    --line:#E8DCC8;
+    --gradient-warm:linear-gradient(135deg, #F6B93B 0%, #F2542D 50%, #B0205B 100%);
+    --danger:#A6423A;
+    --danger-bg:#F6E7E5;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+
+  /* Auralis: soft blurred glow ambience, fixed behind content */
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.32;}
+  .aurora span:nth-child(1){width:340px;height:340px;top:-110px;right:-90px;background:var(--pink);}
+  .aurora span:nth-child(2){width:380px;height:380px;bottom:-140px;left:-120px;background:var(--brand);}
+  .aurora span:nth-child(3){width:280px;height:280px;top:38%;left:50%;transform:translateX(-50%);background:var(--accent);opacity:.16;}
+
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:560px;margin:0 auto;padding-bottom:64px;position:relative;z-index:1;}
+
+  header.hero{position:relative;background:#fff;color:var(--ink);padding:14px 18px 18px;border-radius:0 0 22px 22px;text-align:center;box-shadow:0 1px 0 var(--line);}
+  .hero-logos{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .hero-logo{width:54px;height:54px;flex:none;}
+  .hero-logo.center-logo{width:auto;height:62px;}
+  .hero-logo.parish-logo{width:auto;height:54px;}
+  header.hero h1{margin-top:14px;font-size:20px;line-height:1.2;color:var(--brand-deep);}
+  header.hero .parish{margin-top:6px;font-size:13px;color:var(--ink-soft);}
+  .criteria{margin-top:18px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .criteria-title{font-family:'Fraunces',serif;font-size:16px;color:var(--brand-deep);margin-bottom:8px;}
+  .criteria ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;}
+  .criteria li{font-size:13.5px;color:var(--ink-soft);}
+  a.hub-back{display:inline-block;font-size:12.5px;color:var(--ink-soft);text-decoration:none;margin-bottom:14px;}
+  header.hero .tagline{margin:10px auto 0;font-size:13.5px;color:var(--ink-soft);max-width:42ch;}
+
+  main{padding:0 20px;position:relative;z-index:1;}
+  section.block{margin-top:32px;}
+  section.block h2{font-size:20px;color:var(--brand-deep);margin-bottom:4px;}
+  section.block .block-note{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;}
+  .field label .req{color:var(--pink);margin-left:2px;}
+  .field .hint{font-size:12.5px;color:var(--ink-soft);margin-top:5px;}
+  input[type=text],input[type=tel],input[type=number],select,textarea{
+    width:100%;padding:12px 14px;font-size:16px;font-family:inherit;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    transition:border-color .15s ease;
+  }
+  textarea{resize:vertical;min-height:72px;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-light);}
+  input.invalid,select.invalid,textarea.invalid{border-color:var(--danger);}
+  .field-error{display:none;color:var(--danger);font-size:12.5px;margin-top:5px;}
+  .field-error.show{display:block;}
+
+  .radio-row{display:flex;gap:10px;}
+  .radio-opt{flex:1;position:relative;}
+  .radio-opt input{position:absolute;opacity:0;inset:0;cursor:pointer;}
+  .radio-opt span{display:block;text-align:center;padding:11px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14.5px;font-weight:500;transition:.15s ease;}
+  .radio-opt input:checked + span{background:var(--brand);border-color:var(--brand);color:#fff;}
+
+  .conditional{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+  .conditional.open{max-height:200px;}
+
+  label.file-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:var(--brand-light);color:var(--brand-deep);border:1px dashed var(--brand);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
+  /* Input file sengaja tidak display:none. Di browser bawaan WhatsApp/Instagram (WebView)
+     tap pada label sering tidak membuka pemilih file. Input dibuat transparan dan menutupi
+     seluruh tombol supaya tap langsung mengenai input file itu sendiri. */
+  .file-btn input{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;font-size:0;}
+  .file-btn svg{flex:none;width:18px;height:18px;}
+  .file-preview{margin-top:10px;display:flex;align-items:center;gap:10px;}
+  .file-preview img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);}
+  .file-preview .remove-file{font-size:13px;color:var(--pink);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;}
+
+  .pet-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;position:relative;}
+  .pet-card .pet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .pet-card .pet-head h3{font-size:16px;color:var(--brand-deep);}
+  .pet-card .remove-pet{background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;font-family:inherit;padding:4px 6px;}
+  .pet-card .remove-pet:hover{color:var(--danger);}
+
+  .add-pet-btn{width:100%;padding:14px;background:none;border:1.5px dashed var(--brand);border-radius:12px;color:var(--brand-deep);font-family:'Work Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:.15s ease;}
+  .add-pet-btn:hover{background:var(--brand-light);}
+
+  .notice{background:var(--accent-light);border-radius:10px;padding:14px 16px;font-size:13.5px;color:#5E4419;margin-top:14px;}
+  .field .fill-hint{opacity:0.8;font-size:12px;line-height:1.4;color:var(--ink-soft);margin-top:5px;}
+
+  .checkbox-row{display:flex;align-items:flex-start;gap:10px;margin-top:6px;}
+  .checkbox-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--brand);flex-shrink:0;}
+  .checkbox-row label{font-size:14px;font-weight:400;}
+
+  .submit-btn{width:100%;padding:16px;background:var(--gradient-warm);color:#fff;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:28px;transition:filter .15s ease;text-shadow:0 1px 4px rgb(0 0 0 / .15);}
+  .submit-btn:hover{filter:brightness(1.08);}
+  .submit-btn:disabled{opacity:.6;cursor:not-allowed;filter:none;}
+
+  .form-error-banner{display:none;background:var(--danger-bg);color:var(--danger);padding:12px 16px;border-radius:10px;font-size:14px;margin-top:20px;}
+  .form-error-banner.show{display:block;}
+
+  .confirm-wrap{display:none;padding:60px 24px;text-align:center;}
+  .confirm-wrap.show{display:block;}
+  .confirm-wrap .check{width:56px;height:56px;border-radius:50%;background:var(--brand-light);color:var(--brand-deep);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+  .confirm-wrap h2{font-size:24px;color:var(--brand-deep);}
+  .confirm-wrap p{color:var(--ink-soft);margin-top:10px;font-size:15px;}
+  .confirm-wrap .summary{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:22px;text-align:left;font-size:14px;}
+  .confirm-wrap .summary b{display:block;margin-bottom:4px;}
+  .confirm-wrap .again-btn{margin-top:24px;background:none;border:1px solid var(--brand);color:var(--brand-deep);padding:10px 18px;border-radius:10px;font-family:inherit;font-size:14px;cursor:pointer;}
+
+  .qr-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 18px;margin-top:16px;text-align:center;}
+  .qr-card .qr-box{width:200px;height:200px;margin:0 auto;display:flex;align-items:center;justify-content:center;}
+  .qr-card .qr-box img{width:100%;height:100%;}
+  .qr-card .qr-code{margin-top:12px;font-family:'Work Sans',monospace;font-size:15px;font-weight:600;letter-spacing:1.5px;color:var(--brand-deep);}
+  .qr-card .qr-hint{margin-top:10px;font-size:12.5px;color:var(--ink-soft);}
+  .screenshot-notice{background:var(--accent-light);border-radius:10px;padding:12px 16px;margin-top:16px;font-size:13px;color:#5E4419;text-align:left;}
+
+  .site-footer{text-align:center;padding:40px 20px 32px;}
+  .site-footer .footer-logo{width:64px;height:auto;margin:0 auto 12px;display:block;}
+  .site-footer p{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 14px;}
+  .site-footer .ig-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--brand-deep);font-size:13px;font-weight:500;text-decoration:none;transition:.15s ease;}
+  .site-footer .ig-btn:hover{background:var(--brand-light);border-color:var(--brand);}
+  .site-footer .footer-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+</style>
+</head>
+<body>
+<div class="aurora"><span></span><span></span><span></span></div>
+<div class="wrap">
+
+  <a class="hub-back" href="index.html">&laquo; Semua acara</a>
+  <header class="hero">
+    <div class="hero-logos">
+      <picture>
+        <source srcset="assets/pet-blessing-badge.webp" type="image/webp">
+        <img class="hero-logo" src="assets/pet-blessing-badge.png" alt="Pet Blessing, Paroki SVAP Malang" width="240" height="240">
+      </picture>
+      <picture>
+        <source srcset="assets/pet-blessing-carnival.webp" type="image/webp">
+        <img class="hero-logo center-logo" src="assets/pet-blessing-carnival.png" alt="Pet Blessing and Colorful Carnival 2026" width="1070" height="688">
+      </picture>
+      <picture>
+        <source srcset="assets/paroki-badge.webp" type="image/webp">
+        <img class="hero-logo parish-logo" src="assets/paroki-badge.png" alt="Paroki St. Vincentius a Paulo, Malang" width="366" height="440">
+      </picture>
+    </div>
+    <h1>Pendaftaran Pawrade</h1>
+    <div class="parish">Paroki St. Vincentius a Paulo, Malang, Jawa Timur</div>
+    <p class="tagline">Ajak hewan kesayangan Anda tampil di lomba busana carnival. Isi data di bawah untuk mendaftar.</p>
+    <div class="criteria">
+      <div class="criteria-title">Kriteria Penilaian</div>
+      <ol>
+        <li>Kesesuaian kostum/ornamen/aksesoris, keunikan, kerapian, keserasian warna, dan kreativitas busana tema carnival, dengan tetap mengutamakan kenyamanan pet yang menggunakannya.</li>
+        <li>Kreativitas dan gaya.</li>
+        <li>Karakteristik percaya diri yang kuat: cara pembawaan jalan/bergaya, dan talenta khusus yang ditampilkan.</li>
+      </ol>
+    </div>
+  </header>
+
+  <main>
+    <form id="regForm" novalidate>
+
+      <section class="block">
+        <h2>Data pemilik</h2>
+        <div class="field">
+          <label for="ownerName">Nama pet owner<span class="req">*</span></label>
+          <input type="text" id="ownerName" autocomplete="name">
+          <div class="fill-hint">Pastikan jangan sampai salah input nama. Gunakan Huruf Kapital Di Awal Kata (contoh: Budi Santoso).</div>
+          <div class="field-error" id="err-ownerName">Nama pemilik wajib diisi.</div>
+        </div>
+        <div class="field">
+          <label for="ownerPhone">Kontak / no. HP (WhatsApp)<span class="req">*</span></label>
+          <input type="tel" id="ownerPhone" autocomplete="tel" placeholder="08xx xxxx xxxx">
+          <div class="fill-hint">Pastikan nomor benar dan aktif di WhatsApp, dipakai untuk mengirim QR pendaftaran.</div>
+          <div class="field-error" id="err-ownerPhone">Nomor HP wajib diisi.</div>
+        </div>
+        <div class="field">
+          <label>Apakah Anda umat Paroki St. Vincentius a Paulo, Malang, Jawa Timur?<span class="req">*</span></label>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="isParishioner" value="ya"><span>Ya</span></label>
+            <label class="radio-opt"><input type="radio" name="isParishioner" value="bukan"><span>Bukan</span></label>
+          </div>
+          <div class="field-error" id="err-isParishioner">Silakan pilih salah satu.</div>
+        </div>
+        <div class="conditional" id="parishOriginWrap">
+          <div class="field" style="margin-top:2px;">
+            <label for="parishOrigin">Asal paroki / gereja / daerah<span class="req">*</span></label>
+            <input type="text" id="parishOrigin">
+            <div class="fill-hint">Pastikan penulisan nama paroki/gereja/daerah sudah benar.</div>
+            <div class="field-error" id="err-parishOrigin">Mohon isi asal paroki Anda.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Apakah Anda membawa pendamping (pet handler, keluarga, teman)?<span class="req">*</span></label>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="hasCompanion" value="ya"><span>Ya</span></label>
+            <label class="radio-opt"><input type="radio" name="hasCompanion" value="tidak"><span>Tidak</span></label>
+          </div>
+          <div class="field-error" id="err-hasCompanion">Silakan pilih salah satu.</div>
+        </div>
+        <div class="conditional" id="companionWrap">
+          <div class="field" style="margin-top:2px;">
+            <label for="companionCount">Jumlah pendamping<span class="req">*</span></label>
+            <input type="number" id="companionCount" inputmode="numeric" min="1" max="20" placeholder="misal 1">
+            <div class="field-error" id="err-companionCount">Mohon isi jumlah pendamping (minimal 1).</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Data hewan peliharaan</h2>
+        <div class="block-note">Tambahkan satu kartu untuk tiap hewan yang ikut Pet Blessing.</div>
+        <div id="petCards"></div>
+        <button type="button" class="add-pet-btn" id="addPetBtn">+ Tambah hewan</button>
+      </section>
+
+      <section class="block">
+        <h2>Donasi</h2>
+        <div class="block-note">Donasi bersifat sukarela dan tidak memengaruhi pendaftaran.</div>
+        <div class="field">
+          <label for="donationAmount">Jumlah donasi (opsional)</label>
+          <input type="text" id="donationAmount" inputmode="numeric" placeholder="Rp">
+        </div>
+        <div class="field">
+          <label>Bukti transfer (opsional)</label>
+          <label class="file-btn"><input type="file" id="donationProof" accept="image/*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Unggah bukti transfer</span></label>
+          <div class="file-preview" id="donationProofPreview" style="display:none;"></div>
+          <div class="hint">Transfer ke BCA <b>8161072001</b> a.n. Nicke Purnama Kartawiharja Kusumah</div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Syarat &amp; ketentuan</h2>
+        <div class="checkbox-row">
+          <input type="checkbox" id="agreedTos">
+          <label for="agreedTos">Dengan ini saya menyatakan mendaftarkan diri dalam acara Pet Blessing Paroki St. Vincentius a Paulo, Malang, Jawa Timur dan bersedia mengikuti syarat &amp; ketentuan yang berlaku selama acara.</label>
+        </div>
+        <div class="field-error" id="err-agreedTos">Mohon centang persetujuan untuk melanjutkan.</div>
+        <div class="notice">Pastikan data yang diisi sudah benar, terutama nama hewan. Panitia tidak bertanggung jawab atas kesalahan penulisan setelah data disubmit.</div>
+      </section>
+
+      <div class="form-error-banner" id="formErrorBanner">Ada data yang belum lengkap. Mohon periksa kembali bagian yang ditandai di atas.</div>
+      <div class="cf-turnstile" id="turnstileWidget" style="margin-top:16px;display:flex;justify-content:center;"></div>
+      <button type="submit" class="submit-btn" id="submitBtn">Kirim pendaftaran</button>
+    </form>
+
+    <div class="confirm-wrap" id="confirmWrap">
+      <div class="check">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2>Pendaftaran diterima</h2>
+      <p>Terima kasih sudah mendaftar. Simpan halaman ini sebagai catatan sementara.</p>
+      <div class="summary" id="confirmSummary"></div>
+      <div class="qr-card">
+        <div class="qr-box" id="confirmQrBox"></div>
+        <div class="qr-code" id="confirmQrCode"></div>
+        <div class="qr-hint">Kode ini mewakili pendaftaran Anda dan seluruh hewan di atas.</div>
+      </div>
+      <div class="screenshot-notice">Screenshot halaman ini (termasuk QR di atas) sebagai bukti pendaftaran. Tunjukkan ke panitia saat check-in lomba Pawrade di lokasi acara.</div>
+      <button class="again-btn" id="againBtn">Daftarkan pemilik lain</button>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <img src="assets/dpro-logo.svg" alt="D'Production" class="footer-logo">
+    <p>Made by dreinst, organized by D'Production Event Organizer</p>
+    <div class="footer-links">
+      <a class="ig-btn" href="https://instagram.com/dpro.duction" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        @dpro.duction
+      </a>
+      <a class="ig-btn" href="https://www.instagram.com/petblessing.svapm/" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        @petblessing.svapm
+      </a>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var PET_TYPES = ['Anjing','Kucing','Burung','Kelinci','Hamster','Reptil','Lainnya'];
+  var pets = [];
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  function newPet(){ return { id: uid(), name:'', type:'', typeOther:'', notes:'', photoPreview:null, photoName:null, photoDataUrl:null }; }
+
+  function renderPetCards(){
+    var wrap = document.getElementById('petCards');
+    wrap.innerHTML = '';
+    pets.forEach(function(pet, idx){
+      var card = document.createElement('div');
+      card.className = 'pet-card';
+      card.dataset.id = pet.id;
+
+      var typeOptions = PET_TYPES.map(function(t){
+        return '<option value="'+t+'"'+(pet.type===t?' selected':'')+'>'+t+'</option>';
+      }).join('');
+
+      card.innerHTML =
+        '<div class="pet-head"><h3>Hewan '+(idx+1)+'</h3>'+
+        (pets.length>1 ? '<button type="button" class="remove-pet" data-action="remove">Hapus</button>' : '')+
+        '</div>'+
+        '<div class="field">'+
+          '<label>Nama hewan<span class="req">*</span></label>'+
+          '<input type="text" data-field="name" value="'+escapeHtml(pet.name)+'">'+
+          '<div class="fill-hint">Pastikan jangan sampai salah input nama hewan. Gunakan Huruf Kapital Di Awal Kata.</div>'+
+          '<div class="field-error" data-error="name">Nama hewan wajib diisi.</div>'+
+        '</div>'+
+        '<div class="field">'+
+          '<label>Jenis hewan<span class="req">*</span></label>'+
+          '<select data-field="type"><option value="">Pilih jenis…</option>'+typeOptions+'</select>'+
+          '<div class="field-error" data-error="type">Pilih jenis hewan.</div>'+
+        '</div>'+
+        (pet.type==='Lainnya' ? '<div class="field"><label>Sebutkan jenisnya<span class="req">*</span></label><input type="text" data-field="typeOther" value="'+escapeHtml(pet.typeOther)+'"><div class="field-error" data-error="typeOther">Mohon sebutkan jenis hewannya.</div></div>' : '')+
+        '<div class="field">'+
+          '<label>Foto hewan (opsional)</label>'+
+          '<label class="file-btn"><input type="file" accept="image/*" data-field="photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>Ambil / unggah foto</span></label>'+
+          '<div class="file-preview" data-preview style="display:'+(pet.photoPreview?'flex':'none')+';">'+
+            (pet.photoPreview ? '<img src="'+pet.photoPreview+'"><button type="button" class="remove-file" data-action="removePhoto">Hapus foto</button>' : '')+
+          '</div>'+
+        '</div>'+
+        '<div class="field" style="margin-bottom:0;">'+
+          '<label>Catatan</label>'+
+          '<textarea data-field="notes" placeholder="Agresif, mudah cemas, kondisi kesehatan khusus, atau disabilitas (misal: buta, pincang, dll.). Isi &quot;-&quot; kalau tidak ada.">'+escapeHtml(pet.notes)+'</textarea>'+
+        '</div>';
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('petCards').addEventListener('input', function(e){
+    var card = e.target.closest('.pet-card');
+    if(!card) return;
+    var pet = pets.find(function(p){ return p.id === card.dataset.id; });
+    if(!pet) return;
+    var field = e.target.dataset.field;
+    if(field === 'name'){ pet.name = e.target.value; clearFieldError(e.target); }
+    if(field === 'typeOther'){ pet.typeOther = e.target.value; clearFieldError(e.target); }
+    if(field === 'notes'){ pet.notes = e.target.value; }
+  });
+
+  document.getElementById('petCards').addEventListener('change', function(e){
+    var card = e.target.closest('.pet-card');
+    if(!card) return;
+    var pet = pets.find(function(p){ return p.id === card.dataset.id; });
+    if(!pet) return;
+    if(e.target.dataset.field === 'type'){
+      pet.type = e.target.value;
+      clearFieldError(e.target);
+      renderPetCards();
+    }
+    if(e.target.dataset.field === 'photo'){
+      var file = e.target.files[0];
+      if(file){
+        var reader = new FileReader();
+        reader.onload = function(ev){
+          pet.photoPreview = ev.target.result;
+          pet.photoName = file.name;
+          renderPetCards();
+        };
+        reader.readAsDataURL(file);
+        // Versi terkompres (maks 1024 px, JPEG) yang dikirim ke server, supaya
+        // panitia bisa melihat dan mengunduh foto hewan dari rekap.
+        pet.photoDataUrl = null;
+        compressImage(file, 1024).then(function(dataUrl){ pet.photoDataUrl = dataUrl; });
+      }
+    }
+  });
+
+  document.getElementById('petCards').addEventListener('click', function(e){
+    var action = e.target.dataset.action;
+    if(!action) return;
+    var card = e.target.closest('.pet-card');
+    var pet = pets.find(function(p){ return p.id === card.dataset.id; });
+    if(action === 'remove'){
+      pets = pets.filter(function(p){ return p.id !== pet.id; });
+      renderPetCards();
+    }
+    if(action === 'removePhoto'){
+      pet.photoPreview = null; pet.photoName = null; pet.photoDataUrl = null;
+      renderPetCards();
+    }
+  });
+
+  document.getElementById('addPetBtn').addEventListener('click', function(){
+    pets.push(newPet());
+    renderPetCards();
+  });
+
+  // Live-clear errors on the top-level fields as the person fixes them
+  ['ownerName','ownerPhone','parishOrigin'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(e){ clearFieldError(e.target); });
+  });
+
+  // Conditional parish origin
+  var parishRadios = document.querySelectorAll('input[name="isParishioner"]');
+  var parishOriginWrap = document.getElementById('parishOriginWrap');
+  parishRadios.forEach(function(r){
+    r.addEventListener('change', function(){
+      document.getElementById('err-isParishioner').classList.remove('show');
+      if(r.value === 'bukan' && r.checked){ parishOriginWrap.classList.add('open'); }
+      if(r.value === 'ya' && r.checked){ parishOriginWrap.classList.remove('open'); clearFieldError(document.getElementById('parishOrigin')); }
+    });
+  });
+
+  var companionRadios = document.querySelectorAll('input[name="hasCompanion"]');
+  var companionWrap = document.getElementById('companionWrap');
+  companionRadios.forEach(function(r){
+    r.addEventListener('change', function(){
+      document.getElementById('err-hasCompanion').classList.remove('show');
+      if(r.value === 'ya' && r.checked){ companionWrap.classList.add('open'); }
+      if(r.value === 'tidak' && r.checked){ companionWrap.classList.remove('open'); clearFieldError(document.getElementById('companionCount')); }
+    });
+  });
+
+  document.getElementById('agreedTos').addEventListener('change', function(e){
+    if(e.target.checked) document.getElementById('err-agreedTos').classList.remove('show');
+  });
+
+  // Donation proof preview + versi terkompres yang dikirim ke server
+  // (maks 1280 px, JPEG), supaya panitia bisa mengecek bukti transfer di
+  // rekap tanpa membebani database dengan foto ukuran asli.
+  var donationProofDataUrl = null;
+  function compressImage(file, maxSide){
+    return new Promise(function(resolve){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){
+        try{
+          var max = maxSide || 1280, w = img.width, h = img.height;
+          if(w > max || h > max){ var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        }catch(e){ resolve(null); }
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+  document.getElementById('donationProof').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    var box = document.getElementById('donationProofPreview');
+    donationProofDataUrl = null;
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      box.style.display = 'flex';
+      box.innerHTML = '<img src="'+ev.target.result+'"><button type="button" class="remove-file" id="removeDonationProof">Hapus</button>';
+      document.getElementById('removeDonationProof').addEventListener('click', function(){
+        document.getElementById('donationProof').value = '';
+        donationProofDataUrl = null;
+        box.style.display = 'none'; box.innerHTML = '';
+      });
+    };
+    reader.readAsDataURL(file);
+    compressImage(file).then(function(dataUrl){ donationProofDataUrl = dataUrl; });
+  });
+
+  function clearFieldError(el){
+    if(!el) return;
+    el.classList.remove('invalid');
+    var container = el.closest('.pet-card') || el.closest('.field') || document;
+    var field = el.dataset ? el.dataset.field : null;
+    var errEl = field ? container.querySelector('[data-error="'+field+'"]') : (el.id ? document.getElementById('err-'+el.id) : null);
+    if(errEl) errEl.classList.remove('show');
+  }
+
+  function setError(inputEl, errorEl, show){
+    if(inputEl) inputEl.classList.toggle('invalid', show);
+    if(errorEl) errorEl.classList.toggle('show', show);
+  }
+
+  function validate(){
+    var ok = true;
+
+    var ownerName = document.getElementById('ownerName');
+    if(!ownerName.value.trim()){ setError(ownerName, document.getElementById('err-ownerName'), true); ok = false; }
+    else setError(ownerName, document.getElementById('err-ownerName'), false);
+
+    var ownerPhone = document.getElementById('ownerPhone');
+    if(!ownerPhone.value.trim()){ setError(ownerPhone, document.getElementById('err-ownerPhone'), true); ok = false; }
+    else setError(ownerPhone, document.getElementById('err-ownerPhone'), false);
+
+    var isParishioner = document.querySelector('input[name="isParishioner"]:checked');
+    if(!isParishioner){ document.getElementById('err-isParishioner').classList.add('show'); ok = false; }
+    else document.getElementById('err-isParishioner').classList.remove('show');
+
+    var parishOrigin = document.getElementById('parishOrigin');
+    if(isParishioner && isParishioner.value === 'bukan' && !parishOrigin.value.trim()){
+      setError(parishOrigin, document.getElementById('err-parishOrigin'), true); ok = false;
+    } else setError(parishOrigin, document.getElementById('err-parishOrigin'), false);
+
+    var hasCompanion = document.querySelector('input[name="hasCompanion"]:checked');
+    if(!hasCompanion){ document.getElementById('err-hasCompanion').classList.add('show'); ok = false; }
+    else document.getElementById('err-hasCompanion').classList.remove('show');
+
+    var companionCount = document.getElementById('companionCount');
+    if(hasCompanion && hasCompanion.value === 'ya' && !(parseInt(companionCount.value, 10) >= 1)){
+      setError(companionCount, document.getElementById('err-companionCount'), true); ok = false;
+    } else setError(companionCount, document.getElementById('err-companionCount'), false);
+
+    pets.forEach(function(pet){
+      var card = document.querySelector('.pet-card[data-id="'+pet.id+'"]');
+      if(!card) return;
+      var nameInput = card.querySelector('[data-field="name"]');
+      var typeInput = card.querySelector('[data-field="type"]');
+      var typeOtherInput = card.querySelector('[data-field="typeOther"]');
+      if(!pet.name.trim()){ setError(nameInput, card.querySelector('[data-error="name"]'), true); ok = false; }
+      else setError(nameInput, card.querySelector('[data-error="name"]'), false);
+      if(!pet.type){ setError(typeInput, card.querySelector('[data-error="type"]'), true); ok = false; }
+      else setError(typeInput, card.querySelector('[data-error="type"]'), false);
+      if(pet.type === 'Lainnya' && typeOtherInput && !pet.typeOther.trim()){
+        setError(typeOtherInput, card.querySelector('[data-error="typeOther"]'), true); ok = false;
+      }
+    });
+
+    var agreedTos = document.getElementById('agreedTos');
+    if(!agreedTos.checked){ document.getElementById('err-agreedTos').classList.add('show'); ok = false; }
+    else document.getElementById('err-agreedTos').classList.remove('show');
+
+    return ok;
+  }
+
+  // Data layer: submitRegistration() is the one place that talks to storage.
+  // Nothing else in the form needs to change if this function's storage
+  // backend changes again later. Semua tulis data lewat /api/register
+  // (Vercel), bukan langsung ke database -- supaya captcha bisa diverifikasi
+  // dulu (lihat api/register.js).
+  var API_URL = window.PETBLESSING_API_URL;
+
+  // Widget captcha (Cloudflare Turnstile), dirender manual (bukan auto-render)
+  // supaya site key bisa diisi dari api-config.js.
+  var turnstileWidgetId = null;
+  (function initTurnstile(){
+    if(!window.TURNSTILE_SITE_KEY) return;
+    function render(){
+      if(typeof turnstile === 'undefined'){ setTimeout(render, 200); return; }
+      turnstileWidgetId = turnstile.render('#turnstileWidget', { sitekey: window.TURNSTILE_SITE_KEY });
+    }
+    render();
+  })();
+
+
+  function buildQrDataUrl(text, size, colorDark, colorLight, correctLevel){
+    var hidden = document.createElement('div');
+    var opts = { text: text, width: size, height: size, colorDark: colorDark, colorLight: colorLight };
+    if(correctLevel !== undefined) opts.correctLevel = correctLevel;
+    new QRCode(hidden, opts);
+    var canvas = hidden.querySelector('canvas');
+    return canvas ? canvas.toDataURL('image/png') : null;
+  }
+
+  async function submitRegistration(registration){
+    if(!API_URL) throw new Error('API belum dikonfigurasi (lihat api-config.js)');
+    var turnstileToken = (typeof turnstile !== 'undefined' && turnstileWidgetId !== null)
+      ? turnstile.getResponse(turnstileWidgetId) : null;
+    if(!turnstileToken) throw new Error('Mohon selesaikan verifikasi captcha dulu.');
+
+    var ownerId = crypto.randomUUID();
+    var shortCode = ownerId.slice(0, 8).toUpperCase();
+
+    var petsPayload = registration.pets.map(function(p){
+      return {
+        id: crypto.randomUUID(),
+        owner_id: ownerId,
+        name: p.name,
+        type: p.type,
+        has_photo: p.hasPhoto,
+        photo_base64: p.photoDataUrl || null,
+        notes: p.notes || null
+        };
+    });
+
+    var waQueuePayload = null;
+    if(registration.owner.phone){
+      var petSummary = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
+      var qrForWa = buildQrDataUrl(ownerId, 512, '#000000', '#FFFFFF', QRCode.CorrectLevel.H);
+      if(qrForWa){
+        waQueuePayload = {
+          id: crypto.randomUUID(),
+          owner_id: ownerId,
+          phone: registration.owner.phone,
+          short_code: shortCode,
+          qr_image_base64: qrForWa,
+          owner_name: registration.owner.name,
+          pet_summary: petSummary
+        };
+      }
+    }
+
+    var res = await fetch('/api/register-pawrade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        turnstileToken: turnstileToken,
+        owner: {
+          id: ownerId,
+          name: registration.owner.name,
+          phone: registration.owner.phone,
+          is_parishioner: registration.owner.isParishioner,
+          parish_origin: registration.owner.parishOrigin || null,
+          companions: registration.owner.companions,
+          donation_amount: registration.donation.amount || null,
+          donation_has_proof: registration.donation.hasProof,
+          donation_proof_base64: registration.donation.proofDataUrl || null,
+          agreed_tos: registration.agreedTos,
+          submitted_at: registration.submittedAt
+        },
+        pets: petsPayload,
+        waQueue: waQueuePayload
+      })
+    });
+
+    var data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){
+      throw new Error(data.error || ('Gagal menyimpan (' + res.status + ')'));
+    }
+
+    return { ownerId: ownerId, shortCode: shortCode };
+  }
+
+  document.getElementById('regForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var banner = document.getElementById('formErrorBanner');
+    if(!validate()){
+      banner.classList.add('show');
+      var firstInvalid = document.querySelector('.invalid');
+      if(firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    banner.classList.remove('show');
+
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Mengirim…';
+
+    var isParishioner = document.querySelector('input[name="isParishioner"]:checked').value;
+    var hasCompanion = document.querySelector('input[name="hasCompanion"]:checked').value;
+    var registration = {
+      owner: {
+        name: document.getElementById('ownerName').value.trim(),
+        phone: document.getElementById('ownerPhone').value.trim(),
+        isParishioner: isParishioner,
+        parishOrigin: isParishioner === 'bukan' ? document.getElementById('parishOrigin').value.trim() : '',
+        companions: hasCompanion === 'ya' ? parseInt(document.getElementById('companionCount').value, 10) : 0
+      },
+      pets: pets.map(function(p){
+        return {
+          name: p.name.trim(),
+          type: p.type === 'Lainnya' ? p.typeOther.trim() : p.type,
+          hasPhoto: !!p.photoPreview,
+          photoDataUrl: p.photoDataUrl || null,
+          notes: p.notes.trim()
+        };
+      }),
+      donation: {
+        amount: document.getElementById('donationAmount').value.trim(),
+        hasProof: !!document.getElementById('donationProof').files[0],
+        proofDataUrl: donationProofDataUrl
+      },
+      agreedTos: true,
+      submittedAt: new Date().toISOString()
+    };
+
+    try{
+      var result = await submitRegistration(registration);
+      await showConfirmation(registration, result.ownerId, result.shortCode);
+    }catch(err){
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Kirim pendaftaran';
+      banner.textContent = err.message || 'Gagal menyimpan pendaftaran. Coba lagi sebentar lagi.';
+      banner.classList.add('show');
+    }finally{
+      if(typeof turnstile !== 'undefined' && turnstileWidgetId !== null) turnstile.reset(turnstileWidgetId);
+    }
+  });
+
+  async function showConfirmation(registration, ownerId, shortCode){
+    document.getElementById('regForm').style.display = 'none';
+    var wrap = document.getElementById('confirmWrap');
+    wrap.classList.add('show');
+    var petLines = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
+    document.getElementById('confirmSummary').innerHTML =
+      '<b>'+escapeHtml(registration.owner.name)+'</b>'+
+      escapeHtml(registration.owner.phone)+'<br>'+
+      registration.pets.length+' hewan: '+escapeHtml(petLines)+
+      (registration.owner.companions > 0 ? '<br>'+registration.owner.companions+' pendamping' : '');
+
+    var qrBox = document.getElementById('confirmQrBox');
+    document.getElementById('confirmQrCode').textContent = shortCode;
+    qrBox.innerHTML = '';
+    try{
+      new QRCode(qrBox, { text: ownerId, width: 200, height: 200, colorDark: '#3B1052', colorLight: '#FFFDF8' });
+    }catch(e){
+      qrBox.style.display = 'none';
+    }
+  }
+
+  document.getElementById('againBtn').addEventListener('click', function(){
+    document.getElementById('regForm').reset();
+    pets = [newPet()];
+    renderPetCards();
+    parishOriginWrap.classList.remove('open');
+    companionWrap.classList.remove('open');
+    document.getElementById('donationProofPreview').style.display = 'none';
+    donationProofDataUrl = null;
+    document.getElementById('confirmWrap').classList.remove('show');
+    document.getElementById('regForm').style.display = 'block';
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Kirim pendaftaran';
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  // init
+  pets = [newPet()];
+  renderPetCards();
+})();
+</script>
+</body>
+</html>

@@ -1,17 +1,23 @@
-# Panduan Sistem Pendaftaran Pet Blessing 2026
+# Panduan Sistem Pendaftaran Pet Blessing & Pawrade 2026
 
 Paroki St. Vincentius a Paulo, Malang
 
-Sistem ini terdiri dari beberapa halaman web. Semuanya dibuka lewat browser biasa (Chrome, Safari, atau browser bawaan HP), tidak perlu memasang aplikasi apa pun.
+Sistem ini terdiri dari beberapa halaman web, untuk dua acara: Pet Blessing dan lomba Pawrade (costume parade), keduanya bagian dari Colorful Carnival 2026. Semuanya dibuka lewat browser biasa (Chrome, Safari, atau browser bawaan HP), tidak perlu memasang aplikasi apa pun.
 
 | Halaman | Alamat | Dipakai oleh |
 |---|---|---|
-| Form pendaftaran | https://petblessings.vercel.app | Pet owner (umum) |
-| Rekap pendaftaran | https://petblessings.vercel.app/pendaftaran-masuk.html | Admin dan superadmin |
+| Pilihan acara | https://petblessings.vercel.app | Pengunjung, sebelum memilih acara |
+| Form pendaftaran Pet Blessing | https://petblessings.vercel.app/petblessing.html | Pet owner (umum) |
+| Form pendaftaran Pawrade | https://petblessings.vercel.app/pawrade.html | Peserta lomba (umum) |
+| Rekap Pet Blessing | https://petblessings.vercel.app/pendaftaran-masuk.html | Admin dan superadmin |
+| Rekap Pawrade | https://petblessings.vercel.app/pawrade-rekap.html | Admin dan superadmin |
 | Dashboard superadmin | https://petblessings.vercel.app/superadmin.html | Superadmin saja |
-| Check-in hari-H | https://petblessings.vercel.app/checkin.html | Superadmin saja |
+| Check-in Pet Blessing | https://petblessings.vercel.app/checkin.html | Superadmin saja |
+| Check-in Pawrade | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
 
-Prinsip dasarnya: satu pendaftaran untuk satu pemilik, berapa pun jumlah hewannya. Pemilik mendapat satu QR yang mewakili dirinya dan semua hewannya. Di hari acara, QR itu di-scan satu kali di tiap pos.
+Prinsip dasarnya: satu pendaftaran untuk satu pemilik, berapa pun jumlah hewannya. Pemilik mendapat satu QR yang mewakili dirinya dan semua hewannya. Di hari acara, QR itu di-scan saat check-in.
+
+Panduan di bawah ini ditulis untuk Pet Blessing, tapi berlaku sama persis untuk Pawrade -- form, rekap, dan cara kerjanya identik, cuma dialamat berbeda dan datanya terpisah. Bedanya cuma dua: form Pawrade punya blok info "Kriteria Penilaian" di atas form, dan check-in Pawrade cuma satu titik scan (tanpa pilihan pos seperti Reg ulang/Pos 1-3).
 
 ---
 
