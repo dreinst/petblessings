@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="api-config.js"></script>
 <style>
   :root{
@@ -344,7 +345,9 @@
     });
   }
 
+  var isSuperadmin = false;
   function render(regs){
+    isSuperadmin = tokenLevel() === 'superadmin';
     var list = document.getElementById('list');
     var count = document.getElementById('count');
     if(regs.length === 0){
@@ -379,6 +382,7 @@
         (r.donation && r.donation.hasProof
           ? '<button type=\"button\" data-action=\"proof\">Lihat bukti transfer</button>'
           : '<button type=\"button\" disabled title=\"Belum ada bukti transfer diunggah\">Lihat bukti transfer</button>')+
+        (isSuperadmin ? '<button type=\"button\" data-action=\"qr\">Lihat QR</button>' : '')+
         '</div>';
       return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
         '<div class="owner"><span class="owner-name">'+escapeHtml(titleCase(r.owner.name))+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
@@ -520,6 +524,52 @@
       body.innerHTML = '<p>Gagal memuat foto. Cek koneksi lalu coba lagi.</p>';
     }
   }
+  // --- QR yang sungguh-sungguh sudah dikirim ke WhatsApp (superadmin) ---
+  // Diambil dari api.wa_queue (baris terbaru per pemilik), bukan dibuat
+  // ulang di client, supaya yang ditampilkan/diunduh persis QR yang
+  // diterima pendaftar -- untuk uji scan yang akurat. Kalau belum pernah
+  // masuk antrian (misal belum ada nomor HP), dibuatkan versi baru sebagai
+  // cadangan, dengan penjelasan bahwa itu belum tentu yang sudah dikirim.
+  function buildQrDataUrl(text, size, colorDark, colorLight, correctLevel){
+    var hidden = document.createElement('div');
+    var opts = { text: text, width: size, height: size, colorDark: colorDark, colorLight: colorLight };
+    if(correctLevel !== undefined) opts.correctLevel = correctLevel;
+    new QRCode(hidden, opts);
+    var canvas = hidden.querySelector('canvas');
+    return canvas ? canvas.toDataURL('image/png') : null;
+  }
+  var QR_STATUS_LABEL = { pending: 'menunggu dikirim', sent: 'sudah terkirim ke WhatsApp', failed: 'gagal terkirim (koneksi bot bermasalah)' };
+  async function showSentQr(r){
+    var modal = document.getElementById('proofModal');
+    var body = document.getElementById('proofBody');
+    var shortCode = r.id.slice(0, 8).toUpperCase();
+    document.getElementById('proofTitle').textContent = 'QR: ' + titleCase(r.owner.name) + ' (' + shortCode + ')';
+    body.innerHTML = '<p>Memuat…</p>';
+    modal.classList.add('show');
+    try{
+      var res = await fetch(API_URL + '/wa_queue?owner_id=eq.' + encodeURIComponent(r.id) + '&select=qr_image_base64,status&order=created_at.desc&limit=1', { headers: authHeaders() });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      var rows = await res.json();
+      var row = rows && rows[0];
+      var img, note, ext;
+      if(row && row.qr_image_base64){
+        img = row.qr_image_base64; ext = 'png';
+        note = 'QR ini persis yang ' + (QR_STATUS_LABEL[row.status] || 'tercatat di antrian') + '.';
+      }else{
+        img = buildQrDataUrl(r.id, 512, '#000000', '#FFFFFF', QRCode.CorrectLevel.H); ext = 'png';
+        note = 'Belum pernah masuk antrian WhatsApp (misal belum ada nomor HP tersimpan), jadi ini dibuat ulang sekarang -- isinya sama, tapi bukan file yang sudah dikirim.';
+      }
+      var el = document.createElement('img'); el.src = img; el.alt = 'QR ' + r.owner.name;
+      var dl = document.createElement('a'); dl.className = 'dl-btn'; dl.href = img;
+      dl.download = 'qr-' + shortCode.toLowerCase() + '.' + ext;
+      dl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh QR';
+      body.innerHTML = '<p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">' + escapeHtml(note) + '</p>';
+      body.appendChild(el); body.appendChild(dl);
+    }catch(e){
+      body.innerHTML = '<p>Gagal memuat QR: ' + escapeHtml(e.message) + '. Cek koneksi lalu coba lagi.</p>';
+    }
+  }
   document.getElementById('proofClose').addEventListener('click', function(){ document.getElementById('proofModal').classList.remove('show'); });
   document.getElementById('proofModal').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('show'); });
   document.getElementById('list').addEventListener('click', function(e){
@@ -532,6 +582,7 @@
     else if(btn.dataset.action === 'cancel') render(currentView());
     else if(btn.dataset.action === 'save') saveEdit(entryEl, r);
     else if(btn.dataset.action === 'proof') showProof(r);
+    else if(btn.dataset.action === 'qr') showSentQr(r);
     else if(btn.dataset.action === 'photo') showPetPhoto(r, btn.dataset.pet);
   });
   function currentView(){
