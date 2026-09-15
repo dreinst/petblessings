@@ -128,15 +128,21 @@
     <a href="checkin.html">Scan check-in &raquo;</a>
     <a href="qr-database.html">Database QR &raquo;</a>
   </nav>
+  <nav class="nav">
+    <a href="pawrade-rekap.html">Rekap Pawrade &raquo;</a>
+    <a href="pawrade-checkin.html">Check-in Pawrade &raquo;</a>
+  </nav>
 
   <div class="error" id="statsError" style="display:none;"></div>
   <div class="stats-col">
-    <h2 class="section">Pendaftaran</h2>
+    <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
     <h2 class="section">Check-in hari-H (pemilik per pos)</h2>
     <div class="stats posts" id="statsPosts"></div>
-    <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
+    <h2 class="section">Pendaftaran Pawrade</h2>
+    <div class="stats" id="statsPawrade"></div>
   </div>
+  <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
 
   <section class="log" id="loginLog">
     <div class="log-head"><h2>Log login</h2><span class="log-pending" id="logPending"></span></div>
@@ -244,12 +250,16 @@
     try{
       var results = await Promise.all([
         fetch(API_URL + '/owners?select=companions,donation_amount,pets(id)', { headers: authHeaders() }),
-        fetch(API_URL + '/checkins?select=post', { headers: authHeaders() })
+        fetch(API_URL + '/checkins?select=post', { headers: authHeaders() }),
+        fetch(API_URL + '/pawrade_owners?select=pawrade_pets(id)', { headers: authHeaders() }),
+        fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
-      if(results[0].status === 401 || results[1].status === 401){ expired(); return; }
-      if(!results[0].ok || !results[1].ok) throw new Error('HTTP ' + (results[0].ok ? results[1].status : results[0].status));
+      if(results.some(function(r){ return r.status === 401; })){ expired(); return; }
+      if(results.some(function(r){ return !r.ok; })) throw new Error('HTTP ' + results.find(function(r){ return !r.ok; }).status);
       var owners = await results[0].json();
       var checkins = await results[1].json();
+      var pawradeOwners = await results[2].json();
+      var pawradeCheckins = await results[3].json();
       var pets = 0, companions = 0, donation = 0;
       owners.forEach(function(o){
         pets += (o.pets || []).length;
@@ -264,6 +274,8 @@
       document.getElementById('statsPosts').innerHTML = [['Reg ulang','reg_ulang'],['Pos 1','pos1'],['Pos 2','pos2'],['Pos 3','pos3']].map(function(p){
         return card(p[0], perPost[p[1]] || 0);
       }).join('');
+      var pawradePets = pawradeOwners.reduce(function(sum,o){ return sum + (o.pawrade_pets || []).length; }, 0);
+      document.getElementById('statsPawrade').innerHTML = card('Peserta', pawradeOwners.length) + card('Hewan', pawradePets) + card('Sudah check-in', pawradeCheckins.length);
       document.getElementById('updatedAt').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
       errBox.style.display = 'none';
     }catch(e){

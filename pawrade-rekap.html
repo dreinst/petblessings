@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pendaftaran masuk, Pet Blessing 2026</title>
+<title>Pendaftaran masuk, Pawrade 2026</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -127,7 +127,7 @@
 <div class="aurora"><span></span><span></span></div>
 
 <div class="login-wrap" id="loginWrap">
-  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
+  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
   <h1>Login panitia</h1>
   <p>Halaman ini khusus panitia.</p>
   <div class="field">
@@ -152,13 +152,13 @@
 <div class="wrap" id="appWrap" style="display:none;">
   <header>
     <div class="toolbar-top">
-      <a class="back" href="petblessing.html">&laquo; Kembali ke form</a>
-      <a class="back" href="pawrade-rekap.html">Rekap Pawrade &raquo;</a>
-      <span id="superLinks" style="display:none;"><a class="back" href="superadmin.html">Dashboard &raquo;</a>&nbsp;&nbsp;<a class="back" href="checkin.html">Scan check-in &raquo;</a></span>
+      <a class="back" href="pawrade.html">&laquo; Kembali ke form</a>
+      <a class="back" href="pendaftaran-masuk.html">Rekap Pet Blessing &raquo;</a>
+      <span id="superLinks" style="display:none;"><a class="back" href="superadmin.html">Dashboard &raquo;</a>&nbsp;&nbsp;<a class="back" href="pawrade-checkin.html">Scan check-in &raquo;</a></span>
       <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
     </div>
-    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
-    <h1>Pendaftaran masuk</h1>
+    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
+    <h1>Pendaftaran masuk, Pawrade</h1>
     <p>Data langsung dari database, khusus panitia yang sudah login.</p>
   </header>
 
@@ -326,7 +326,7 @@
   // --- Data ---
   async function listRegistrations(){
     var token = sessionStorage.getItem(TOKEN_KEY);
-    var res = await fetch(API_URL + '/owners?select=id,name,phone,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pets(id,name,type,has_photo,notes)&order=submitted_at.desc', {
+    var res = await fetch(API_URL + '/pawrade_owners?select=id,name,phone,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pawrade_pets(id,name,type,has_photo,notes)&order=submitted_at.desc', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if(res.status === 401){
@@ -350,7 +350,7 @@
           amount: row.donation_amount,
           hasProof: row.donation_has_proof
         },
-        pets: (row.pets || []).map(function(p){
+        pets: (row.pawrade_pets || []).map(function(p){
           return { id: p.id, name: p.name, type: p.type, hasPhoto: p.has_photo, notes: p.notes };
         }),
         submittedAt: row.submitted_at
@@ -516,7 +516,7 @@
     var saveBtn = entryEl.querySelector('[data-action="save"]');
     saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan…';
     try{
-      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(r.id), {
+      var res = await fetch(API_URL + '/pawrade_owners?id=eq.' + encodeURIComponent(r.id), {
         method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify(owner)
       });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
@@ -525,7 +525,7 @@
         var p = petsPatch[i];
         var petBody = { name: p.name, type: p.type, notes: p.notes };
         if(p.photo_base64){ petBody.photo_base64 = p.photo_base64; petBody.has_photo = p.has_photo; }
-        var pr = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(p.id), {
+        var pr = await fetch(API_URL + '/pawrade_pets?id=eq.' + encodeURIComponent(p.id), {
           method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify(petBody)
         });
         if(!pr.ok) throw new Error('data hewan (' + pr.status + ')');
@@ -545,7 +545,7 @@
     body.innerHTML = '<p>Memuat gambar…</p>';
     modal.classList.add('show');
     try{
-      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(r.id) + '&select=donation_proof_base64', { headers: authHeaders() });
+      var res = await fetch(API_URL + '/pawrade_owners?id=eq.' + encodeURIComponent(r.id) + '&select=donation_proof_base64', { headers: authHeaders() });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
       var rows = await res.json();
       var img = rows && rows[0] && rows[0].donation_proof_base64;
@@ -573,7 +573,7 @@
     try{
       var dataUrl = await compressImage(file, 1024);
       if(!dataUrl) throw new Error('gagal membaca file ini');
-      var res = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(petId), {
+      var res = await fetch(API_URL + '/pawrade_pets?id=eq.' + encodeURIComponent(petId), {
         method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ photo_base64: dataUrl, has_photo: true })
       });
@@ -595,7 +595,7 @@
     body.innerHTML = '<p>Memuat foto…</p>';
     modal.classList.add('show');
     try{
-      var res = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(petId) + '&select=photo_base64', { headers: authHeaders() });
+      var res = await fetch(API_URL + '/pawrade_pets?id=eq.' + encodeURIComponent(petId) + '&select=photo_base64', { headers: authHeaders() });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
       var rows = await res.json();
       var img = rows && rows[0] && rows[0].photo_base64;
@@ -643,7 +643,7 @@
     body.innerHTML = '<p>Memuat…</p>';
     modal.classList.add('show');
     try{
-      var res = await fetch(API_URL + '/wa_queue?owner_id=eq.' + encodeURIComponent(r.id) + '&select=qr_image_base64,status&order=created_at.desc&limit=1', { headers: authHeaders() });
+      var res = await fetch(API_URL + '/pawrade_wa_queue?owner_id=eq.' + encodeURIComponent(r.id) + '&select=qr_image_base64,status&order=created_at.desc&limit=1', { headers: authHeaders() });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
       if(!res.ok) throw new Error('HTTP ' + res.status);
       var rows = await res.json();
@@ -748,7 +748,7 @@
     XLSX.utils.book_append_sheet(wb, ws, 'Pendaftaran');
 
     var stamp = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, 'pet-blessing-2026-pendaftaran-' + stamp + '.xlsx');
+    XLSX.writeFile(wb, 'pawrade-2026-pendaftaran-' + stamp + '.xlsx');
   }
 
   document.getElementById('search').addEventListener('input', applySearch);
