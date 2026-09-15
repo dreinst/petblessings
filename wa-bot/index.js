@@ -203,9 +203,23 @@ async function sendOne(sock, row) {
   }
 }
 
-async function runWorkerLoop(sock) {
+// Satu-satunya worker loop. Dulu tiap event 'open' (termasuk setiap
+// reconnect) memulai loop baru tanpa mematikan yang lama; loop lama memegang
+// socket yang sudah mati, jadi pesan yang diambilnya gagal "Connection Closed"
+// tiga kali beruntun dan ditandai failed. Sekarang loop dimulai sekali dan
+// selalu memakai currentSock, serta menunggu kalau koneksi sedang putus.
+var currentSock = null;
+var connected = false;
+var workerStarted = false;
+
+async function runWorkerLoop() {
   var sentCount = 0;
   while (true) {
+    if (!connected || !currentSock) {
+      await sleep(5000);
+      continue;
+    }
+    var sock = currentSock;
     var row = null;
     var isFollowup = false;
     try {
@@ -235,6 +249,13 @@ async function runWorkerLoop(sock) {
       sentCount++;
       logger.info({ id: row.id }, 'terkirim');
     } catch (e) {
+      if (/connection closed/i.test(e.message)) {
+        // Socket sedang putus/tersambung ulang, bukan masalah pesannya.
+        // Jangan habiskan jatah percobaan; tunggu lalu coba lagi.
+        logger.warn({ id: row.id }, 'koneksi sedang putus, pesan ditunda 20 detik');
+        await sleep(20000);
+        continue;
+      }
       logger.error({ id: row.id, err: e.message }, 'gagal kirim, akan dicoba lagi');
       if (isFollowup) await markFollowupAttemptFailed(row.id, row.attempts, e.message);
       else await markAttemptFailed(row.id, row.attempts, e.message);
@@ -277,13 +298,19 @@ async function start() {
       });
     }
     if (connection === 'close') {
+      connected = false;
       var statusCode = new Boom(lastDisconnect && lastDisconnect.error).output.statusCode;
       var shouldReconnect = statusCode !== DisconnectReason.loggedOut;
       logger.warn({ statusCode, shouldReconnect }, 'koneksi WhatsApp terputus');
       if (shouldReconnect) start();
     } else if (connection === 'open') {
+      currentSock = sock;
+      connected = true;
       logger.info('WhatsApp bot terhubung');
-      runWorkerLoop(sock).catch((e) => logger.error({ err: e.message }, 'worker loop berhenti'));
+      if (!workerStarted) {
+        workerStarted = true;
+        runWorkerLoop().catch((e) => { workerStarted = false; logger.error({ err: e.message }, 'worker loop berhenti'); });
+      }
     }
   });
 }
