@@ -230,23 +230,25 @@
 
       <section class="block">
         <h2>Data hewan peliharaan</h2>
-        <div class="block-note">Tambahkan satu kartu untuk tiap hewan yang ikut Pet Blessing.</div>
+        <div class="block-note">Tambahkan satu kartu untuk tiap hewan yang ikut Pawrade.</div>
         <div id="petCards"></div>
         <button type="button" class="add-pet-btn" id="addPetBtn">+ Tambah hewan</button>
       </section>
 
       <section class="block">
-        <h2>Donasi</h2>
-        <div class="block-note">Donasi bersifat sukarela dan tidak memengaruhi pendaftaran.</div>
+        <h2>Biaya Pendaftaran</h2>
+        <div class="block-note">Wajib dibayar untuk mengikuti lomba Pawrade, bukan donasi sukarela.</div>
         <div class="field">
-          <label for="donationAmount">Jumlah donasi (opsional)</label>
-          <input type="text" id="donationAmount" inputmode="numeric" placeholder="Rp">
+          <label for="donationAmount">Jumlah<span class="req">*</span></label>
+          <input type="text" id="donationAmount" value="Rp 50.000" readonly>
+          <div class="field-error" id="err-donationAmount">Biaya pendaftaran Rp 50.000 wajib dibayar.</div>
         </div>
         <div class="field">
-          <label>Bukti transfer (opsional)</label>
+          <label>Bukti transfer<span class="req">*</span></label>
           <label class="file-btn"><input type="file" id="donationProof" accept="image/*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Unggah bukti transfer</span></label>
           <div class="file-preview" id="donationProofPreview" style="display:none;"></div>
-          <div class="hint">Transfer ke BCA <b>8161072001</b> a.n. Nicke Purnama Kartawiharja Kusumah</div>
+          <div class="field-error" id="err-donationProof">Bukti transfer wajib diunggah.</div>
+          <div class="hint">Transfer Rp 50.000 ke BCA <b>8161072001</b> a.n. Nicke Purnama Kartawiharja Kusumah, lalu unggah bukti transfernya di sini.</div>
         </div>
       </section>
 
@@ -254,7 +256,7 @@
         <h2>Syarat &amp; ketentuan</h2>
         <div class="checkbox-row">
           <input type="checkbox" id="agreedTos">
-          <label for="agreedTos">Dengan ini saya menyatakan mendaftarkan diri dalam acara Pet Blessing Paroki St. Vincentius a Paulo, Malang, Jawa Timur dan bersedia mengikuti syarat &amp; ketentuan yang berlaku selama acara.</label>
+          <label for="agreedTos">Dengan ini saya menyatakan mendaftarkan diri dalam lomba Pawrade, Paroki St. Vincentius a Paulo, Malang, Jawa Timur dan bersedia mengikuti syarat &amp; ketentuan yang berlaku selama acara.</label>
         </div>
         <div class="field-error" id="err-agreedTos">Mohon centang persetujuan untuk melanjutkan.</div>
         <div class="notice">Pastikan data yang diisi sudah benar, terutama nama hewan. Panitia tidak bertanggung jawab atas kesalahan penulisan setelah data disubmit.</div>
@@ -528,6 +530,11 @@
     if(hasCompanion && hasCompanion.value === 'ya' && !(parseInt(companionCount.value, 10) >= 1)){
       setError(companionCount, document.getElementById('err-companionCount'), true); ok = false;
     } else setError(companionCount, document.getElementById('err-companionCount'), false);
+
+    var donationProofInput = document.getElementById('donationProof');
+    if(!donationProofInput.files[0]){
+      setError(donationProofInput, document.getElementById('err-donationProof'), true); ok = false;
+    } else setError(donationProofInput, document.getElementById('err-donationProof'), false);
 
     pets.forEach(function(pet){
       var card = document.querySelector('.pet-card[data-id="'+pet.id+'"]');

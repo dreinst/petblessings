@@ -39,10 +39,12 @@ function validatePayload(body) {
   if (owner.is_parishioner !== 'ya' && owner.is_parishioner !== 'bukan') return 'Status umat tidak valid';
   var companions = owner.companions == null ? 0 : owner.companions;
   if (!Number.isInteger(companions) || companions < 0 || companions > 20) return 'Jumlah pendamping tidak valid';
+  // Biaya pendaftaran Pawrade WAJIB dibayar (bukan donasi sukarela seperti
+  // Pet Blessing), jadi jumlah dan bukti transfer wajib ada di sini juga --
+  // bukan cuma di client, supaya tidak bisa dilewati.
+  if (!isNonEmptyString(owner.donation_amount, 50)) return 'Jumlah biaya pendaftaran wajib diisi';
   var proof = owner.donation_proof_base64;
-  if (proof != null && proof !== '') {
-    if (typeof proof !== 'string' || proof.length > 2000000 || proof.indexOf('data:image/') !== 0) return 'Bukti transfer tidak valid';
-  }
+  if (!isNonEmptyString(proof, 2000000) || proof.indexOf('data:image/') !== 0) return 'Bukti transfer wajib diunggah';
 
   if (!Array.isArray(pets) || pets.length < 1 || pets.length > 20) return 'Data hewan tidak valid';
   for (var i = 0; i < pets.length; i++) {
