@@ -40,7 +40,12 @@
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;}
   .toolbar input{flex:1;padding:10px 12px;font-size:14px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
   .toolbar button{padding:10px 14px;font-size:13px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer;}
-  .count{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--brand-deep);margin-bottom:14px;}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
+  .stat .num{font-family:'Fraunces',serif;font-size:24px;color:var(--brand-deep);line-height:1.1;}
+  .stat .num.money{font-size:16px;}
+  .stat .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  @media (max-width:420px){ .stats{grid-template-columns:repeat(2,1fr);} }
 
   .entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
   .entry .owner{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;}
@@ -89,6 +94,10 @@
   .edit-form input,.edit-form select{width:100%;padding:9px 11px;font-size:14px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:#fff;margin-top:4px;}
   .edit-form .edit-pet{margin-top:12px;padding:10px 12px;background:var(--brand-light);border-radius:8px;}
   .edit-form .edit-pet .pet-title{font-size:12.5px;font-weight:500;color:var(--brand-deep);}
+  .edit-form .edit-photo-row{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .edit-form .edit-photo-row img{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--line);}
+  .edit-form .edit-photo-status{font-size:12px;color:var(--ink-soft);}
+  .edit-form .edit-photo-row input[type="file"]{font-size:12px;max-width:100%;}
   .edit-form .edit-error{color:#A6423A;font-size:13px;margin-top:8px;display:none;}
   .edit-form .edit-error.show{display:block;}
 
@@ -155,7 +164,7 @@
     <button type="button" class="export-btn" id="exportBtn">Export xlsx</button>
   </div>
   <div class="notice" id="notice"></div>
-  <div class="count" id="count"></div>
+  <div class="stats" id="count"></div>
 
   <div id="list"><div class="loading">Memuat pendaftaran…</div></div>
   </div>
@@ -351,7 +360,7 @@
     var list = document.getElementById('list');
     var count = document.getElementById('count');
     if(regs.length === 0){
-      count.textContent = '';
+      count.innerHTML = '';
       list.innerHTML = '<div class="empty">Belum ada pendaftaran masuk.</div>';
       return;
     }
@@ -364,7 +373,10 @@
       var digits = String((r.donation && r.donation.amount) || '').replace(/[^0-9]/g, '');
       return sum + (digits ? parseInt(digits, 10) : 0);
     }, 0);
-    count.textContent = regs.length + ' pemilik, ' + totalPets + ' hewan, ' + totalCompanions + ' pendamping, total donasi Rp' + totalDonation.toLocaleString('id-ID');
+    function statCard(label, num, cssClass){
+      return '<div class="stat"><div class="num' + (cssClass ? ' ' + cssClass : '') + '">' + num + '</div><div class="lbl">' + escapeHtml(label) + '</div></div>';
+    }
+    count.innerHTML = statCard('Pemilik', regs.length) + statCard('Hewan', totalPets) + statCard('Pendamping', totalCompanions) + statCard('Donasi', 'Rp' + totalDonation.toLocaleString('id-ID'), 'money');
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
@@ -408,13 +420,42 @@
     n.textContent = text; n.classList.add('show');
     setTimeout(function(){ n.classList.remove('show'); }, 4000);
   }
+  // Kalau pendaftar mengirim foto hewannya susulan (misal lewat WhatsApp,
+  // untuk pendaftaran dari sebelum fitur foto ada), panitia bisa
+  // melampirkannya di sini -- dikompres di browser sama seperti form
+  // publik (maks 1024 px, JPEG), baru dikirim saat Simpan ditekan.
+  var pendingPhotos = {};
+  function compressImage(file, maxSide){
+    return new Promise(function(resolve){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){
+        try{
+          var max = maxSide || 1024, w = img.width, h = img.height;
+          if(w > max || h > max){ var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        }catch(e){ resolve(null); }
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
   function renderEditForm(entryEl, r){
+    pendingPhotos = {};
     var petsHtml = r.pets.map(function(p, i){
       return '<div class="edit-pet" data-pet-id="'+escapeHtml(p.id)+'">'+
         '<div class="pet-title">Hewan '+(i+1)+'</div>'+
         '<label>Nama hewan<input data-pf="name" value="'+escapeHtml(p.name)+'"></label>'+
         '<label>Jenis hewan<input data-pf="type" value="'+escapeHtml(p.type)+'"></label>'+
         '<label>Catatan<input data-pf="notes" value="'+escapeHtml(p.notes || '')+'"></label>'+
+        '<div class="edit-photo-row">'+
+          '<span class="edit-photo-status" data-photo-status>'+(p.hasPhoto ? 'Ada tanda foto (cek dengan tombol Foto di kartu kalau gambarnya benar tersimpan). Pilih file untuk mengganti/menambah.' : 'Belum ada foto. Pilih file kalau pendaftar mengirim susulan.')+'</span>'+
+          '<input type="file" accept="image/*" data-pf-photo>'+
+        '</div>'+
         '</div>';
     }).join('');
     entryEl.innerHTML = '<div class="edit-form">'+
@@ -432,6 +473,21 @@
       '<div class="edit-error"></div>'+
       '</div>';
   }
+  document.getElementById('list').addEventListener('change', function(e){
+    if(e.target.matches('[data-pf-photo]')){
+      var petEl = e.target.closest('.edit-pet');
+      var petId = petEl.dataset.petId;
+      var statusEl = petEl.querySelector('[data-photo-status]');
+      var file = e.target.files[0];
+      if(!file){ delete pendingPhotos[petId]; return; }
+      statusEl.textContent = 'Mengompres foto…';
+      compressImage(file, 1024).then(function(dataUrl){
+        if(!dataUrl){ statusEl.textContent = 'Gagal membaca file ini, coba foto lain.'; delete pendingPhotos[petId]; return; }
+        pendingPhotos[petId] = dataUrl;
+        statusEl.textContent = 'Foto baru siap disimpan (' + Math.round(dataUrl.length / 1024) + ' KB).';
+      });
+    }
+  });
   async function saveEdit(entryEl, r){
     var errEl = entryEl.querySelector('.edit-error');
     var v = function(sel){ return entryEl.querySelector('[data-f="'+sel+'"]').value.trim(); };
@@ -443,7 +499,9 @@
     };
     var petsPatch = Array.from(entryEl.querySelectorAll('.edit-pet')).map(function(el){
       var pv = function(sel){ return el.querySelector('[data-pf="'+sel+'"]').value.trim(); };
-      return { id: el.dataset.petId, name: pv('name'), type: pv('type'), notes: pv('notes') || null };
+      var patch = { id: el.dataset.petId, name: pv('name'), type: pv('type'), notes: pv('notes') || null };
+      if(pendingPhotos[el.dataset.petId]){ patch.photo_base64 = pendingPhotos[el.dataset.petId]; patch.has_photo = true; }
+      return patch;
     });
     var problem = !owner.name ? 'Nama pemilik wajib diisi.' :
       !owner.phone ? 'Nomor HP wajib diisi.' :
@@ -461,8 +519,10 @@
       if(!res.ok) throw new Error('data pemilik (' + res.status + ')');
       for(var i = 0; i < petsPatch.length; i++){
         var p = petsPatch[i];
+        var petBody = { name: p.name, type: p.type, notes: p.notes };
+        if(p.photo_base64){ petBody.photo_base64 = p.photo_base64; petBody.has_photo = p.has_photo; }
         var pr = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(p.id), {
-          method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify({ name: p.name, type: p.type, notes: p.notes })
+          method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify(petBody)
         });
         if(!pr.ok) throw new Error('data hewan (' + pr.status + ')');
       }
