@@ -54,6 +54,7 @@
 
   h2.section{font-size:16px;color:var(--brand-deep);margin:0 0 10px;}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+  #statsPawrade{grid-template-columns:repeat(4,1fr);}
   .stats.stats-reg{grid-template-columns:repeat(4,1fr);}
   .stats.posts{grid-template-columns:repeat(4,1fr);}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
@@ -251,7 +252,7 @@
       var results = await Promise.all([
         fetch(API_URL + '/owners?select=companions,donation_amount,pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/checkins?select=post', { headers: authHeaders() }),
-        fetch(API_URL + '/pawrade_owners?select=pawrade_pets(id)', { headers: authHeaders() }),
+        fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
       if(results.some(function(r){ return r.status === 401; })){ expired(); return; }
@@ -274,8 +275,13 @@
       document.getElementById('statsPosts').innerHTML = [['Reg ulang','reg_ulang'],['Pos 1','pos1'],['Pos 2','pos2'],['Pos 3','pos3']].map(function(p){
         return card(p[0], perPost[p[1]] || 0);
       }).join('');
-      var pawradePets = pawradeOwners.reduce(function(sum,o){ return sum + (o.pawrade_pets || []).length; }, 0);
-      document.getElementById('statsPawrade').innerHTML = card('Peserta', pawradeOwners.length) + card('Hewan', pawradePets) + card('Sudah check-in', pawradeCheckins.length);
+      var pawradePets = 0, pawradeFee = 0;
+      pawradeOwners.forEach(function(o){
+        pawradePets += (o.pawrade_pets || []).length;
+        var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
+        pawradeFee += digits ? parseInt(digits, 10) : 0;
+      });
+      document.getElementById('statsPawrade').innerHTML = card('Peserta', pawradeOwners.length) + card('Hewan', pawradePets) + card('Sudah check-in', pawradeCheckins.length) + card('Biaya Terkumpul', 'Rp' + pawradeFee.toLocaleString('id-ID'), 'money');
       document.getElementById('updatedAt').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
       errBox.style.display = 'none';
     }catch(e){

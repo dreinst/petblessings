@@ -380,7 +380,7 @@
     function statCard(label, num, cssClass){
       return '<div class="stat"><div class="num' + (cssClass ? ' ' + cssClass : '') + '">' + num + '</div><div class="lbl">' + escapeHtml(label) + '</div></div>';
     }
-    count.innerHTML = statCard('Pemilik', regs.length) + statCard('Hewan', totalPets) + statCard('Pendamping', totalCompanions) + statCard('Donasi', 'Rp' + totalDonation.toLocaleString('id-ID'), 'money');
+    count.innerHTML = statCard('Pemilik', regs.length) + statCard('Hewan', totalPets) + statCard('Pendamping', totalCompanions) + statCard('Biaya Terkumpul', 'Rp' + totalDonation.toLocaleString('id-ID'), 'money');
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
@@ -391,7 +391,7 @@
         ? '<div class="origin">Dari '+escapeHtml(titleCase(r.owner.parishOrigin))+'</div>' : '';
       var companionLine = r.owner.companions > 0 ? '<div class=\"origin\">'+r.owner.companions+' pendamping</div>' : '';
       var donationLine = (r.donation && (r.donation.amount || r.donation.hasProof))
-        ? '<div class="donation-row">Donasi: '+escapeHtml(r.donation.amount || 'tanpa jumlah')+(r.donation.hasProof ? ', ada bukti transfer' : '')+'</div>' : '';
+        ? '<div class="donation-row">Biaya pendaftaran: '+escapeHtml(r.donation.amount || 'belum diisi')+(r.donation.hasProof ? ', ada bukti transfer' : ', BELUM ADA BUKTI TRANSFER')+'</div>' : '';
       var shortCode = r.id ? r.id.slice(0, 8).toUpperCase() : '';
       var actionsHtml = '<div class=\"actions\">'+
         '<button type=\"button\" data-action=\"edit\">Ubah data</button>'+
@@ -471,7 +471,7 @@
         '<option value="bukan"'+(r.owner.isParishioner === 'bukan' ? ' selected' : '')+'>Bukan</option></select></label>'+
       '<label>Asal paroki / daerah (kalau bukan umat)<input data-f="parish_origin" value="'+escapeHtml(r.owner.parishOrigin || '')+'"></label>'+
       '<label>Jumlah pendamping<input type="number" min="0" max="20" data-f="companions" value="'+escapeHtml(String(r.owner.companions || 0))+'"></label>'+
-      '<label>Donasi<input data-f="donation_amount" value="'+escapeHtml(r.donation.amount || '')+'"></label>'+
+      '<label>Biaya pendaftaran<input data-f="donation_amount" value="'+escapeHtml(r.donation.amount || '')+'"></label>'+
       petsHtml+
       '<div class="actions"><button type="button" class="primary" data-action="save">Simpan</button><button type="button" data-action="cancel">Batal</button></div>'+
       '<div class="edit-error"></div>'+
@@ -734,7 +734,7 @@
         'Jenis hewan': p ? p.type : '',
         'Ada foto': p ? (p.hasPhoto ? 'Ya' : 'Tidak') : '',
         'Catatan hewan': p ? (p.notes || '') : '',
-        'Donasi': r.donation.amount || '',
+        'Biaya pendaftaran': r.donation.amount || '',
         'Ada bukti transfer': r.donation.hasProof ? 'Ya' : 'Tidak',
         'Waktu daftar': formatTime(r.submittedAt)
       };
