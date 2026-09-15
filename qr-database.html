@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database QR, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="api-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+  :root{
+    --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
+    --brand:#00A3B8; --brand-deep:#3B1052; --brand-light:#DFF4F6;
+    --accent:#C97F1F; --accent-light:#FCE9C5; --pink:#E0357B;
+    --line:#E8DCC8; --danger:#A6423A; --danger-bg:#F6E7E5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.28;}
+  .aurora span:nth-child(1){width:320px;height:320px;top:-100px;right:-90px;background:var(--pink);opacity:.18;}
+  .aurora span:nth-child(2){width:360px;height:360px;bottom:-130px;left:-110px;background:var(--brand);opacity:.18;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 20px 64px;position:relative;z-index:1;}
+  .login-wrap{position:relative;z-index:1;}
+  a{color:var(--brand-deep);}
+  .brand-badge{width:40px;height:40px;display:block;margin:0 0 14px;}
+  .login-wrap .brand-badge{margin:0 auto 16px;}
+
+  .login-wrap{max-width:360px;margin:80px auto 0;padding:0 20px;}
+  .login-wrap h1{font-size:22px;color:var(--brand-deep);margin-bottom:6px;}
+  .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px;}
+  .login-wrap .field{margin-bottom:14px;}
+  .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
+  .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
+  .login-wrap button{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-wrap button:disabled{opacity:.6;cursor:not-allowed;}
+  .login-error{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
+  .login-error.show{display:block;}
+
+  header{margin-bottom:16px;}
+  header .top{display:flex;justify-content:space-between;align-items:center;}
+  header .who{font-size:12.5px;color:var(--ink-soft);}
+  .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
+  header h1{font-size:24px;color:var(--brand-deep);margin-top:8px;}
+  header p{font-size:13.5px;color:var(--ink-soft);margin-top:4px;}
+  a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;}
+
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .toolbar .count{font-size:13px;color:var(--ink-soft);}
+  .download-all{padding:12px 18px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
+  .download-all:disabled{opacity:.6;cursor:not-allowed;}
+  .error{background:var(--danger-bg);color:var(--danger);padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;}
+  .loading{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:14px;}
+
+  .qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .qr-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;}
+  .qr-card img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:8px;display:block;}
+  .qr-card .name{font-size:14px;font-weight:600;margin-top:10px;}
+  .qr-card .code{font-family:monospace;font-size:12px;letter-spacing:1px;color:var(--brand-deep);background:var(--brand-light);display:inline-block;padding:2px 8px;border-radius:6px;margin-top:4px;}
+  .qr-card .st{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  .qr-card .dl{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;border:1px solid var(--brand);border-radius:8px;background:var(--card);color:var(--brand-deep);text-decoration:none;font-size:12.5px;font-weight:500;}
+</style>
+</head>
+<body>
+<div class="aurora"><span></span><span></span></div>
+
+<div class="login-wrap" id="loginWrap">
+  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
+  <h1>Login superadmin</h1>
+  <p>Halaman ini khusus superadmin: mengunduh database QR seluruh pendaftar.</p>
+  <div class="field">
+    <label for="loginEmail">Username</label>
+    <input type="text" id="loginEmail" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+  </div>
+  <button type="button" id="loginBtn">Masuk</button>
+  <div class="login-error" id="loginError">Username atau password salah.</div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
+  <header>
+    <div class="top">
+      <a class="back" href="superadmin.html">&laquo; Dashboard</a>
+      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+    </div>
+    <h1>Database QR</h1>
+    <p>QR tiap pendaftar -- yang benar-benar sudah dikirim ke WhatsApp kalau ada, atau dibuat ulang (isinya sama) kalau belum.</p>
+  </header>
+
+  <div class="error" id="loadError" style="display:none;"></div>
+  <div class="toolbar">
+    <span class="count" id="count"></span>
+    <button type="button" class="download-all" id="downloadAllBtn">Unduh semua (ZIP)</button>
+  </div>
+  <div id="grid" class="qr-grid"><div class="loading">Memuat data…</div></div>
+</div>
+
+<script>
+(function(){
+  var API_URL = window.PETBLESSING_API_URL;
+  var TOKEN_KEY = 'petblessing_panitia_token';
+  if(!API_URL){
+    document.getElementById('loginWrap').innerHTML = '<div class="error">API belum dikonfigurasi. Isi api-config.js dulu.</div>';
+    return;
+  }
+  var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
+  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman ini.';
+  var items = [];
+
+  function token(){ return sessionStorage.getItem(TOKEN_KEY); }
+  function tokenLevel(){
+    try{ var p = token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))).level || null; }catch(e){ return null; }
+  }
+  function authHeaders(){ return { 'Authorization': 'Bearer ' + token() }; }
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function slug(t){ return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'pendaftar'; }
+  function buildQrDataUrl(text, size, colorDark, colorLight, correctLevel){
+    var hidden = document.createElement('div');
+    var opts = { text: text, width: size, height: size, colorDark: colorDark, colorLight: colorLight };
+    if(correctLevel !== undefined) opts.correctLevel = correctLevel;
+    new QRCode(hidden, opts);
+    var canvas = hidden.querySelector('canvas');
+    return canvas ? canvas.toDataURL('image/png') : null;
+  }
+
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'block';
+    load();
+  }
+  function showLogin(){
+    document.getElementById('appWrap').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+  function expired(){
+    sessionStorage.removeItem(TOKEN_KEY);
+    var err = document.getElementById('loginError');
+    err.textContent = 'Sesi habis, silakan login lagi.'; err.classList.add('show');
+    showLogin();
+  }
+  function checkSession(){
+    if(token() && tokenLevel() === 'superadmin'){ showApp(); return; }
+    var err = document.getElementById('loginError');
+    if(token()){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); }
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var btn = this;
+    var username = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var err = document.getElementById('loginError');
+    err.classList.remove('show'); err.textContent = LOGIN_ERR_DEFAULT;
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    try{
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !data.token){ err.textContent = data.error || LOGIN_ERR_DEFAULT; err.classList.add('show'); return; }
+      if(data.level !== 'superadmin'){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      showApp();
+    }catch(e){
+      err.classList.add('show');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Masuk';
+    }
+  });
+  ['loginEmail','loginPassword'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginBtn').click(); }
+    });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  });
+
+  // --- Muat semua pendaftar + QR (asli dari wa_queue kalau ada) ---
+  async function load(){
+    var errBox = document.getElementById('loadError');
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '<div class="loading">Memuat data…</div>';
+    errBox.style.display = 'none';
+    try{
+      var results = await Promise.all([
+        fetch(API_URL + '/owners?select=id,name&order=queue_number.asc', { headers: authHeaders() }),
+        fetch(API_URL + '/wa_queue?select=owner_id,qr_image_base64,status,created_at&order=created_at.desc', { headers: authHeaders() })
+      ]);
+      if(results[0].status === 401 || results[1].status === 401){ expired(); return; }
+      if(!results[0].ok || !results[1].ok) throw new Error('HTTP ' + (results[0].ok ? results[1].status : results[0].status));
+      var owners = await results[0].json();
+      var queue = await results[1].json();
+      // Baris wa_queue terbaru per pemilik (queue sudah diurut created_at desc).
+      var latestByOwner = {};
+      queue.forEach(function(q){ if(!latestByOwner[q.owner_id]) latestByOwner[q.owner_id] = q; });
+      items = owners.map(function(o){
+        var q = latestByOwner[o.id];
+        var shortCode = o.id.slice(0, 8).toUpperCase();
+        var img, sent;
+        if(q && q.qr_image_base64){
+          img = q.qr_image_base64; sent = true;
+        }else{
+          img = buildQrDataUrl(o.id, 512, '#000000', '#FFFFFF', QRCode.CorrectLevel.H); sent = false;
+        }
+        return {
+          id: o.id, name: o.name, shortCode: shortCode, img: img,
+          status: q ? q.status : null, sent: sent,
+          fileName: 'qr-' + shortCode.toLowerCase() + '-' + slug(o.name) + '.png'
+        };
+      });
+      renderGrid();
+      document.getElementById('count').textContent = items.length + ' pendaftar';
+    }catch(e){
+      errBox.textContent = 'Gagal memuat data: ' + e.message + '. Cek koneksi lalu muat ulang halaman.';
+      errBox.style.display = 'block';
+      grid.innerHTML = '';
+    }
+  }
+
+  function statusLabel(item){
+    if(item.status === 'sent') return 'Sudah terkirim ke WhatsApp';
+    if(item.status === 'pending') return 'Menunggu dikirim';
+    if(item.status === 'failed') return 'Gagal terkirim';
+    return 'Belum ada nomor HP / belum masuk antrian (QR dibuat ulang)';
+  }
+
+  function renderGrid(){
+    var grid = document.getElementById('grid');
+    if(!items.length){ grid.innerHTML = '<div class="loading">Belum ada pendaftaran masuk.</div>'; return; }
+    grid.innerHTML = items.map(function(item){
+      return '<div class="qr-card">'+
+        '<img src="'+item.img+'" alt="QR '+escapeHtml(item.name)+'">'+
+        '<div class="name">'+escapeHtml(item.name)+'</div>'+
+        '<div class="code">'+escapeHtml(item.shortCode)+'</div>'+
+        '<span class="st">'+escapeHtml(statusLabel(item))+'</span>'+
+        '<a class="dl" href="'+item.img+'" download="'+escapeHtml(item.fileName)+'">Unduh</a>'+
+        '</div>';
+    }).join('');
+  }
+
+  // --- Unduh semua sekaligus sebagai satu file ZIP ---
+  document.getElementById('downloadAllBtn').addEventListener('click', async function(){
+    var btn = this;
+    if(!items.length) return;
+    btn.disabled = true; btn.textContent = 'Menyiapkan ZIP…';
+    try{
+      var zip = new JSZip();
+      items.forEach(function(item){
+        var base64 = item.img.replace(/^data:image\/\w+;base64,/, '');
+        zip.file(item.fileName, base64, { base64: true });
+      });
+      var blob = await zip.generateAsync({ type: 'blob' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'qr-pet-blessing-2026-' + new Date().toISOString().slice(0, 10) + '.zip';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    }catch(e){
+      alert('Gagal membuat ZIP: ' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Unduh semua (ZIP)';
+    }
+  });
+
+  checkSession();
+})();
+</script>
+</body>
+</html>
