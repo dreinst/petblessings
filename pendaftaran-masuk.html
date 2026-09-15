@@ -49,8 +49,10 @@
   .entry .reg-code{font-size:12px;font-family:monospace;letter-spacing:1px;color:var(--brand-deep);background:var(--brand-light);display:inline-block;padding:2px 8px;border-radius:6px;margin-top:4px;}
   .entry .origin{font-size:13px;color:var(--ink-soft);margin-top:2px;}
   .pet-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
-  .pet-row{font-size:13.5px;padding:8px 10px;background:var(--brand-light);border-radius:8px;color:var(--brand-deep);}
-  .pet-row .pet-notes{display:block;color:var(--ink-soft);margin-top:2px;font-size:12.5px;}
+  .pet-row{font-size:13.5px;padding:8px 10px;background:var(--brand-light);border-radius:8px;color:var(--brand-deep);display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;}
+  .pet-row .pet-notes{display:block;width:100%;color:var(--ink-soft);margin-top:2px;font-size:12.5px;}
+  .pet-photo-btn{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;font-size:12px;font-family:inherit;border:1px solid var(--brand);border-radius:6px;background:var(--card);color:var(--brand-deep);cursor:pointer;}
+  .modal .dl-btn{display:inline-flex;align-items:center;gap:6px;margin:12px 8px 0 0;padding:10px 16px;border:1px solid var(--brand);border-radius:10px;background:var(--card);color:var(--brand-deep);text-decoration:none;font-size:14px;font-weight:500;}
   .donation-row{margin-top:10px;font-size:12.5px;color:var(--ink-soft);}
 
   .empty,.loading,.error{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:14px;}
@@ -356,7 +358,8 @@
     list.innerHTML = regs.map(function(r){
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
-        return '<div class="pet-row">'+escapeHtml(titleCase(p.name))+' &middot; '+escapeHtml(p.type)+(p.hasPhoto ? ' &middot; ada foto' : '')+notes+'</div>';
+        var photoBtn = p.hasPhoto ? '<button type="button" class="pet-photo-btn" data-action="photo" data-pet="'+escapeHtml(p.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto</button>' : '';
+        return '<div class="pet-row"><span>'+escapeHtml(titleCase(p.name))+' &middot; '+escapeHtml(p.type)+'</span>'+photoBtn+notes+'</div>';
       }).join('');
       var originLine = r.owner.isParishioner === 'bukan' && r.owner.parishOrigin
         ? '<div class="origin">Dari '+escapeHtml(titleCase(r.owner.parishOrigin))+'</div>' : '';
@@ -481,6 +484,35 @@
       body.innerHTML = '<p>Gagal memuat gambar. Cek koneksi lalu coba lagi.</p>';
     }
   }
+  // --- Foto hewan: diambil per hewan saat diminta, bisa diunduh ---
+  function slug(t){ return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'foto'; }
+  async function showPetPhoto(r, petId){
+    var pet = r.pets.find(function(p){ return p.id === petId; }) || { name: '' };
+    var modal = document.getElementById('proofModal');
+    var body = document.getElementById('proofBody');
+    document.getElementById('proofTitle').textContent = 'Foto ' + titleCase(pet.name) + ' (' + titleCase(r.owner.name) + ')';
+    body.innerHTML = '<p>Memuat foto…</p>';
+    modal.classList.add('show');
+    try{
+      var res = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(petId) + '&select=photo_base64', { headers: authHeaders() });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      var rows = await res.json();
+      var img = rows && rows[0] && rows[0].photo_base64;
+      if(img && img.indexOf('data:image/') === 0){
+        var ext = (img.match(/^data:image\/(\w+)/) || [])[1] || 'jpg';
+        if(ext === 'jpeg') ext = 'jpg';
+        var el = document.createElement('img'); el.src = img; el.alt = 'Foto ' + pet.name;
+        var dl = document.createElement('a'); dl.className = 'dl-btn'; dl.href = img;
+        dl.download = 'foto-' + slug(pet.name) + '-' + slug(r.owner.name) + '.' + ext;
+        dl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh foto';
+        body.innerHTML = ''; body.appendChild(el); body.appendChild(dl);
+      }else{
+        body.innerHTML = '<p>Tidak ada foto tersimpan. Pendaftar menandai ada foto, tetapi gambarnya tidak terunggah (misalnya mendaftar sebelum fitur ini ada).</p>';
+      }
+    }catch(e){
+      body.innerHTML = '<p>Gagal memuat foto. Cek koneksi lalu coba lagi.</p>';
+    }
+  }
   document.getElementById('proofClose').addEventListener('click', function(){ document.getElementById('proofModal').classList.remove('show'); });
   document.getElementById('proofModal').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('show'); });
   document.getElementById('list').addEventListener('click', function(e){
@@ -493,6 +525,7 @@
     else if(btn.dataset.action === 'cancel') render(currentView());
     else if(btn.dataset.action === 'save') saveEdit(entryEl, r);
     else if(btn.dataset.action === 'proof') showProof(r);
+    else if(btn.dataset.action === 'photo') showPetPhoto(r, btn.dataset.pet);
   });
   function currentView(){
     var q = document.getElementById('search').value.trim().toLowerCase();

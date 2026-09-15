@@ -7,6 +7,8 @@ Form pendaftaran untuk acara Pet Blessing 2026, Paroki St. Vincentius a Paulo, M
 - `index.html`, form pendaftaran publik. Satu pemilik bisa mendaftarkan beberapa hewan dalam satu submission (satu record pemilik, satu record per hewan, terhubung lewat ID pendaftaran). Setelah submit, tampil QR + kode pendek sebagai bukti pendaftaran (untuk di-screenshot), dan otomatis dikirim juga lewat WhatsApp.
 - `pendaftaran-masuk.html`, halaman rekap panitia (login `admin` atau `superadmin`): daftar pendaftar, ubah data, lihat bukti transfer, export `.xlsx`.
 - `superadmin.html`, dashboard superadmin: ringkasan angka (pemilik, hewan, pendamping, check-in per pos), log login panitia dengan tombol setujui/tolak login admin, tautan ke rekap dan check-in.
+- `tiket.html`, halaman publik yang terbuka kalau QR dipindai kamera HP biasa: menampilkan ulang QR (dari id di tautan) dan kode pendek, tanpa data pribadi.
+- `qr.js`, pembuat QR bersama (isi = tautan `tiket.html?id=<uuid>`, koreksi level H, logo Pet Blessing di tengah); dipakai form, halaman tiket, dan alat kirim-ulang. Halaman check-in menerima tautan itu maupun UUID polos dari QR lama.
 - `checkin.html`, halaman scan check-in hari-H (kamera live, khusus login `superadmin`) untuk 4 pos: reg ulang, pos 1-3. Ada pencarian manual (kode 8 karakter, nama, atau no. HP) untuk pemilik yang QR-nya tidak terbaca atau tidak menerima WhatsApp.
 - `api/register.js`, satu-satunya jalur menulis data pendaftaran -- verifikasi captcha (Cloudflare Turnstile) dulu sebelum insert ke database.
 - `api/login.js`, login panitia: dua akun dari env Vercel (`PANITIA_*` = admin, `SUPERADMIN_*` = superadmin), JWT membawa role Postgres `web_admin` / `web_superadmin`.
@@ -25,7 +27,7 @@ Database Postgres + PostgREST ringan (bukan Supabase, lihat `vps-db/README.md` u
 - QR check-in divalidasi format UUID ketat sebelum dipakai untuk query apapun -- data QR mentah tidak pernah dipakai langsung ke URL/DOM.
 - Halaman rekap & check-in dikunci login panitia. Dua level: `admin` (role `web_admin`: baca + ubah owners/pets) dan `superadmin` (role `web_superadmin`: semua hak admin + check-in). Batasannya berlaku di database lewat PostgREST (`vps-db/init/06-roles.sql`), bukan hanya di tampilan.
 
-Bukti transfer donasi disimpan (dikompres di browser, maks 1280 px JPEG) di kolom `owners.donation_proof_base64` dan bisa dilihat panitia di rekap. Foto hewan masih hanya dipratinjau di browser, menyusul di fase sertifikat.
+Bukti transfer donasi (maks 1280 px) dan foto hewan (maks 1024 px) dikompres di browser menjadi JPEG lalu disimpan di `owners.donation_proof_base64` dan `pets.photo_base64`. Panitia melihat bukti transfer dan melihat serta mengunduh foto hewan dari rekap, per pendaftar (kolom gambar tidak ikut di query daftar).
 
 ## Rencana eskalasi
 

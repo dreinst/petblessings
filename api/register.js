@@ -52,6 +52,9 @@ function validatePayload(body) {
     if (!isNonEmptyString(p.id, 100) || !isNonEmptyString(p.owner_id, 100)) return 'ID hewan tidak valid';
     if (!isNonEmptyString(p.name, 100)) return 'Nama hewan wajib diisi';
     if (!isNonEmptyString(p.type, 50)) return 'Jenis hewan wajib diisi';
+    if (p.photo_base64 != null && p.photo_base64 !== '') {
+      if (typeof p.photo_base64 !== 'string' || p.photo_base64.length > 2000000 || p.photo_base64.indexOf('data:image/') !== 0) return 'Foto hewan tidak valid';
+    }
     if (p.owner_id !== owner.id) return 'Data hewan tidak cocok dengan pemilik';
   }
 
@@ -138,6 +141,7 @@ module.exports = async function handler(req, res) {
         name: p.name,
         type: p.type,
         has_photo: !!p.has_photo,
+        photo_base64: p.photo_base64 || null,
         notes: p.notes || null,
       };
     }));

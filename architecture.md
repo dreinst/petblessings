@@ -49,7 +49,7 @@ Satu fungsi, `saveRegistration()`, adalah satu-satunya tempat yang bicara ke pen
 
 Fungsi ini sekarang memanggil Supabase (`supabase-js`, project terpisah dari sistem 14-agent EO/WO yang sudah berjalan, supaya dua sistem tidak saling mengganggu): insert satu baris ke `owners`, ambil `id`-nya, lalu insert N baris ke `pets` dengan `owner_id` itu. Kredensial (Project URL + anon key) ada di `supabase-config.js`, dimuat lewat `<script>` sebelum kode form. anon key aman ditaruh di sisi klien karena akses dibatasi lewat Row Level Security (lihat `supabase/schema.sql`): anon cuma boleh insert, tidak boleh membaca data pemilik/hewan lain.
 
-Bukti transfer donasi dikompres di browser (canvas, maks 1280 px, JPEG) dan disimpan sebagai data URL di kolom `owners.donation_proof_base64`; panitia melihatnya per pendaftar dari halaman rekap. Foto hewan dan pemilik masih hanya dipratinjau di browser lewat FileReader, belum diunggah. Di versi produksi, ini perlu diunggah ke Supabase Storage dan disimpan sebagai link, bukan sebagai data mentah di tabel.
+Bukti transfer donasi (maks 1280 px) dan foto hewan (maks 1024 px) dikompres di browser (canvas, JPEG) dan disimpan sebagai data URL di `owners.donation_proof_base64` dan `pets.photo_base64`; panitia melihatnya per pendaftar dari halaman rekap, dan foto hewan bisa diunduh dari sana.
 
 ### 3.3 Halaman pendaftaran masuk (sudah dibangun)
 
@@ -59,7 +59,7 @@ Ada tombol "Export xlsx" (pakai SheetJS) yang mengunduh rekap: satu baris per he
 
 ### 3.4 QR dan check-in (rencana)
 
-Satu QR dibuat per pemilik saat pendaftaran diterima, mewakili pemilik dan seluruh hewannya sekaligus. Alasan satu QR per pemilik, bukan per hewan: kalau satu keluarga membawa lima hewan dan tiap hewan punya QR sendiri, itu berarti lima kali scan di tiap titik. Dengan satu QR per pemilik, cukup satu kali scan di tiap titik, sementara data tiap hewan tetap tersimpan terpisah di baliknya untuk kebutuhan sertifikat nanti.
+Satu QR dibuat per pemilik saat pendaftaran diterima, mewakili pemilik dan seluruh hewannya sekaligus. Isi QR adalah tautan `https://petblessings.vercel.app/tiket.html?id=<uuid pemilik>` (bukan UUID polos), supaya kamera HP biasa menawarkan membuka tautan; halaman check-in mengambil UUID dari tautan itu, dan tetap menerima QR lama berisi UUID polos. QR dibuat di browser lewat `qr.js` (qrcodejs, koreksi level H, logo Pet Blessing di tengah). Alasan satu QR per pemilik, bukan per hewan: kalau satu keluarga membawa lima hewan dan tiap hewan punya QR sendiri, itu berarti lima kali scan di tiap titik. Dengan satu QR per pemilik, cukup satu kali scan di tiap titik, sementara data tiap hewan tetap tersimpan terpisah di baliknya untuk kebutuhan sertifikat nanti.
 
 Ada 4 titik scan: reg ulang saat kedatangan, lalu tiga pos. Tiap titik pakai laptop atau tablet dengan kamera bawaan lewat browser biasa, tidak perlu alat scanner khusus atau aplikasi terinstal.
 
