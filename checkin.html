@@ -184,6 +184,10 @@
   var scanning = false;
   var paused = false;
   var stream = null;
+  var barcodeDetector = null;
+  if('BarcodeDetector' in window){
+    try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }catch(e){ barcodeDetector = null; }
+  }
 
   function token(){ return sessionStorage.getItem(TOKEN_KEY); }
   // Level akun dibaca dari isi JWT (klaim "level"), tanpa verifikasi di
@@ -284,11 +288,12 @@
       return;
     }
     try{
+      var wantRes = { width: { ideal: 1920 }, height: { ideal: 1080 } };
       try{
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ facingMode: 'environment' }, wantRes) });
       }catch(e){
         // Perangkat tanpa kamera belakang (laptop/Mac) -- pakai kamera apa saja yang ada.
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: wantRes });
       }
       video.srcObject = stream;
       await video.play();
@@ -305,35 +310,48 @@
     if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
   }
 
-  function scanLoop(){
+  async function scanLoop(){
     if(!scanning) return;
     var video = document.getElementById('video');
-    var canvas = document.getElementById('hiddenCanvas');
     if(video.readyState === video.HAVE_ENOUGH_DATA && !paused){
-      var w = video.videoWidth, h = video.videoHeight;
-      canvas.width = w;
-      canvas.height = h;
-      var ctx = canvas.getContext('2d');
-
-      ctx.drawImage(video, 0, 0, w, h);
-      var imageData = ctx.getImageData(0, 0, w, h);
-      var code = jsQR(imageData.data, w, h);
-
-      if(!code){
-        // Kamera depan (termasuk webcam laptop) sering mengirim gambar yang
-        // sudah di-mirror -- QR code tidak terbaca kalau di-mirror (beda
-        // dengan wajah manusia yang tetap kebaca walau kebalik). Coba lagi
-        // versi yang di-flip balik sebelum menyerah di frame ini.
-        ctx.save();
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, -w, 0, w, h);
-        ctx.restore();
-        var flippedData = ctx.getImageData(0, 0, w, h);
-        code = jsQR(flippedData.data, w, h);
+      var handled = false;
+      if(barcodeDetector){
+        try{
+          var codes = await barcodeDetector.detect(video);
+          if(codes && codes.length && codes[0].rawValue){ handleScan(codes[0].rawValue); handled = true; }
+        }catch(e){
+          // Detektor native gagal/format tidak didukung sepenuhnya -- pindah
+          // permanen ke jsQR untuk sisa sesi ini.
+          barcodeDetector = null;
+        }
       }
+      if(!handled && !barcodeDetector){
+        var canvas = document.getElementById('hiddenCanvas');
+        var w = video.videoWidth, h = video.videoHeight;
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
 
-      if(code && code.data){
-        handleScan(code.data);
+        ctx.drawImage(video, 0, 0, w, h);
+        var imageData = ctx.getImageData(0, 0, w, h);
+        var code = jsQR(imageData.data, w, h);
+
+        if(!code){
+          // Kamera depan (termasuk webcam laptop) sering mengirim gambar yang
+          // sudah di-mirror -- QR code tidak terbaca kalau di-mirror (beda
+          // dengan wajah manusia yang tetap kebaca walau kebalik). Coba lagi
+          // versi yang di-flip balik sebelum menyerah di frame ini.
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, -w, 0, w, h);
+          ctx.restore();
+          var flippedData = ctx.getImageData(0, 0, w, h);
+          code = jsQR(flippedData.data, w, h);
+        }
+
+        if(code && code.data){
+          handleScan(code.data);
+        }
       }
     }
     requestAnimationFrame(scanLoop);
