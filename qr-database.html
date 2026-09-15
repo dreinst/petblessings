@@ -96,7 +96,7 @@
       <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
     </div>
     <h1>Database QR</h1>
-    <p>QR tiap pendaftar -- yang benar-benar sudah dikirim ke WhatsApp kalau ada, atau dibuat ulang (isinya sama) kalau belum.</p>
+    <p>QR tiap pendaftar -- yang benar-benar sudah dikirim ke WhatsApp kalau ada, atau dibuat ulang (isinya sama) kalau belum. Memuat ulang sendiri tiap 15 detik.</p>
   </header>
 
   <div class="error" id="loadError" style="display:none;"></div>
@@ -140,12 +140,16 @@
     return canvas ? canvas.toDataURL('image/png') : null;
   }
 
+  var refreshTimer = null;
   function showApp(){
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
     load();
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(load, 15000);
   }
   function showLogin(){
+    clearInterval(refreshTimer);
     document.getElementById('appWrap').style.display = 'none';
     document.getElementById('loginWrap').style.display = 'block';
   }
@@ -192,6 +196,7 @@
     });
   });
   document.getElementById('logoutBtn').addEventListener('click', function(){
+    clearInterval(refreshTimer);
     sessionStorage.removeItem(TOKEN_KEY);
     showLogin();
   });
