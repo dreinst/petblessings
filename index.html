@@ -12,7 +12,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="qr.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root{
@@ -558,6 +557,15 @@
   })();
 
 
+  function buildQrDataUrl(text, size, colorDark, colorLight, correctLevel){
+    var hidden = document.createElement('div');
+    var opts = { text: text, width: size, height: size, colorDark: colorDark, colorLight: colorLight };
+    if(correctLevel !== undefined) opts.correctLevel = correctLevel;
+    new QRCode(hidden, opts);
+    var canvas = hidden.querySelector('canvas');
+    return canvas ? canvas.toDataURL('image/png') : null;
+  }
+
   async function submitRegistration(registration){
     if(!API_URL) throw new Error('API belum dikonfigurasi (lihat api-config.js)');
     var turnstileToken = (typeof turnstile !== 'undefined' && turnstileWidgetId !== null)
@@ -582,8 +590,7 @@
     var waQueuePayload = null;
     if(registration.owner.phone){
       var petSummary = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
-      // Hitam-putih 512 px untuk dikirim bot WA (sebagai dokumen PNG), isi = tautan tiket, logo di tengah.
-      var qrForWa = await PetQr.build(ownerId, 512, '#000000', '#FFFFFF');
+      var qrForWa = buildQrDataUrl(ownerId, 512, '#000000', '#FFFFFF', QRCode.CorrectLevel.H);
       if(qrForWa){
         waQueuePayload = {
           id: crypto.randomUUID(),
@@ -699,11 +706,7 @@
     document.getElementById('confirmQrCode').textContent = shortCode;
     qrBox.innerHTML = '';
     try{
-      var qrDataUrl = await PetQr.build(ownerId, 200, '#3B1052', '#FFFDF8');
-      if(!qrDataUrl) throw new Error('QR gagal dibuat');
-      var qrImg = document.createElement('img');
-      qrImg.src = qrDataUrl; qrImg.alt = 'QR pendaftaran'; qrImg.width = 200; qrImg.height = 200;
-      qrBox.appendChild(qrImg);
+      new QRCode(qrBox, { text: ownerId, width: 200, height: 200, colorDark: '#3B1052', colorLight: '#FFFDF8' });
     }catch(e){
       qrBox.style.display = 'none';
     }
