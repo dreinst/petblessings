@@ -29,20 +29,25 @@
   ];
 
   var CSS = [
-    // Mobile dulu: baris 1 = peran + Keluar, baris 2 = tombol halaman dalam 2 kolom.
-    // Di layar lebar (>=720px) semua tombol jadi satu baris, Keluar di ujung kanan.
-    '.pnav{position:sticky;top:0;z-index:30;display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:-8px -4px 18px;padding:10px 4px;background:rgba(251,243,231,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line,#E8DCC8);}',
-    '.pnav-role{order:1;font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--brand-deep,#3B1052);background:var(--brand-light,#DFF4F6);padding:6px 10px;border-radius:999px;white-space:nowrap;}',
-    '.pnav-logout{order:2;margin-left:auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid var(--line,#E8DCC8);border-radius:12px;background:transparent;color:var(--danger,#A6423A);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:background .18s ease,border-color .18s ease;}',
-    '.pnav-items{order:3;flex:1 1 100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}',
-    '.pnav-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 12px;border:1px solid var(--line,#E8DCC8);border-radius:12px;background:var(--card,#FFFDF8);color:var(--ink,#2A2024);font-family:inherit;font-size:13.5px;font-weight:500;line-height:1.2;text-decoration:none;cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;}',
+    // Baris 1 selalu: peran di kiri, Keluar di kanan. Baris 2 selalu: grid
+    // tombol halaman. Jumlah kolom dikunci ke 2, 3, atau 6 (bukan auto-fit
+    // bebas) supaya baris terakhir selalu penuh, tidak pernah menyisakan
+    // satu tombol sendirian di baris pincang.
+    '.pnav{position:sticky;top:0;z-index:30;display:flex;flex-direction:column;gap:10px;margin:-8px -4px 18px;padding:10px 4px 14px;background:rgba(251,243,231,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line,#E8DCC8);container-type:inline-size;container-name:pnav;}',
+    '.pnav-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}',
+    '.pnav-role{font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--brand-deep,#3B1052);background:var(--brand-light,#DFF4F6);padding:6px 10px;border-radius:999px;white-space:nowrap;}',
+    '.pnav-logout{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid var(--line,#E8DCC8);border-radius:12px;background:transparent;color:var(--danger,#A6423A);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:background .18s ease,border-color .18s ease;}',
+    '.pnav-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}',
+    '@container pnav (min-width:460px){.pnav-items{grid-template-columns:repeat(3,minmax(0,1fr));}}',
+    '@container pnav (min-width:920px){.pnav-items{grid-template-columns:repeat(6,minmax(0,1fr));}}',
+    '.pnav-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 12px;border:1px solid var(--line,#E8DCC8);border-radius:12px;background:var(--card,#FFFDF8);color:var(--ink,#2A2024);font-family:inherit;font-size:13.5px;font-weight:500;line-height:1.2;text-decoration:none;cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;}',
     '.pnav-btn svg,.pnav-logout svg{width:18px;height:18px;flex:none;}',
     '.pnav-btn:hover{background:var(--brand-light,#DFF4F6);border-color:var(--brand,#00A3B8);}',
     '.pnav-btn:active{transform:scale(.97);}',
     '.pnav-btn.active{background:var(--brand-deep,#3B1052);border-color:var(--brand-deep,#3B1052);color:#fff;}',
     '.pnav-btn:focus-visible,.pnav-logout:focus-visible{outline:3px solid var(--brand,#00A3B8);outline-offset:2px;}',
     '.pnav-logout:hover{background:var(--danger-bg,#F6E7E5);border-color:var(--danger,#A6423A);}',
-    '@media (min-width:720px){.pnav-items{order:2;flex:1 1 auto;display:flex;flex-wrap:wrap;}.pnav-logout{order:3;}.pnav-btn{padding:10px 14px;}}',
+    '@media (min-width:720px){.pnav-btn{padding:10px 14px;}}',
     '@media (prefers-reduced-motion:reduce){.pnav-btn,.pnav-logout{transition:none;}.pnav-btn:active{transform:none;}}'
   ].join('\n');
 
@@ -60,14 +65,16 @@
     var items = ITEMS.filter(function(i){ return !i.level || i.level === lv; });
     mount.innerHTML =
       '<nav class="pnav" aria-label="Navigasi panitia">' +
-        '<span class="pnav-role">' + (lv === 'superadmin' ? 'Superadmin' : 'Admin') + '</span>' +
+        '<div class="pnav-top">' +
+          '<span class="pnav-role">' + (lv === 'superadmin' ? 'Superadmin' : 'Admin') + '</span>' +
+          '<button type="button" class="pnav-logout" id="pnavLogout">' + ICON.logout + '<span>Keluar</span></button>' +
+        '</div>' +
         '<div class="pnav-items">' +
           items.map(function(i){
             var active = i.href === here;
             return '<a class="pnav-btn' + (active ? ' active' : '') + '" href="' + i.href + '"' + (active ? ' aria-current="page"' : '') + '>' + ICON[i.icon] + '<span>' + i.label + '</span></a>';
           }).join('') +
         '</div>' +
-        '<button type="button" class="pnav-logout" id="pnavLogout">' + ICON.logout + '<span>Keluar</span></button>' +
       '</nav>';
     document.getElementById('pnavLogout').addEventListener('click', function(){
       var pageLogout = document.getElementById('logoutBtn');
