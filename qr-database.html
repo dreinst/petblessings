@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
+<script src="panitia-nav.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
@@ -90,10 +91,10 @@
 </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
+  <div id="panitiaNav"></div>
   <header>
     <div class="top">
-      <a class="back" href="superadmin.html">&laquo; Dashboard</a>
-      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+      <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
     <h1>Database QR</h1>
     <p>QR tiap pendaftar -- yang benar-benar sudah dikirim ke WhatsApp kalau ada, atau dibuat ulang (isinya sama) kalau belum. Memuat ulang sendiri tiap 15 detik.</p>
@@ -142,6 +143,7 @@
 
   var refreshTimer = null;
   function showApp(){
+    if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
     load();

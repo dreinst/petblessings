@@ -13,11 +13,14 @@ Sistem ini terdiri dari beberapa halaman web, untuk dua acara: Pet Blessing dan 
 | Rekap Pawrade | https://petblessings.vercel.app/pawrade-rekap.html | Admin dan superadmin |
 | Dashboard superadmin | https://petblessings.vercel.app/superadmin.html | Superadmin saja |
 | Check-in Pet Blessing | https://petblessings.vercel.app/checkin.html | Superadmin saja |
-| Check-in Pawrade | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
+| Reg ulang Pawrade | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
+| Database QR | https://petblessings.vercel.app/qr-database.html | Superadmin saja |
 
 Prinsip dasarnya: satu pendaftaran untuk satu pemilik, berapa pun jumlah hewannya. Pemilik mendapat satu QR yang mewakili dirinya dan semua hewannya. Di hari acara, QR itu di-scan saat check-in.
 
-Panduan di bawah ini ditulis untuk Pet Blessing, tapi berlaku sama persis untuk Pawrade -- form, rekap, dan cara kerjanya identik, cuma dialamat berbeda dan datanya terpisah. Bedanya cuma dua: form Pawrade punya blok info "Kriteria Penilaian" di atas form, dan check-in Pawrade cuma satu titik scan (tanpa pilihan pos seperti Reg ulang/Pos 1-3).
+Panduan di bawah ini ditulis untuk Pet Blessing, tapi berlaku sama persis untuk Pawrade. Form, rekap, dan cara kerjanya identik, cuma alamatnya berbeda dan datanya terpisah. Bedanya cuma dua: form Pawrade punya blok info "Kriteria Penilaian" di atas form, dan Pawrade hanya punya satu titik scan, yaitu **Reg ulang** (tidak ada Pos 1 sampai 3 seperti Pet Blessing).
+
+Semua halaman panitia memakai bilah navigasi yang sama di bagian atas: deretan tombol (bukan tautan teks) yang berisi chip level akun, tombol **Keluar** di kanan, dan tombol ke tiap halaman. Tombol halaman yang sedang dibuka berwarna ungu tua. Admin hanya melihat tombol Rekap Pet Blessing dan Rekap Pawrade; superadmin melihat semuanya: Dashboard, kedua rekap, Check-in Pet Blessing, Reg ulang Pawrade, dan Database QR. Karena sesi login dibagi antar halaman di browser yang sama, pindah halaman lewat tombol ini tidak perlu login lagi.
 
 ---
 
@@ -124,7 +127,7 @@ Export selalu mengambil seluruh data, bukan hanya hasil pencarian yang sedang ta
 - Halaman rekap tidak menampilkan status check-in. Jumlah yang sudah hadir dilihat di dashboard superadmin atau di halaman check-in, per pos.
 - Pesan "Sesi habis, silakan login lagi" berarti 12 jam sudah lewat. Login ulang saja.
 - Pesan "Belum bisa memuat data" biasanya soal koneksi internet. Cek koneksi lalu tekan Muat ulang.
-- Tautan **Dashboard** dan **Scan check-in** di bagian atas hanya tampil untuk superadmin. Admin tidak melihat tautan itu dan memang tidak bisa membuka dua halaman tersebut.
+- Tombol **Dashboard**, **Check-in Pet Blessing**, **Reg ulang Pawrade**, dan **Database QR** di bilah navigasi atas hanya tampil untuk superadmin. Admin tidak melihat tombol itu dan memang tidak bisa membuka halaman tersebut.
 
 ---
 
@@ -134,9 +137,9 @@ Halaman: https://petblessings.vercel.app/superadmin.html
 
 Hanya akun superadmin yang bisa masuk; akun admin ditolak dengan pesan yang jelas. Isinya:
 
-- Dua tombol besar ke **Rekap pendaftaran** dan **Scan check-in**. Karena sesi login dibagi antar halaman di browser yang sama, tidak perlu login lagi di sana.
-- Ringkasan pendaftaran: jumlah pemilik, hewan, dan pendamping.
-- Ringkasan check-in hari-H: jumlah pemilik yang sudah scan di Reg ulang, Pos 1, Pos 2, dan Pos 3. Ini cara termudah memantau antrean dari mana saja saat acara.
+- Bilah navigasi tombol di bagian atas menuju semua halaman panitia. Karena sesi login dibagi antar halaman di browser yang sama, tidak perlu login lagi di sana.
+- Ringkasan pendaftaran Pet Blessing dan Pawrade: jumlah pemilik, hewan, pendamping, dan total donasi atau biaya yang masuk.
+- Ringkasan check-in hari-H: jumlah pemilik Pet Blessing yang sudah scan di Reg ulang, Pos 1, Pos 2, dan Pos 3, serta jumlah peserta Pawrade yang sudah reg ulang. Ini cara termudah memantau antrean dari mana saja saat acara.
 - Panel **Log login** dengan tombol Setujui, Tolak, dan Cabut untuk login admin, seperti dijelaskan di Bagian 2.
 
 Semua angka dan log memuat ulang sendiri tiap 15 detik; tombol **Muat ulang** memaksa pembaruan segera.
@@ -187,7 +190,7 @@ Di bawah kotak kamera ada bagian **Tanpa QR? Cari manual**. Dipakai kalau QR pem
 - QR tidak ada sama sekali, atau tetap tidak terbaca setelah dicoba: pakai pencarian manual di bawah kotak kamera (lihat bagian di atas).
 - Kamera tidak muncul: cek izin kamera di pengaturan browser, lalu muat ulang halaman. Pesan "Library pembaca QR gagal dimuat" berarti koneksi internet terputus saat halaman dibuka. Sambungkan lagi lalu muat ulang.
 - Halaman tiba-tiba kembali ke layar login: sesi 12 jam habis. Login lagi sebagai superadmin, pilihan pos tetap tersimpan.
-- Tautan **Dashboard** di kiri atas kembali ke dashboard superadmin tanpa login ulang.
+- Tombol **Dashboard** di bilah navigasi atas kembali ke dashboard superadmin tanpa login ulang.
 
 ### Urutan hari-H
 

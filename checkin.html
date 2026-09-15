@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="api-config.js"></script>
+<script src="panitia-nav.js"></script>
 <style>
   :root{
     --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
@@ -124,13 +125,13 @@
 </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
+  <div id="panitiaNav"></div>
   <header>
     <div class="top">
-      <a class="back" href="superadmin.html">&laquo; Dashboard</a>
-      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+      <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
-    <h1>Check-in hari-H</h1>
+    <h1>Check-in Pet Blessing</h1>
   </header>
 
   <div class="post-select" id="postSelect">
@@ -199,6 +200,7 @@
   var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman check-in. Akun admin cukup untuk halaman rekap.';
 
   function showApp(){
+    if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
     setPost(currentPost);

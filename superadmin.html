@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
+<script src="panitia-nav.js"></script>
 <style>
   :root{
     --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
@@ -60,7 +61,7 @@
   .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
   .stat .num{font-family:'Fraunces',serif;font-size:28px;color:var(--brand-deep);line-height:1.1;}
   .stat .num.money{font-size:19px;}
-  .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .stat .lbl{font-size:12.5px;color:var(--ink-soft);margin-top:4px;line-height:1.35;}
   .refresh-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-soft);margin-bottom:18px;}
   .refresh-line button{padding:8px 12px;font-size:12.5px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;}
   .error{background:var(--danger-bg);color:var(--danger);padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;}
@@ -87,7 +88,7 @@
     .wrap{max-width:960px;}
     #appWrap{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start;}
     #appWrap > header,
-    #appWrap > .nav,
+    #appWrap > #panitiaNav,
     #appWrap > .error{grid-column:1 / -1;}
     .stats-col{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;}
     .log{align-self:start;}
@@ -114,31 +115,22 @@
 </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
+  <div id="panitiaNav"></div>
   <header>
     <div class="top">
-      <span class="who">Masuk sebagai superadmin</span>
-      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+      
+      <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
     <h1>Dashboard superadmin</h1>
     <p>Angka langsung dari database, memuat ulang sendiri tiap 15 detik.</p>
   </header>
 
-  <nav class="nav">
-    <a href="pendaftaran-masuk.html">Rekap pendaftaran &raquo;</a>
-    <a href="checkin.html">Scan check-in &raquo;</a>
-    <a href="qr-database.html">Database QR &raquo;</a>
-  </nav>
-  <nav class="nav">
-    <a href="pawrade-rekap.html">Rekap Pawrade &raquo;</a>
-    <a href="pawrade-checkin.html">Check-in Pawrade &raquo;</a>
-  </nav>
-
   <div class="error" id="statsError" style="display:none;"></div>
   <div class="stats-col">
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
-    <h2 class="section">Check-in hari-H (pemilik per pos)</h2>
+    <h2 class="section">Check-in Pet Blessing (pemilik per pos)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <h2 class="section">Pendaftaran Pawrade</h2>
     <div class="stats" id="statsPawrade"></div>
@@ -184,6 +176,7 @@
 
   // --- Login gate (superadmin saja) ---
   function showApp(){
+    if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
     clearInterval(timer);
@@ -281,7 +274,7 @@
         var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
         pawradeFee += digits ? parseInt(digits, 10) : 0;
       });
-      document.getElementById('statsPawrade').innerHTML = card('Peserta', pawradeOwners.length) + card('Hewan', pawradePets) + card('Sudah check-in', pawradeCheckins.length) + card('Biaya Terkumpul', 'Rp' + pawradeFee.toLocaleString('id-ID'), 'money');
+      document.getElementById('statsPawrade').innerHTML = card('Peserta', pawradeOwners.length) + card('Hewan', pawradePets) + card('Sudah reg ulang', pawradeCheckins.length) + card('Biaya Terkumpul', 'Rp' + pawradeFee.toLocaleString('id-ID'), 'money');
       document.getElementById('updatedAt').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
       errBox.style.display = 'none';
     }catch(e){

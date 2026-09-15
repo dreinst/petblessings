@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Check-in, Pawrade 2026</title>
+<title>Reg ulang, Pawrade 2026</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="api-config.js"></script>
+<script src="panitia-nav.js"></script>
 <style>
   :root{
     --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
@@ -106,7 +107,7 @@
 <div class="login-wrap" id="loginWrap">
   <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
   <h1>Login panitia</h1>
-  <p>Halaman ini khusus superadmin untuk scan check-in lomba Pawrade.</p>
+  <p>Halaman ini khusus superadmin untuk scan QR reg ulang peserta lomba Pawrade.</p>
   <div class="field">
     <label for="loginEmail">Username</label>
     <input type="text" id="loginEmail" autocomplete="username">
@@ -120,13 +121,13 @@
 </div>
 
 <div class="wrap" id="appWrap" style="display:none;">
+  <div id="panitiaNav"></div>
   <header>
     <div class="top">
-      <a class="back" href="superadmin.html">&laquo; Dashboard</a>
-      <button type="button" class="logout-btn" id="logoutBtn">Keluar</button>
+      <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
-    <h1>Check-in lomba Pawrade</h1>
+    <h1>Reg ulang Pawrade</h1>
   </header>
 
   <div class="count" id="postCount"></div>
@@ -140,7 +141,7 @@
 
   <section class="manual">
     <h2>Tanpa QR? Cari manual</h2>
-    <p>Untuk peserta yang QR-nya tidak terbaca atau tidak menerima WhatsApp. Cari, lalu tekan namanya untuk check-in.</p>
+    <p>Untuk peserta yang QR-nya tidak terbaca atau tidak menerima WhatsApp. Cari, lalu tekan namanya untuk reg ulang.</p>
     <form id="manualForm" autocomplete="off">
       <input type="text" id="manualQuery" placeholder="Kode 8 karakter, nama, atau no. HP">
       <button type="submit">Cari</button>
@@ -187,6 +188,7 @@
   var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman check-in. Akun admin cukup untuk halaman rekap.';
 
   function showApp(){
+    if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
     loadCount();
@@ -251,7 +253,7 @@
       });
       var contentRange = res.headers.get('content-range');
       var total = contentRange ? contentRange.split('/')[1] : (await res.json()).length;
-      el.textContent = total + ' peserta sudah check-in';
+      el.textContent = total + ' peserta sudah reg ulang';
     }catch(e){ el.textContent = ''; }
   }
 
@@ -371,10 +373,10 @@
       });
 
       if(checkinRes.status === 201){
-        renderResult('ok', owner, 'Check-in berhasil.');
+        renderResult('ok', owner, 'Reg ulang berhasil.');
         loadCount();
       } else if(checkinRes.status === 409){
-        renderResult('warn', owner, 'Sudah check-in sebelumnya.');
+        renderResult('warn', owner, 'Sudah reg ulang sebelumnya.');
       } else {
         renderResult('err', owner, 'Gagal menyimpan check-in (' + checkinRes.status + ').');
       }
@@ -471,7 +473,7 @@
     icon.textContent = kind === 'ok' ? '✓' : (kind === 'warn' ? '!' : '✕');
 
     var title = document.getElementById('resultTitle');
-    title.textContent = kind === 'ok' ? 'Check-in berhasil' : (kind === 'warn' ? 'Sudah check-in' : 'Tidak valid');
+    title.textContent = kind === 'ok' ? 'Reg ulang berhasil' : (kind === 'warn' ? 'Sudah reg ulang' : 'Tidak valid');
 
     var body = document.getElementById('resultBody');
     if(!owner){
