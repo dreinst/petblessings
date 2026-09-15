@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="qr.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root{
@@ -125,7 +126,7 @@
   .confirm-wrap .again-btn{margin-top:24px;background:none;border:1px solid var(--brand);color:var(--brand-deep);padding:10px 18px;border-radius:10px;font-family:inherit;font-size:14px;cursor:pointer;}
 
   .qr-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 18px;margin-top:16px;text-align:center;}
-  .qr-card .qr-box{width:180px;height:180px;margin:0 auto;display:flex;align-items:center;justify-content:center;}
+  .qr-card .qr-box{width:200px;height:200px;margin:0 auto;display:flex;align-items:center;justify-content:center;}
   .qr-card .qr-box img{width:100%;height:100%;}
   .qr-card .qr-code{margin-top:12px;font-family:'Work Sans',monospace;font-size:15px;font-weight:600;letter-spacing:1.5px;color:var(--brand-deep);}
   .qr-card .qr-hint{margin-top:10px;font-size:12.5px;color:var(--ink-soft);}
@@ -136,6 +137,7 @@
   .site-footer p{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 14px;}
   .site-footer .ig-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--brand-deep);font-size:13px;font-weight:500;text-decoration:none;transition:.15s ease;}
   .site-footer .ig-btn:hover{background:var(--brand-light);border-color:var(--brand);}
+  .site-footer .footer-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 
 </style>
 </head>
@@ -270,10 +272,16 @@
   <footer class="site-footer">
     <img src="assets/dpro-logo.svg" alt="D'Production" class="footer-logo">
     <p>Made by dreinst, organized by D'Production Event Organizer</p>
-    <a class="ig-btn" href="https://instagram.com/dpro.duction" target="_blank" rel="noopener">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-      @dpro.duction
-    </a>
+    <div class="footer-links">
+      <a class="ig-btn" href="https://instagram.com/dpro.duction" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        @dpro.duction
+      </a>
+      <a class="ig-btn" href="https://www.instagram.com/petblessing.svapm/" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        @petblessing.svapm
+      </a>
+    </div>
   </footer>
 </div>
 
@@ -284,7 +292,7 @@
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
 
-  function newPet(){ return { id: uid(), name:'', type:'', typeOther:'', notes:'', photoPreview:null, photoName:null }; }
+  function newPet(){ return { id: uid(), name:'', type:'', typeOther:'', notes:'', photoPreview:null, photoName:null, photoDataUrl:null }; }
 
   function renderPetCards(){
     var wrap = document.getElementById('petCards');
@@ -365,6 +373,10 @@
           renderPetCards();
         };
         reader.readAsDataURL(file);
+        // Versi terkompres (maks 1024 px, JPEG) yang dikirim ke server, supaya
+        // panitia bisa melihat dan mengunduh foto hewan dari rekap.
+        pet.photoDataUrl = null;
+        compressImage(file, 1024).then(function(dataUrl){ pet.photoDataUrl = dataUrl; });
       }
     }
   });
@@ -379,7 +391,7 @@
       renderPetCards();
     }
     if(action === 'removePhoto'){
-      pet.photoPreview = null; pet.photoName = null;
+      pet.photoPreview = null; pet.photoName = null; pet.photoDataUrl = null;
       renderPetCards();
     }
   });
@@ -423,13 +435,13 @@
   // (maks 1280 px, JPEG), supaya panitia bisa mengecek bukti transfer di
   // rekap tanpa membebani database dengan foto ukuran asli.
   var donationProofDataUrl = null;
-  function compressImage(file){
+  function compressImage(file, maxSide){
     return new Promise(function(resolve){
       var url = URL.createObjectURL(file);
       var img = new Image();
       img.onload = function(){
         try{
-          var max = 1280, w = img.width, h = img.height;
+          var max = maxSide || 1280, w = img.width, h = img.height;
           if(w > max || h > max){ var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
           var canvas = document.createElement('canvas');
           canvas.width = w; canvas.height = h;
@@ -545,14 +557,6 @@
     render();
   })();
 
-  function buildQrDataUrl(text, size, colorDark, colorLight, correctLevel){
-    var hidden = document.createElement('div');
-    var opts = { text: text, width: size, height: size, colorDark: colorDark, colorLight: colorLight };
-    if(correctLevel !== undefined) opts.correctLevel = correctLevel;
-    new QRCode(hidden, opts);
-    var canvas = hidden.querySelector('canvas');
-    return canvas ? canvas.toDataURL('image/png') : null;
-  }
 
   async function submitRegistration(registration){
     if(!API_URL) throw new Error('API belum dikonfigurasi (lihat api-config.js)');
@@ -570,14 +574,16 @@
         name: p.name,
         type: p.type,
         has_photo: p.hasPhoto,
+        photo_base64: p.photoDataUrl || null,
         notes: p.notes || null
-      };
+        };
     });
 
     var waQueuePayload = null;
     if(registration.owner.phone){
       var petSummary = registration.pets.map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
-      var qrForWa = buildQrDataUrl(ownerId, 512, '#000000', '#FFFFFF', QRCode.CorrectLevel.H);
+      // Hitam-putih 512 px untuk dikirim bot WA (sebagai dokumen PNG), isi = tautan tiket, logo di tengah.
+      var qrForWa = await PetQr.build(ownerId, 512, '#000000', '#FFFFFF');
       if(qrForWa){
         waQueuePayload = {
           id: crypto.randomUUID(),
@@ -652,6 +658,7 @@
           name: p.name.trim(),
           type: p.type === 'Lainnya' ? p.typeOther.trim() : p.type,
           hasPhoto: !!p.photoPreview,
+          photoDataUrl: p.photoDataUrl || null,
           notes: p.notes.trim()
         };
       }),
@@ -692,7 +699,11 @@
     document.getElementById('confirmQrCode').textContent = shortCode;
     qrBox.innerHTML = '';
     try{
-      new QRCode(qrBox, { text: ownerId, width: 180, height: 180, colorDark: '#3B1052', colorLight: '#FFFDF8' });
+      var qrDataUrl = await PetQr.build(ownerId, 200, '#3B1052', '#FFFDF8');
+      if(!qrDataUrl) throw new Error('QR gagal dibuat');
+      var qrImg = document.createElement('img');
+      qrImg.src = qrDataUrl; qrImg.alt = 'QR pendaftaran'; qrImg.width = 200; qrImg.height = 200;
+      qrBox.appendChild(qrImg);
     }catch(e){
       qrBox.style.display = 'none';
     }
