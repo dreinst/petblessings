@@ -90,6 +90,8 @@
   .entry .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
   .entry .actions button{padding:7px 12px;font-size:12.5px;font-family:inherit;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;}
   .entry .actions button.primary{background:var(--brand);border-color:var(--brand);color:#fff;}
+  .entry .actions button.danger{border-color:var(--danger);color:var(--danger);}
+  .entry .actions button.danger:hover{background:var(--danger-bg);}
   .entry .actions button:disabled{opacity:.5;cursor:not-allowed;}
 
   /* Form ubah data, menggantikan isi kartu selama diedit */
@@ -398,6 +400,7 @@
           ? '<button type=\"button\" data-action=\"proof\">Lihat bukti transfer</button>'
           : '<button type=\"button\" disabled title=\"Belum ada bukti transfer diunggah\">Lihat bukti transfer</button>')+
         (isSuperadmin ? '<button type=\"button\" data-action=\"qr\">Lihat QR</button>' : '')+
+        (isSuperadmin ? '<button type=\"button\" class=\"danger\" data-action=\"delete\">Hapus</button>' : '')+
         '</div>';
       return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
         '<div class="owner"><span class="owner-name">'+escapeHtml(titleCase(r.owner.name))+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
@@ -679,7 +682,38 @@
     else if(btn.dataset.action === 'proof') showProof(r);
     else if(btn.dataset.action === 'qr') showSentQr(r);
     else if(btn.dataset.action === 'photo') showPetPhoto(r, btn.dataset.pet);
+    else if(btn.dataset.action === 'delete') deleteEntry(entryEl, r, btn);
   });
+
+  // Hapus pendaftaran Pawrade (superadmin saja) -- menghapus baris
+  // pawrade_owners otomatis ikut menghapus semua hewannya, antrian QR
+  // WhatsApp (jadi QR yang sudah terkirim ikut hilang), dan status reg
+  // ulangnya lewat "on delete cascade" di database (lihat
+  // vps-db/init/13-superadmin-delete.sql). Tidak bisa dibatalkan.
+  async function deleteEntry(entryEl, r, btn){
+    var petNames = r.pets.map(function(p){ return titleCase(p.name); }).join(', ') || 'tanpa hewan tercatat';
+    var confirmed = window.confirm(
+      'Hapus pendaftaran Pawrade ' + r.owner.name + ' (' + petNames + ') secara permanen?\n\n' +
+      'QR yang sudah dikirim, foto hewan, bukti transfer, dan status reg ulang pendaftaran ini ' +
+      'ikut terhapus semua. Tindakan ini TIDAK BISA dibatalkan.'
+    );
+    if(!confirmed) return;
+    btn.disabled = true;
+    btn.textContent = 'Menghapus…';
+    try{
+      var res = await fetch(API_URL + '/pawrade_owners?id=eq.' + encodeURIComponent(r.id), {
+        method: 'DELETE', headers: authHeaders({ 'Prefer': 'return=minimal' })
+      });
+      if(!res.ok) throw new Error('Gagal menghapus (' + res.status + ')');
+      allRegs = allRegs.filter(function(x){ return x.id !== r.id; });
+      applySearch();
+      showNotice('Pendaftaran ' + r.owner.name + ' sudah dihapus.');
+    }catch(e){
+      btn.disabled = false;
+      btn.textContent = 'Hapus';
+      showNotice('Gagal menghapus: ' + (e.message || 'coba lagi sebentar lagi.'));
+    }
+  }
   function currentView(){
     var q = document.getElementById('search').value.trim().toLowerCase();
     return q ? allRegs.filter(function(x){ return searchBlob(x).indexOf(q) !== -1; }) : allRegs;
