@@ -13,21 +13,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#2A2024; --ink-soft:#6E6266; --bg:#FBF3E7; --card:#FFFDF8;
-    --brand:#00A3B8; --brand-deep:#3B1052; --brand-light:#DFF4F6;
-    --accent:#C97F1F; --accent-light:#FCE9C5; --pink:#E0357B;
-    --line:#E8DCC8;
+    --ink:#241B2E; --ink-soft:#6E6266; --bg:#FFF9F0; --card:#FFFDF8;
+    --brand:#0E8F7A; --brand-deep:#3B1052; --brand-light:#DCF3E8;
+    --accent:#E0762A; --accent-light:#FCE3C7; --pink:#D6236F;
+    --line:#F0E4CC;
+    --shadow-card:0 2px 10px -2px rgba(59,16,82,.08);
+    --shadow-soft:0 10px 26px -8px rgba(59,16,82,.14), 0 3px 10px rgba(226,84,46,.06);
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
   .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-  .aurora span{position:absolute;border-radius:50%;filter:blur(64px);opacity:.3;}
-  .aurora span:nth-child(1){width:340px;height:340px;top:-110px;right:-90px;background:var(--pink);}
-  .aurora span:nth-child(2){width:300px;height:300px;top:220px;left:-120px;background:var(--brand);}
-  .aurora span:nth-child(3){width:280px;height:280px;bottom:-100px;right:-60px;background:var(--accent);opacity:.22;}
-  h1,h2{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(70px);opacity:.28;}
+  .aurora span:nth-child(1){width:300px;height:300px;top:-100px;right:-80px;background:var(--pink);}
+  .aurora span:nth-child(2){width:320px;height:320px;top:200px;left:-130px;background:var(--brand);}
+  .aurora span:nth-child(3){width:260px;height:260px;bottom:-90px;right:-50px;background:var(--accent);opacity:.22;}
+  .aurora span:nth-child(4){width:220px;height:220px;top:45%;left:55%;background:#F2B705;opacity:.16;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:600;margin:0;}
   a{color:var(--brand-deep);}
   .wrap{max-width:460px;margin:0 auto;padding:40px 20px 56px;position:relative;z-index:1;text-align:center;}
+
+  .bunting{width:100%;max-width:220px;margin:0 auto 14px;opacity:.9;}
+  .verify-row{display:inline-flex;align-items:center;gap:10px;background:var(--card);padding:6px 14px 6px 6px;border-radius:999px;border:1px solid var(--line);box-shadow:var(--shadow-card);margin:0 auto 18px;}
+  .verify-row img{width:28px;height:28px;border-radius:50%;object-fit:contain;background:#fff;box-shadow:0 0 0 1px var(--line);}
+  .verify-row span{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#7A4A0F;}
 
   .banner{width:100%;max-width:260px;height:auto;margin:0 auto 20px;display:block;}
   h1{font-size:24px;color:var(--brand-deep);}
@@ -35,28 +43,53 @@
   .tagline{font-size:14.5px;color:var(--ink-soft);margin:14px 0 30px;}
 
   .choices{display:flex;flex-direction:column;gap:16px;}
-  .choice{display:block;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;text-decoration:none;color:var(--ink);text-align:left;transition:transform .12s ease, box-shadow .12s ease;box-shadow:0 1px 2px rgba(43,32,20,.04);}
-  .choice:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(43,32,20,.08);}
-  .choice .row{display:flex;align-items:center;gap:14px;}
-  .choice .icon{width:46px;height:46px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;}
-  .choice .icon svg{width:24px;height:24px;}
-  .choice.pb .icon{background:var(--brand-light);color:var(--brand-deep);}
-  .choice.pw .icon{background:var(--accent-light);color:#7A4A0F;}
-  .choice .title{font-family:'Fraunces',serif;font-size:19px;color:var(--brand-deep);}
-  .choice .desc{font-size:13px;color:var(--ink-soft);margin-top:3px;}
+  .choice{display:block;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;text-decoration:none;color:var(--ink);text-align:left;transition:transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease, border-color .16s ease;box-shadow:var(--shadow-card);}
+  .choice:hover{transform:translateY(-2px);box-shadow:var(--shadow-soft);}
+  .choice:active{transform:scale(.98);}
+  .choice .row{display:flex;align-items:flex-start;gap:14px;}
+  .choice .icon{width:46px;height:46px;flex:none;border-radius:14px;display:flex;align-items:center;justify-content:center;}
+  .choice .icon svg{width:23px;height:23px;}
+  .choice.pb .icon{background:var(--brand-light);color:var(--brand);}
+  .choice.pw .icon{background:var(--accent-light);color:var(--accent);}
+  .choice .title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .choice .title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink);}
+  .choice .tag{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2.5px 9px;border-radius:999px;}
+  .choice.pb .tag{background:var(--brand-light);color:#00594C;}
+  .choice.pw .tag{background:var(--accent-light);color:#8A3E10;}
+  .choice .desc{font-size:12.5px;color:var(--ink-soft);margin-top:4px;line-height:1.5;}
   .choice .arrow{margin-left:auto;font-size:20px;color:var(--ink-soft);flex:none;}
+  .choice .meta{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:11.5px;}
+  .choice .meta .go{font-weight:600;display:flex;align-items:center;gap:4px;}
+  .choice.pb .meta .go{color:var(--brand);}
+  .choice.pw .meta .go{color:var(--accent);}
 
   .site-footer{text-align:center;padding:36px 20px 8px;position:relative;z-index:1;}
   .site-footer .footer-logo{width:56px;height:auto;margin:0 auto 12px;display:block;}
   .site-footer p{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 14px;}
   .site-footer .footer-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-  .site-footer .ig-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--brand-deep);font-size:13px;font-weight:500;text-decoration:none;}
+  .site-footer .ig-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--brand-deep);font-size:13px;font-weight:500;text-decoration:none;transition:background .15s ease,border-color .15s ease;}
+  .site-footer .ig-btn:hover{background:var(--brand-light);border-color:var(--brand);}
 </style>
 </head>
 <body>
-<div class="aurora"><span></span><span></span><span></span></div>
+<div class="aurora"><span></span><span></span><span></span><span></span></div>
 <div class="wrap">
 
+  <svg class="bunting" viewBox="0 0 220 20" aria-hidden="true">
+    <polygon fill="#E0762A" points="10,0 20,18 30,0"/>
+    <polygon fill="#F2B705" points="35,0 45,18 55,0"/>
+    <polygon fill="#0E8F7A" points="60,0 70,18 80,0"/>
+    <polygon fill="#D6236F" points="85,0 95,18 105,0"/>
+    <polygon fill="#E0762A" points="110,0 120,18 130,0"/>
+    <polygon fill="#F2B705" points="135,0 145,18 155,0"/>
+    <polygon fill="#0E8F7A" points="160,0 170,18 180,0"/>
+    <polygon fill="#D6236F" points="185,0 195,18 205,0"/>
+  </svg>
+  <div class="verify-row">
+    <picture><source srcset="assets/paroki-badge.webp" type="image/webp"><img src="assets/paroki-badge.png" alt="Paroki St. Vincentius a Paulo"></picture>
+    <span>Paroki Resmi SVAP Malang</span>
+    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img src="assets/pet-blessing-badge.png" alt="Pet Blessing SVAP Malang"></picture>
+  </div>
   <picture>
     <source srcset="assets/pet-blessing-carnival.webp" type="image/webp">
     <img class="banner" src="assets/pet-blessing-carnival.png" alt="Pet Blessing and Colorful Carnival 2026">
@@ -69,22 +102,30 @@
     <a class="choice pb" href="petblessing.html">
       <div class="row">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg></div>
-        <div>
-          <div class="title">Pet Blessing</div>
+        <div style="flex:1;">
+          <div class="title-row">
+            <div class="title">Pet Blessing</div>
+            <span class="tag">Gratis / Donasi</span>
+          </div>
           <div class="desc">Pemberkatan hewan peliharaan bersama umat paroki.</div>
         </div>
         <div class="arrow">&rsaquo;</div>
       </div>
+      <div class="meta"><span class="go">Pilih Pet Blessing &rarr;</span></div>
     </a>
     <a class="choice pw" href="pawrade.html">
       <div class="row">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.3 7.2 17.9l.9-5.4L4.2 8.7l5.4-.8z"/></svg></div>
-        <div>
-          <div class="title">Pawrade</div>
+        <div style="flex:1;">
+          <div class="title-row">
+            <div class="title">Pawrade</div>
+            <span class="tag">Rp 50.000</span>
+          </div>
           <div class="desc">Lomba busana carnival untuk hewan kesayangan Anda.</div>
         </div>
         <div class="arrow">&rsaquo;</div>
       </div>
+      <div class="meta"><span class="go">Daftar Pawrade &rarr;</span></div>
     </a>
   </div>
 
