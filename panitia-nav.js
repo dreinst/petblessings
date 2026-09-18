@@ -22,9 +22,9 @@
   var ITEMS = [
     { href: 'superadmin.html',       label: 'Dashboard',            icon: 'dashboard', level: 'superadmin' },
     { href: 'pendaftaran-masuk.html', label: 'Rekap Pet Blessing',  icon: 'rekap' },
-    { href: 'pawrade-rekap.html',     label: 'Rekap Pawrade',       icon: 'pawrade' },
+    { href: 'pawrade-rekap.html',     label: 'Rekap Fashion Pawrade Competition 2026', icon: 'pawrade' },
     { href: 'checkin.html',           label: 'Check-in Pet Blessing', icon: 'checkin', level: 'superadmin' },
-    { href: 'pawrade-checkin.html',   label: 'Reg ulang Pawrade',   icon: 'checkin', level: 'superadmin' },
+    { href: 'pawrade-checkin.html',   label: 'Reg ulang Fashion Pawrade Competition 2026', icon: 'checkin', level: 'superadmin' },
     { href: 'qr-database.html',       label: 'Database QR',         icon: 'qr', level: 'superadmin' }
   ];
 

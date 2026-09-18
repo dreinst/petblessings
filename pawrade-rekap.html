@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pendaftaran masuk, Pawrade 2026</title>
+<title>Pendaftaran masuk, Fashion Pawrade Competition 2026</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -130,7 +130,7 @@
 <div class="aurora"><span></span><span></span></div>
 
 <div class="login-wrap" id="loginWrap">
-  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
+  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Fashion Pawrade Competition 2026"></picture>
   <h1>Login panitia</h1>
   <p>Halaman ini khusus panitia.</p>
   <div class="field">
@@ -158,8 +158,8 @@
     <div class="toolbar-top">
       <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
-    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pawrade 2026"></picture>
-    <h1>Rekap Pawrade</h1>
+    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Fashion Pawrade Competition 2026"></picture>
+    <h1>Rekap Fashion Pawrade Competition 2026</h1>
     <p>Data langsung dari database, khusus panitia yang sudah login.</p>
   </header>
 
@@ -693,7 +693,7 @@
   async function deleteEntry(entryEl, r, btn){
     var petNames = r.pets.map(function(p){ return titleCase(p.name); }).join(', ') || 'tanpa hewan tercatat';
     var confirmed = window.confirm(
-      'Hapus pendaftaran Pawrade ' + r.owner.name + ' (' + petNames + ') secara permanen?\n\n' +
+      'Hapus pendaftaran Fashion Pawrade Competition 2026 ' + r.owner.name + ' (' + petNames + ') secara permanen?\n\n' +
       'QR yang sudah dikirim, foto hewan, bukti transfer, dan status reg ulang pendaftaran ini ' +
       'ikut terhapus semua. Tindakan ini TIDAK BISA dibatalkan.'
     );

@@ -1,26 +1,26 @@
-# Panduan Sistem Pendaftaran Pet Blessing & Pawrade 2026
+# Panduan Sistem Pendaftaran Pet Blessing & Fashion Pawrade Competition 2026
 
 Paroki St. Vincentius a Paulo, Malang
 
-Sistem ini terdiri dari beberapa halaman web, untuk dua acara: Pet Blessing dan lomba Pawrade (costume parade), keduanya bagian dari Colorful Carnival 2026. Semuanya dibuka lewat browser biasa (Chrome, Safari, atau browser bawaan HP), tidak perlu memasang aplikasi apa pun.
+Sistem ini terdiri dari beberapa halaman web, untuk dua acara: Pet Blessing dan Fashion Pawrade Competition 2026 (costume parade), keduanya bagian dari Colorful Carnival 2026. Semuanya dibuka lewat browser biasa (Chrome, Safari, atau browser bawaan HP), tidak perlu memasang aplikasi apa pun.
 
 | Halaman | Alamat | Dipakai oleh |
 |---|---|---|
 | Pilihan acara | https://petblessings.vercel.app | Pengunjung, sebelum memilih acara |
 | Form pendaftaran Pet Blessing | https://petblessings.vercel.app/petblessing.html | Pet owner (umum) |
-| Form pendaftaran Pawrade | https://petblessings.vercel.app/pawrade.html | Peserta lomba (umum) |
+| Form pendaftaran Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade.html | Peserta lomba (umum) |
 | Rekap Pet Blessing | https://petblessings.vercel.app/pendaftaran-masuk.html | Admin dan superadmin |
-| Rekap Pawrade | https://petblessings.vercel.app/pawrade-rekap.html | Admin dan superadmin |
+| Rekap Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade-rekap.html | Admin dan superadmin |
 | Dashboard superadmin | https://petblessings.vercel.app/superadmin.html | Superadmin saja |
 | Check-in Pet Blessing | https://petblessings.vercel.app/checkin.html | Superadmin saja |
-| Reg ulang Pawrade | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
+| Reg ulang Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
 | Database QR | https://petblessings.vercel.app/qr-database.html | Superadmin saja |
 
 Prinsip dasarnya: satu pendaftaran untuk satu pemilik, berapa pun jumlah hewannya. Pemilik mendapat satu QR yang mewakili dirinya dan semua hewannya. Di hari acara, QR itu di-scan saat check-in.
 
-Panduan di bawah ini ditulis untuk Pet Blessing, tapi berlaku sama persis untuk Pawrade. Form, rekap, dan cara kerjanya identik, cuma alamatnya berbeda dan datanya terpisah. Bedanya cuma dua: form Pawrade punya blok info "Kriteria Penilaian" di atas form, dan Pawrade hanya punya satu titik scan, yaitu **Reg ulang** (tidak ada Pos 1 sampai 3 seperti Pet Blessing).
+Panduan di bawah ini ditulis untuk Pet Blessing, tapi berlaku sama persis untuk Fashion Pawrade Competition 2026. Form, rekap, dan cara kerjanya identik, cuma alamatnya berbeda dan datanya terpisah. Bedanya cuma dua: form Fashion Pawrade Competition 2026 punya blok info "Kriteria Penilaian" di atas form, dan Fashion Pawrade Competition 2026 hanya punya satu titik scan, yaitu **Reg ulang** (tidak ada Pos 1 sampai 3 seperti Pet Blessing).
 
-Semua halaman panitia memakai bilah navigasi yang sama di bagian atas: deretan tombol (bukan tautan teks) yang berisi chip level akun, tombol **Keluar** di kanan, dan tombol ke tiap halaman. Tombol halaman yang sedang dibuka berwarna ungu tua. Admin hanya melihat tombol Rekap Pet Blessing dan Rekap Pawrade; superadmin melihat semuanya: Dashboard, kedua rekap, Check-in Pet Blessing, Reg ulang Pawrade, dan Database QR. Karena sesi login dibagi antar halaman di browser yang sama, pindah halaman lewat tombol ini tidak perlu login lagi.
+Semua halaman panitia memakai bilah navigasi yang sama di bagian atas: deretan tombol (bukan tautan teks) yang berisi chip level akun, tombol **Keluar** di kanan, dan tombol ke tiap halaman. Tombol halaman yang sedang dibuka berwarna ungu tua. Admin hanya melihat tombol Rekap Pet Blessing dan Rekap Fashion Pawrade Competition 2026; superadmin melihat semuanya: Dashboard, kedua rekap, Check-in Pet Blessing, Reg ulang Fashion Pawrade Competition 2026, dan Database QR. Karena sesi login dibagi antar halaman di browser yang sama, pindah halaman lewat tombol ini tidak perlu login lagi.
 
 ---
 
@@ -127,7 +127,7 @@ Export selalu mengambil seluruh data, bukan hanya hasil pencarian yang sedang ta
 - Halaman rekap tidak menampilkan status check-in. Jumlah yang sudah hadir dilihat di dashboard superadmin atau di halaman check-in, per pos.
 - Pesan "Sesi habis, silakan login lagi" berarti 12 jam sudah lewat. Login ulang saja.
 - Pesan "Belum bisa memuat data" biasanya soal koneksi internet. Cek koneksi lalu tekan Muat ulang.
-- Tombol **Dashboard**, **Check-in Pet Blessing**, **Reg ulang Pawrade**, dan **Database QR** di bilah navigasi atas hanya tampil untuk superadmin. Admin tidak melihat tombol itu dan memang tidak bisa membuka halaman tersebut.
+- Tombol **Dashboard**, **Check-in Pet Blessing**, **Reg ulang Fashion Pawrade Competition 2026**, dan **Database QR** di bilah navigasi atas hanya tampil untuk superadmin. Admin tidak melihat tombol itu dan memang tidak bisa membuka halaman tersebut.
 
 ---
 
@@ -138,8 +138,8 @@ Halaman: https://petblessings.vercel.app/superadmin.html
 Hanya akun superadmin yang bisa masuk; akun admin ditolak dengan pesan yang jelas. Isinya:
 
 - Bilah navigasi tombol di bagian atas menuju semua halaman panitia. Karena sesi login dibagi antar halaman di browser yang sama, tidak perlu login lagi di sana.
-- Ringkasan pendaftaran Pet Blessing dan Pawrade: jumlah pemilik, hewan, pendamping, dan total donasi atau biaya yang masuk.
-- Ringkasan check-in hari-H: jumlah pemilik Pet Blessing yang sudah scan di Reg ulang, Pos 1, Pos 2, dan Pos 3, serta jumlah peserta Pawrade yang sudah reg ulang. Ini cara termudah memantau antrean dari mana saja saat acara.
+- Ringkasan pendaftaran Pet Blessing dan Fashion Pawrade Competition 2026: jumlah pemilik, hewan, pendamping, dan total donasi atau biaya yang masuk.
+- Ringkasan check-in hari-H: jumlah pemilik Pet Blessing yang sudah scan di Reg ulang, Pos 1, Pos 2, dan Pos 3, serta jumlah peserta Fashion Pawrade Competition 2026 yang sudah reg ulang. Ini cara termudah memantau antrean dari mana saja saat acara.
 - Panel **Log login** dengan tombol Setujui, Tolak, dan Cabut untuk login admin, seperti dijelaskan di Bagian 2.
 
 Semua angka dan log memuat ulang sendiri tiap 15 detik; tombol **Muat ulang** memaksa pembaruan segera.
