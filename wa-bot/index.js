@@ -151,11 +151,11 @@ async function sendFollowup(sock, row) {
 }
 
 const PAWRADE_CAPTION_TEMPLATES = [
-  (name, code, g, c, e) => `${g} ${name} ${e}\n\nIni QR bukti pendaftaran lomba Pawrade (Colorful Carnival 2026) kamu.\nKode: *${code}*\n\nSimpan gambar ini, nanti ditunjukkan ke panitia saat check-in di lokasi lomba ya.${c ? '\n\n' + c : ''}`,
-  (name, code, g, c, e) => `${g} ${name}! ${e}\n\nBerikut QR pendaftaran lomba Pawrade kamu (kode ${code}). Mohon disimpan untuk ditunjukkan saat check-in di hari lomba.${c ? '\n' + c : ''}`,
-  (name, code, g, c, e) => `${g} ${name},\n\nPendaftaran lomba Pawrade kamu sudah tercatat. QR di atas adalah bukti pendaftaran, kode: ${code}.\nJangan lupa dibawa/ditunjukkan saat check-in di lokasi ya${e ? ' ' + e : ''}`,
-  (name, code, g, c, e) => `${g} ${name} ${e}\n\nQR ini bukti kamu sudah terdaftar di lomba Pawrade (kode: ${code}). Simpan baik-baik dan tunjukkan ke panitia saat kedatangan.${c ? '\n\n' + c : ''}`,
-  (name, code, g, c, e) => `${name}, pendaftaran lomba Pawrade kamu berhasil ${e}\n\nKode pendaftaran: ${code}\nQR di atas mewakili kamu dan semua hewan yang didaftarkan.${c ? '\n' + c : ''}`,
+  (name, code, g, c, e) => `${g} ${name} ${e}\n\nIni QR bukti pendaftaran kamu di Fashion Pawrade Competition 2026 (Colorful Carnival 2026).\nKode: *${code}*\n\nSimpan gambar ini, nanti ditunjukkan ke panitia saat check-in di lokasi lomba ya.${c ? '\n\n' + c : ''}`,
+  (name, code, g, c, e) => `${g} ${name}! ${e}\n\nBerikut QR pendaftaran kamu di Fashion Pawrade Competition 2026 (kode ${code}). Mohon disimpan untuk ditunjukkan saat check-in di hari lomba.${c ? '\n' + c : ''}`,
+  (name, code, g, c, e) => `${g} ${name},\n\nPendaftaran kamu di Fashion Pawrade Competition 2026 sudah tercatat. QR di atas adalah bukti pendaftaran, kode: ${code}.\nJangan lupa dibawa/ditunjukkan saat check-in di lokasi ya${e ? ' ' + e : ''}`,
+  (name, code, g, c, e) => `${g} ${name} ${e}\n\nQR ini bukti kamu sudah terdaftar di Fashion Pawrade Competition 2026 (kode: ${code}). Simpan baik-baik dan tunjukkan ke panitia saat kedatangan.${c ? '\n\n' + c : ''}`,
+  (name, code, g, c, e) => `${name}, pendaftaran kamu di Fashion Pawrade Competition 2026 berhasil ${e}\n\nKode pendaftaran: ${code}\nQR di atas mewakili kamu dan semua hewan yang didaftarkan.${c ? '\n' + c : ''}`,
 ];
 
 function buildPawradeCaption(name, code, queueNumber) {
@@ -199,7 +199,7 @@ async function sendPawrade(sock, row) {
 
   var base64 = row.qr_image_base64.replace(/^data:image\/\w+;base64,/, '');
   var buffer = Buffer.from(base64, 'base64');
-  var fileName = `QR-Pawrade-${row.short_code}.png`;
+  var fileName = `QR-Fashion-Pawrade-Competition-2026-${row.short_code}.png`;
 
   var useTwoStep = Math.random() < 0.35;
   await typingPause(sock, jid);
