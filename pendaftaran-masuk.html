@@ -552,8 +552,13 @@
       var rows = await res.json();
       var img = rows && rows[0] && rows[0].donation_proof_base64;
       if(img && img.indexOf('data:image/') === 0){
+        var ext = (img.match(/^data:image\/(\w+)/) || [])[1] || 'jpg';
+        if(ext === 'jpeg') ext = 'jpg';
         var el = document.createElement('img'); el.src = img; el.alt = 'Bukti transfer';
-        body.innerHTML = ''; body.appendChild(el);
+        var dl = document.createElement('a'); dl.className = 'dl-btn'; dl.href = img;
+        dl.download = 'bukti-transfer-' + slug(r.owner.name) + '.' + ext;
+        dl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh bukti transfer';
+        body.innerHTML = ''; body.appendChild(el); body.appendChild(dl);
       }else{
         body.innerHTML = '<p>Tidak ada gambar tersimpan. Pendaftar menandai ada bukti transfer, tetapi gambarnya tidak terunggah (misalnya mendaftar sebelum fitur ini ada).</p>';
       }
