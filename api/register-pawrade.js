@@ -37,6 +37,7 @@ function validatePayload(body) {
   if (!isNonEmptyString(owner.name, 200)) return 'Nama pemilik wajib diisi';
   if (!isNonEmptyString(owner.phone, 30)) return 'Nomor HP wajib diisi';
   if (owner.is_parishioner !== 'ya' && owner.is_parishioner !== 'bukan') return 'Status umat tidak valid';
+  if (!isNonEmptyString(owner.parish_origin, 200)) return 'Asal/wilayah wajib diisi';
   var companions = owner.companions == null ? 0 : owner.companions;
   if (!Number.isInteger(companions) || companions < 0 || companions > 20) return 'Jumlah pendamping tidak valid';
   // Biaya pendaftaran Pawrade WAJIB dibayar (bukan donasi sukarela seperti
