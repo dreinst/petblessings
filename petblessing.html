@@ -224,13 +224,11 @@
           </div>
           <div class="field-error" id="err-isParishioner">Silakan pilih salah satu.</div>
         </div>
-        <div class="conditional" id="parishOriginWrap">
-          <div class="field" style="margin-top:2px;">
-            <label for="parishOrigin">Asal paroki / gereja / daerah<span class="req">*</span></label>
-            <input type="text" id="parishOrigin">
-            <div class="fill-hint">Pastikan penulisan nama paroki/gereja/daerah sudah benar.</div>
-            <div class="field-error" id="err-parishOrigin">Mohon isi asal paroki Anda.</div>
-          </div>
+        <div class="field" id="parishOriginWrap">
+          <label for="parishOrigin" id="parishOriginLabel">Asal paroki / gereja / daerah<span class="req">*</span></label>
+          <input type="text" id="parishOrigin" placeholder="Contoh: Lingkungan St. Agustinus 2">
+          <div class="fill-hint" id="parishOriginHint">Pastikan penulisan nama paroki/gereja/daerah sudah benar.</div>
+          <div class="field-error" id="err-parishOrigin">Mohon isi asal/wilayah Anda.</div>
         </div>
         <div class="field">
           <label>Apakah Anda membawa pendamping (pet handler, keluarga, teman)?<span class="req">*</span></label>
@@ -452,14 +450,27 @@
     document.getElementById(id).addEventListener('input', function(e){ clearFieldError(e.target); });
   });
 
-  // Conditional parish origin
+  // Field asal/wilayah selalu tampil dan wajib diisi untuk Ya maupun Bukan,
+  // cuma labelnya berubah sesuai jawaban (lihat updateParishOriginLabel).
   var parishRadios = document.querySelectorAll('input[name="isParishioner"]');
-  var parishOriginWrap = document.getElementById('parishOriginWrap');
+  function updateParishOriginLabel(value){
+    var label = document.getElementById('parishOriginLabel');
+    var input = document.getElementById('parishOrigin');
+    var hint = document.getElementById('parishOriginHint');
+    if(value === 'ya'){
+      label.innerHTML = 'Wilayah / Nama Lingkungan SVAP<span class="req">*</span>';
+      input.placeholder = 'Contoh: Lingkungan St. Agustinus 2';
+      hint.textContent = 'Pastikan penulisan nama wilayah/lingkungan sudah benar.';
+    } else {
+      label.innerHTML = 'Asal paroki / gereja / daerah<span class="req">*</span>';
+      input.placeholder = '';
+      hint.textContent = 'Pastikan penulisan nama paroki/gereja/daerah sudah benar.';
+    }
+  }
   parishRadios.forEach(function(r){
     r.addEventListener('change', function(){
       document.getElementById('err-isParishioner').classList.remove('show');
-      if(r.value === 'bukan' && r.checked){ parishOriginWrap.classList.add('open'); }
-      if(r.value === 'ya' && r.checked){ parishOriginWrap.classList.remove('open'); clearFieldError(document.getElementById('parishOrigin')); }
+      if(r.checked) updateParishOriginLabel(r.value);
     });
   });
 
@@ -578,7 +589,7 @@
     else document.getElementById('err-isParishioner').classList.remove('show');
 
     var parishOrigin = document.getElementById('parishOrigin');
-    if(isParishioner && isParishioner.value === 'bukan' && !parishOrigin.value.trim()){
+    if(!parishOrigin.value.trim()){
       setError(parishOrigin, document.getElementById('err-parishOrigin'), true); ok = false;
     } else setError(parishOrigin, document.getElementById('err-parishOrigin'), false);
 
@@ -733,7 +744,7 @@
         name: document.getElementById('ownerName').value.trim(),
         phone: document.getElementById('ownerPhone').value.trim(),
         isParishioner: isParishioner,
-        parishOrigin: isParishioner === 'bukan' ? document.getElementById('parishOrigin').value.trim() : '',
+        parishOrigin: document.getElementById('parishOrigin').value.trim(),
         companions: hasCompanion === 'ya' ? parseInt(document.getElementById('companionCount').value, 10) : 0
       },
       pets: pets.map(function(p){
@@ -792,7 +803,7 @@
     document.getElementById('regForm').reset();
     pets = [newPet()];
     renderPetCards();
-    parishOriginWrap.classList.remove('open');
+    updateParishOriginLabel('bukan');
     companionWrap.classList.remove('open');
     document.getElementById('donationProofPreview').style.display = 'none';
     donationProofDataUrl = null;
