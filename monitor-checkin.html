@@ -44,6 +44,7 @@
   .topbar img{height:5vh;width:5vh;min-height:32px;min-width:32px;object-fit:contain;}
   .topbar h1{font-size:clamp(18px,3vh,32px);font-weight:600;color:var(--brand-deep);}
   .topbar .spacer{flex:1;}
+  .testbadge{background:#F2B705;color:#241B2E;font-weight:700;font-size:clamp(12px,2vh,20px);padding:.6vh 1.2vw;border-radius:999px;}
   .topbar .status{display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.9vh,18px);color:var(--ink-soft);}
   .dot{width:1.4vh;height:1.4vh;min-width:10px;min-height:10px;border-radius:50%;background:#2E9E5B;}
   .dot.bad{background:var(--danger);}
@@ -112,6 +113,7 @@
   <div class="topbar">
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
     <h1>Reg ulang Pet Blessing 2026</h1>
+    <span class="testbadge" id="testBadge" hidden>MODE UJI: hanya data Testing</span>
     <div class="spacer"></div>
     <div class="status"><span class="dot" id="dot"></span><span id="statusText">memuat</span></div>
     <button type="button" class="fs-btn" id="fsBtn">Layar penuh</button>
@@ -140,6 +142,10 @@
   var TOKEN_KEY = 'petblessing_panitia_token';
   var RECENT_LIMIT = 5;     // sebelumnya yang ditampilkan per sisi (di luar kartu "sekarang")
   var POLL_MS = 3000;
+  // ?uji=1 = mode uji: hanya memakai data "Testing Nomor N" (owners.is_test), terpisah
+  // dari data pendaftar asli. Tanpa parameter, data uji diabaikan.
+  var TEST = new URLSearchParams(location.search).get('uji') === '1';
+  document.getElementById('testBadge').hidden = !TEST;
   if(!API_URL){
     document.getElementById('loginWrap').innerHTML = '<p>API belum dikonfigurasi.</p>';
     return;
@@ -292,7 +298,7 @@
     if(!running) return;
     var next = document.hidden ? POLL_MS * 3 : POLL_MS;
     try{
-      var res = await fetch(API_URL + '/rpc/checkin_monitor?recent_limit=' + (RECENT_LIMIT + 1), {
+      var res = await fetch(API_URL + '/rpc/checkin_monitor?recent_limit=' + (RECENT_LIMIT + 1) + '&only_test=' + TEST, {
         headers: { Authorization: 'Bearer ' + token() }
       });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }

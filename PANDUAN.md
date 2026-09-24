@@ -205,6 +205,10 @@ Untuk ditampilkan di layar kedua atau monitor besar: tekan tombol **Buka layar m
 - Layar memuat ulang sendiri sekitar tiap 3 detik. Kalau scanner dibuka di browser yang sama dengan monitor, layar langsung berubah begitu ada scan. Lampu hijau di pojok kanan atas menandakan tersambung.
 - Layar ini tidak memerlukan panitia menyentuhnya selama acara.
 
+### Mode uji (mencoba tanpa mengganggu data asli)
+
+Sebelum acara, panitia bisa berlatih memakai pendaftar uji bernama "Testing Nomor 1" sampai "Testing Nomor 12" (ditandai `owners.is_test`, boleh sama nomornya dengan nomor asli). Tambahkan `?uji=1` di alamat: `checkin.html?pos=A&uji=1`, `checkin.html?pos=B&uji=1`, dan `monitor-checkin.html?uji=1`. Di mode ini scanner dan monitor HANYA menghitung data uji (ada label kuning MODE UJI), sedangkan alamat tanpa `?uji=1` mengabaikan data uji. QR-nya ada di folder `qr-data-uji` (satu file per nomor). Dashboard tidak menghitung data uji tapi menampilkan pengingat selama masih ada. **Hapus semua data uji sebelum acara**: hapus lewat tombol Hapus di halaman rekap, atau perintah `delete from api.owners where is_test;` (hewan, QR, dan reg ulang ikut terhapus).
+
 ### Urutan hari-H
 
 Pemilik datang ke titik check in, panitia memindai QR-nya (Pos A untuk nomor ganjil, Pos B untuk genap), lalu mencocokkan stiker nomor. Nomor yang baru dipindai langsung muncul di layar monitor.

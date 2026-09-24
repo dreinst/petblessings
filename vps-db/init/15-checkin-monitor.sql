@@ -5,6 +5,8 @@
 -- kolom checkins.post (tetap 'reg_ulang'), karena pos selalu bisa dihitung
 -- dari nomor urut pemilik (queue_number % 2).
 --
+-- (DIGANTI oleh 17-test-owners.sql: fungsi ini sekarang bernama sama tapi punya
+-- parameter only_test. Jangan jalankan ulang file ini setelah 17.)
 -- Fungsi ini mengembalikan semuanya dalam SATU request supaya hemat: API
 -- dibatasi request per menit, dan monitor memuat ulang data tiap beberapa
 -- detik. Hasil JSON:
