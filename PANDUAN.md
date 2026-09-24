@@ -12,7 +12,8 @@ Sistem ini terdiri dari beberapa halaman web, untuk dua acara: Pet Blessing dan 
 | Rekap Pet Blessing | https://petblessings.vercel.app/pendaftaran-masuk.html | Admin dan superadmin |
 | Rekap Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade-rekap.html | Admin dan superadmin |
 | Dashboard superadmin | https://petblessings.vercel.app/superadmin.html | Superadmin saja |
-| Check-in Pet Blessing | https://petblessings.vercel.app/checkin.html | Superadmin saja |
+| Check in Pet Blessing (scanner Pos A dan Pos B) | https://petblessings.vercel.app/checkin.html | Superadmin saja |
+| Monitor check in Pet Blessing (layar tambahan) | https://petblessings.vercel.app/monitor-checkin.html | Superadmin saja |
 | Reg ulang Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
 | Database QR | https://petblessings.vercel.app/qr-database.html | Superadmin saja |
 
@@ -139,7 +140,7 @@ Hanya akun superadmin yang bisa masuk; akun admin ditolak dengan pesan yang jela
 
 - Bilah navigasi tombol di bagian atas menuju semua halaman panitia. Karena sesi login dibagi antar halaman di browser yang sama, tidak perlu login lagi di sana.
 - Ringkasan pendaftaran Pet Blessing dan Fashion Pawrade Competition 2026: jumlah pemilik, hewan, pendamping, dan total donasi atau biaya yang masuk.
-- Ringkasan check-in hari-H: jumlah pemilik Pet Blessing yang sudah scan di Reg ulang, Pos 1, Pos 2, dan Pos 3, serta jumlah peserta Fashion Pawrade Competition 2026 yang sudah reg ulang. Ini cara termudah memantau antrean dari mana saja saat acara.
+- Ringkasan check in hari-H: jumlah pemilik Pet Blessing yang sudah dan belum check in, dipecah per Pos A (nomor ganjil) dan Pos B (nomor genap), serta jumlah peserta Fashion Pawrade Competition 2026 yang sudah reg ulang. Ini cara termudah memantau antrean dari mana saja saat acara.
 - Panel **Log login** dengan tombol Setujui, Tolak, dan Cabut untuk login admin, seperti dijelaskan di Bagian 2.
 
 Semua angka dan log memuat ulang sendiri tiap 15 detik; tombol **Muat ulang** memaksa pembaruan segera.
@@ -153,23 +154,25 @@ Halaman: https://petblessings.vercel.app/checkin.html
 ### Persiapan perangkat
 
 - HP, tablet, atau laptop yang punya kamera dan koneksi internet. Di HP dipakai kamera belakang, di laptop dipakai webcam.
-- Satu perangkat untuk satu pos. Ada empat pos: Reg ulang, Pos 1, Pos 2, Pos 3.
+- Satu perangkat untuk satu pos. Check in Pet Blessing berlangsung di satu titik dengan dua pos: **Pos A** melayani nomor urut ganjil, **Pos B** melayani nomor urut genap.
 - Saat pertama membuka halaman, browser meminta izin kamera. Pilih **Izinkan**.
 - Login hanya bisa dengan akun superadmin. Akun admin ditolak di halaman ini.
 
 ### Memilih pos
 
-Tekan salah satu tombol pos di bagian atas. Tombol yang aktif berwarna berbeda. Pilihan ini tersimpan di perangkat tersebut, jadi cukup dipilih sekali di awal acara. Pastikan pos yang aktif sesuai dengan tempat perangkat itu berada, karena semua scan akan dicatat ke pos itu.
+Tekan **Pos A** (nomor ganjil, hijau) atau **Pos B** (nomor genap, oranye) di bagian atas. Pilihan ini tersimpan di perangkat tersebut, jadi cukup dipilih sekali di awal acara. Pos hanya menentukan nomor mana yang seharusnya dilayani perangkat itu, pembagiannya tetap ganjil dan genap.
 
-Di bawah tombol pos tampil angka "X orang sudah check-in di pos ini". Angka ini naik setiap ada scan yang berhasil.
+Di bawah tombol pos tampil angka "X dari Y nomor sudah check in" untuk pos ini, dan angka pos satunya. Angka ini naik setiap ada scan yang berhasil.
+
+Kalau perangkat di Pos A memindai nomor genap (atau sebaliknya), check in **tetap tercatat**, tapi layar menampilkan kotak kuning "Nomor genap seharusnya di Pos B" dan bunyinya berbeda. Arahkan pemilik ke pos yang benar. Pos yang benar juga tampil sebagai label hijau (Pos A) atau oranye (Pos B) di lembar hasil dan di tiap baris hasil pencarian manual.
 
 ### Alur scan
 
 1. Minta pemilik menunjukkan QR-nya (dari screenshot, dari pesan WhatsApp, atau dari halaman bukti pendaftaran).
 2. Arahkan kamera ke QR sampai masuk kotak putih di layar. Tidak ada tombol yang perlu ditekan, pembacaan berjalan otomatis. 
 3. Begitu terbaca, sistem memeriksa data dan mencatat check-in. Hasilnya muncul sebagai lembar di bagian bawah layar, disertai bunyi dan getar:
-   - Hijau, tanda centang, "Check-in berhasil". Tampil nomor urut (#), nama pemilik, nomor HP, jumlah pendamping kalau ada, dan daftar hewannya. Bunyi beep tinggi pendek.
-   - Kuning, tanda seru, "Sudah check-in". Pemilik ini sudah pernah di-scan di pos yang sama sebelumnya. Tidak dicatat dua kali. Bunyi beep sedang.
+   - Hijau, tanda centang, "Check in berhasil". Tampil pos yang seharusnya melayani nomor itu, nomor urut (#), nama pemilik, nomor HP, jumlah pendamping kalau ada, dan daftar hewannya. Bunyi beep tinggi pendek.
+   - Kuning, tanda seru, "Sudah check in". Pemilik ini sudah pernah di-scan sebelumnya. Tidak dicatat dua kali. Bunyi beep sedang.
    - Merah, tanda silang, "Tidak valid". QR bukan dari sistem ini, data tidak ditemukan, atau gagal tersimpan. Bunyi beep rendah.
 4. Tekan **Lanjut scan berikutnya** untuk menutup lembar hasil. Selama lembar hasil masih terbuka, kamera berhenti membaca, jadi tidak akan terjadi scan ganda.
 
@@ -184,7 +187,7 @@ Di bawah kotak kamera ada bagian **Tanpa QR? Cari manual**. Dipakai kalau QR pem
 
 ### Yang perlu diperhatikan
 
-- Saat reg ulang, cocokkan nomor urut (#) yang tampil di layar dengan stiker nomor yang diberikan ke pemilik.
+- Cocokkan nomor urut (#) yang tampil di layar dengan stiker nomor yang diberikan ke pemilik.
 - Pemilik dengan beberapa hewan cukup di-scan satu kali di tiap pos. Semua hewannya ikut tampil di lembar hasil.
 - QR sulit terbaca: minta pemilik memperbesar screenshot atau menaikkan kecerahan layar HP-nya, lalu dekatkan ke kamera.
 - QR tidak ada sama sekali, atau tetap tidak terbaca setelah dicoba: pakai pencarian manual di bawah kotak kamera (lihat bagian di atas).
@@ -192,9 +195,17 @@ Di bawah kotak kamera ada bagian **Tanpa QR? Cari manual**. Dipakai kalau QR pem
 - Halaman tiba-tiba kembali ke layar login: sesi 12 jam habis. Login lagi sebagai superadmin, pilihan pos tetap tersimpan.
 - Tombol **Dashboard** di bilah navigasi atas kembali ke dashboard superadmin tanpa login ulang.
 
+### Layar monitor tambahan
+
+Untuk ditampilkan di layar kedua atau monitor besar: tekan tombol **Buka layar monitor** di halaman check in (atau buka https://petblessings.vercel.app/monitor-checkin.html langsung, login superadmin). Layar dibagi dua: **kiri Pos A (nomor ganjil), kanan Pos B (nomor genap)**. Tiap sisi menampilkan nomor urut terbaru dalam ukuran besar, nama pemilik, nama dan jenis hewan, jumlah pendamping, daftar beberapa check in sebelumnya, dan progres "X dari Y nomor sudah check in". Nomor HP tidak ditampilkan.
+
+- Tekan **Layar penuh** (atau tombol F) untuk memenuhi monitor. Seret jendelanya ke monitor tambahan dulu sebelum layar penuh.
+- Layar memuat ulang sendiri sekitar tiap 3 detik. Kalau scanner dibuka di browser yang sama dengan monitor, layar langsung berubah begitu ada scan. Lampu hijau di pojok kanan atas menandakan tersambung.
+- Layar ini tidak memerlukan panitia menyentuhnya selama acara.
+
 ### Urutan hari-H
 
-Pemilik datang, scan di Reg ulang (cocokkan stiker nomor), lalu scan lagi di Pos 1, Pos 2, dan Pos 3 secara berurutan.
+Pemilik datang ke titik check in, panitia memindai QR-nya (Pos A untuk nomor ganjil, Pos B untuk genap), lalu mencocokkan stiker nomor. Nomor yang baru dipindai langsung muncul di layar monitor.
 
 ---
 

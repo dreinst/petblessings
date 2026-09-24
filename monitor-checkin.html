@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor Check in Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="api-config.js"></script>
+<style>
+  :root{
+    --ink:#241B2E; --ink-soft:#6E6266; --bg:#FFF9F0; --card:#FFFDF8; --line:#F0E4CC;
+    --brand-deep:#3B1052;
+    /* Dua sisi dibedakan warna: Pos A (ganjil) hijau tua, Pos B (genap) oranye tua.
+       Keduanya dipilih cukup gelap supaya teks putih di atasnya terbaca dari jauh. */
+    --a:#0B6E5E; --a-soft:#DCF3E8;
+    --b:#B8410F; --b-soft:#FCE3D3;
+    --danger:#A6423A; --danger-bg:#F6E7E5;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
+  h1,h2{font-family:'Fraunces',serif;margin:0;}
+
+  /* --- login (sama polanya dengan halaman panitia lain) --- */
+  .login-wrap{max-width:360px;margin:12vh auto 0;padding:0 20px;text-align:left;}
+  .login-wrap h1{font-size:22px;color:var(--brand-deep);margin-bottom:6px;font-weight:500;}
+  .login-wrap p{font-size:13.5px;color:var(--ink-soft);margin:0 0 20px;}
+  .login-wrap .field{margin-bottom:14px;}
+  .login-wrap label{display:block;font-size:13.5px;font-weight:500;margin-bottom:6px;}
+  .login-wrap input{width:100%;padding:11px 13px;font-size:15px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--card);}
+  .login-wrap button{width:100%;padding:13px;background:var(--a);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .login-error{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
+  .login-error.show{display:block;}
+  .brand-badge{width:44px;height:44px;display:block;margin:0 auto 16px;}
+
+  /* --- layar monitor --- */
+  #screen{display:none;height:100vh;grid-template-rows:auto 1fr;}
+  #screen.show{display:grid;}
+  .topbar{display:flex;align-items:center;gap:14px;padding:1.2vh 2vw;border-bottom:1px solid var(--line);background:var(--card);}
+  .topbar img{height:5vh;width:5vh;min-height:32px;min-width:32px;object-fit:contain;}
+  .topbar h1{font-size:clamp(18px,3vh,32px);font-weight:600;color:var(--brand-deep);}
+  .topbar .spacer{flex:1;}
+  .topbar .status{display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.9vh,18px);color:var(--ink-soft);}
+  .dot{width:1.4vh;height:1.4vh;min-width:10px;min-height:10px;border-radius:50%;background:#2E9E5B;}
+  .dot.bad{background:var(--danger);}
+  .clock{font-family:'Fraunces',serif;font-size:clamp(20px,3.4vh,38px);font-weight:600;color:var(--brand-deep);min-width:5.2ch;text-align:right;}
+  .fs-btn{font-family:inherit;font-size:clamp(12px,1.9vh,18px);font-weight:600;color:var(--brand-deep);background:none;border:1.5px solid var(--brand-deep);border-radius:999px;padding:.7vh 1.4vw;cursor:pointer;}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;min-height:0;}
+  .side{display:flex;flex-direction:column;min-height:0;padding:2vh 1.6vw 2vh;gap:2vh;}
+  .side + .side{border-left:3px solid var(--line);}
+  .side.a{--c:var(--a);--soft:var(--a-soft);}
+  .side.b{--c:var(--b);--soft:var(--b-soft);}
+
+  .head{background:var(--c);color:#fff;border-radius:1.6vh;padding:1.6vh 1.6vw;display:flex;align-items:baseline;justify-content:space-between;gap:1vw;flex-wrap:wrap;}
+  .head .pos{font-family:'Fraunces',serif;font-size:clamp(28px,6.4vh,72px);font-weight:700;line-height:1;}
+  .head .kind{font-size:clamp(15px,2.8vh,30px);font-weight:600;}
+  .head .prog{width:100%;font-size:clamp(13px,2.3vh,24px);font-weight:500;opacity:1;}
+
+  .now{background:var(--card);border:3px solid var(--c);border-radius:2vh;padding:2vh 1.6vw;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:1vh;flex:0 0 auto;min-height:0;}
+  .now .lbl{font-size:clamp(12px,2vh,22px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);}
+  .now .num{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(72px,24vh,300px);line-height:.95;color:var(--c);}
+  .now .name{font-size:clamp(22px,5vh,60px);font-weight:700;line-height:1.1;overflow-wrap:anywhere;}
+  .now .pets{display:flex;flex-wrap:wrap;gap:.8vh .8vw;justify-content:center;}
+  .now .chip{background:var(--soft);color:var(--ink);border-radius:999px;padding:.6vh 1.2vw;font-size:clamp(14px,2.7vh,30px);font-weight:600;}
+  .now .extra{font-size:clamp(13px,2.2vh,24px);color:var(--ink-soft);}
+  .now.empty .num{color:#B9AEB3;}
+  .now.empty .name{color:var(--ink-soft);font-weight:500;font-size:clamp(18px,3.2vh,36px);}
+  .now.flash{animation:flash 1.6s ease-out 1;}
+  @keyframes flash{0%{background:var(--soft);transform:scale(1.02);}100%{background:var(--card);transform:scale(1);}}
+  @media (prefers-reduced-motion:reduce){ .now.flash{animation:none;} }
+
+  .recent{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:1vh;}
+  .recent h2{font-size:clamp(12px,2vh,22px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-family:'Work Sans',sans-serif;}
+  .row{display:flex;align-items:center;gap:1.2vw;background:var(--card);border:1px solid var(--line);border-radius:1.4vh;padding:1vh 1.2vw;min-height:0;}
+  .row .n{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(20px,4.2vh,48px);color:var(--c);min-width:3.2ch;}
+  .row .t{min-width:0;}
+  .row .who{font-size:clamp(14px,2.7vh,30px);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .row .pp{font-size:clamp(12px,2.1vh,24px);color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  #screenError{display:none;position:fixed;left:50%;bottom:2vh;transform:translateX(-50%);background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);border-radius:999px;padding:1vh 2vw;font-size:clamp(13px,2vh,20px);font-weight:600;}
+  #screenError.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
+  <h1>Login panitia</h1>
+  <p>Layar monitor check in ini khusus superadmin.</p>
+  <div class="field">
+    <label for="loginEmail">Username</label>
+    <input type="text" id="loginEmail" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+  </div>
+  <button type="button" id="loginBtn">Masuk</button>
+  <div class="login-error" id="loginError">Username atau password salah.</div>
+</div>
+
+<div id="screen">
+  <div class="topbar">
+    <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
+    <h1>Check in Pet Blessing 2026</h1>
+    <div class="spacer"></div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusText">memuat</span></div>
+    <button type="button" class="fs-btn" id="fsBtn">Layar penuh</button>
+    <div class="clock" id="clock"></div>
+  </div>
+  <div class="cols">
+    <section class="side a" id="sideA" aria-label="Pos A, nomor ganjil">
+      <div class="head"><span class="pos">POS A</span><span class="kind">Nomor ganjil</span><span class="prog" id="progA"></span></div>
+      <div class="now empty" id="nowA" aria-live="polite"></div>
+      <div class="recent"><h2>Sebelumnya</h2><div id="recentA"></div></div>
+    </section>
+    <section class="side b" id="sideB" aria-label="Pos B, nomor genap">
+      <div class="head"><span class="pos">POS B</span><span class="kind">Nomor genap</span><span class="prog" id="progB"></span></div>
+      <div class="now empty" id="nowB" aria-live="polite"></div>
+      <div class="recent"><h2>Sebelumnya</h2><div id="recentB"></div></div>
+    </section>
+  </div>
+</div>
+<div id="screenError">Koneksi terputus, mencoba lagi</div>
+
+<script>
+(function(){
+  var API_URL = window.PETBLESSING_API_URL;
+  var TOKEN_KEY = 'petblessing_panitia_token';
+  var RECENT_LIMIT = 6;     // sebelumnya yang ditampilkan per sisi (di luar kartu "sekarang")
+  var POLL_MS = 3000;
+  if(!API_URL){
+    document.getElementById('loginWrap').innerHTML = '<p>API belum dikonfigurasi.</p>';
+    return;
+  }
+
+  function token(){ return sessionStorage.getItem(TOKEN_KEY); }
+  function tokenLevel(){
+    try{ var p = token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))).level || null; }catch(e){ return null; }
+  }
+  var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
+  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka layar monitor ini.';
+  function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  var timer = null, running = false, firstRender = true;
+  var lastTop = { a: null, b: null };
+
+  function showScreen(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('screen').classList.add('show');
+    running = true;
+    tickClock();
+    load();
+  }
+  function showLogin(){
+    running = false;
+    clearTimeout(timer);
+    document.getElementById('screen').classList.remove('show');
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+  function checkSession(){
+    if(token() && tokenLevel() === 'superadmin'){ showScreen(); return; }
+    var err = document.getElementById('loginError');
+    if(token()){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); }
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var btn = this;
+    var err = document.getElementById('loginError');
+    err.classList.remove('show'); err.textContent = LOGIN_ERR_DEFAULT;
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    try{
+      var res = await fetch('/api/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: document.getElementById('loginEmail').value.trim(), password: document.getElementById('loginPassword').value })
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !data.token){ err.classList.add('show'); return; }
+      if(data.level !== 'superadmin'){ err.textContent = LOGIN_ERR_LEVEL; err.classList.add('show'); return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      showScreen();
+    }catch(e){ err.classList.add('show'); }
+    finally{ btn.disabled = false; btn.textContent = 'Masuk'; }
+  });
+  ['loginEmail','loginPassword'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginBtn').click(); }
+    });
+  });
+
+  // --- Jam dan layar penuh ---
+  function tickClock(){
+    var d = new Date();
+    document.getElementById('clock').textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  setInterval(tickClock, 5000);
+  function toggleFullscreen(){
+    if(document.fullscreenElement){ document.exitFullscreen(); }
+    else if(document.documentElement.requestFullscreen){ document.documentElement.requestFullscreen(); }
+  }
+  document.getElementById('fsBtn').addEventListener('click', toggleFullscreen);
+  document.addEventListener('keydown', function(e){
+    if((e.key === 'f' || e.key === 'F') && document.getElementById('screen').classList.contains('show') && e.target.tagName !== 'INPUT'){ toggleFullscreen(); }
+  });
+  document.addEventListener('fullscreenchange', function(){
+    document.getElementById('fsBtn').textContent = document.fullscreenElement ? 'Keluar layar penuh' : 'Layar penuh';
+  });
+
+  // --- Render ---
+  function petsChips(pets){
+    var list = (pets || []).slice(0, 6).map(function(p){
+      return '<span class="chip">' + escapeHtml(p.name) + ' (' + escapeHtml(p.type) + ')</span>';
+    });
+    if((pets || []).length > 6) list.push('<span class="chip">dan ' + ((pets || []).length - 6) + ' lainnya</span>');
+    return list.join('');
+  }
+  function petsLine(pets){
+    return (pets || []).map(function(p){ return p.name + ' (' + p.type + ')'; }).join(', ');
+  }
+  function renderSide(key, data){
+    var K = key.toUpperCase();
+    document.getElementById('prog' + K).textContent = data.checked + ' dari ' + data.total + ' nomor sudah check in';
+    var now = document.getElementById('now' + K);
+    var recent = data.recent || [];
+    var top = recent[0];
+    if(!top){
+      now.className = 'now empty';
+      now.innerHTML = '<div class="lbl">Nomor terbaru</div><div class="num">0</div><div class="name">Menunggu check in pertama</div>';
+      document.getElementById('recent' + K).innerHTML = '';
+      lastTop[key] = null;
+      return;
+    }
+    var topKey = top.queue_number + '|' + top.checked_in_at;
+    var isNew = !firstRender && lastTop[key] !== null && lastTop[key] !== topKey;
+    if(lastTop[key] !== topKey){
+      now.className = 'now' + (isNew ? ' flash' : '');
+      now.innerHTML =
+        '<div class="lbl">Nomor terbaru</div>' +
+        '<div class="num">' + escapeHtml(top.queue_number) + '</div>' +
+        '<div class="name">' + escapeHtml(top.name) + '</div>' +
+        '<div class="pets">' + petsChips(top.pets) + '</div>' +
+        (top.companions > 0 ? '<div class="extra">' + escapeHtml(top.companions) + ' pendamping</div>' : '');
+      lastTop[key] = topKey;
+    }
+    document.getElementById('recent' + K).innerHTML = recent.slice(1, 1 + RECENT_LIMIT).map(function(r){
+      return '<div class="row"><div class="n">' + escapeHtml(r.queue_number) + '</div><div class="t">' +
+        '<div class="who">' + escapeHtml(r.name) + '</div><div class="pp">' + escapeHtml(petsLine(r.pets)) + '</div></div></div>';
+    }).join('');
+  }
+
+  function setStatus(ok, text){
+    document.getElementById('dot').className = 'dot' + (ok ? '' : ' bad');
+    document.getElementById('statusText').textContent = text;
+    document.getElementById('screenError').classList.toggle('show', !ok);
+  }
+
+  // --- Ambil data: satu request untuk dua sisi (lihat vps-db/init/15-checkin-monitor.sql) ---
+  async function load(){
+    clearTimeout(timer);
+    if(!running) return;
+    var next = document.hidden ? POLL_MS * 3 : POLL_MS;
+    try{
+      var res = await fetch(API_URL + '/rpc/checkin_monitor?recent_limit=' + (RECENT_LIMIT + 1), {
+        headers: { Authorization: 'Bearer ' + token() }
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(res.status === 429){ setStatus(false, 'terlalu sering, menunggu'); next = 8000; }
+      else if(!res.ok){ throw new Error('HTTP ' + res.status); }
+      else{
+        var d = await res.json();
+        renderSide('a', d.odd);
+        renderSide('b', d.even);
+        firstRender = false;
+        setStatus(true, 'tersambung ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
+      }
+    }catch(e){
+      setStatus(false, 'terputus');
+      next = 5000;
+    }
+    timer = setTimeout(load, next);
+  }
+
+  // Kalau halaman check in (scanner) dibuka di browser yang sama, ia memberi kabar
+  // begitu ada check in baru, jadi layar ini langsung menyegarkan tanpa menunggu.
+  try{
+    var bc = new BroadcastChannel('pb-checkin');
+    bc.onmessage = function(){ if(running) load(); };
+  }catch(e){ /* BroadcastChannel tidak ada, cukup andalkan polling */ }
+
+  checkSession();
+})();
+</script>
+</body>
+</html>

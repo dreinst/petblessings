@@ -130,7 +130,7 @@
   <div class="stats-col">
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
-    <h2 class="section">Check-in Pet Blessing (pemilik per pos)</h2>
+    <h2 class="section">Check in Pet Blessing (Pos A ganjil, Pos B genap)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <h2 class="section">Pendaftaran Fashion Pawrade Competition 2026</h2>
     <div class="stats" id="statsPawrade"></div>
@@ -243,17 +243,15 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=companions,donation_amount,pets(id)', { headers: authHeaders() }),
-        fetch(API_URL + '/checkins?select=post', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,companions,donation_amount,pets(id),checkins(post)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
       if(results.some(function(r){ return r.status === 401; })){ expired(); return; }
       if(results.some(function(r){ return !r.ok; })) throw new Error('HTTP ' + results.find(function(r){ return !r.ok; }).status);
       var owners = await results[0].json();
-      var checkins = await results[1].json();
-      var pawradeOwners = await results[2].json();
-      var pawradeCheckins = await results[3].json();
+      var pawradeOwners = await results[1].json();
+      var pawradeCheckins = await results[2].json();
       var pets = 0, companions = 0, donation = 0;
       owners.forEach(function(o){
         pets += (o.pets || []).length;
@@ -262,12 +260,19 @@
         var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
         donation += digits ? parseInt(digits, 10) : 0;
       });
-      var perPost = {};
-      checkins.forEach(function(c){ perPost[c.post] = (perPost[c.post] || 0) + 1; });
+      // Check in 1 titik, 2 pos: nomor urut ganjil = Pos A, genap = Pos B.
+      var totalA = 0, totalB = 0, doneA = 0, doneB = 0;
+      owners.forEach(function(o){
+        var odd = Number(o.queue_number) % 2 === 1;
+        var done = (o.checkins || []).some(function(c){ return c.post === 'reg_ulang'; });
+        if(odd){ totalA++; if(done) doneA++; } else { totalB++; if(done) doneB++; }
+      });
       document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
-      document.getElementById('statsPosts').innerHTML = [['Reg ulang','reg_ulang'],['Pos 1','pos1'],['Pos 2','pos2'],['Pos 3','pos3']].map(function(p){
-        return card(p[0], perPost[p[1]] || 0);
-      }).join('');
+      document.getElementById('statsPosts').innerHTML =
+        card('Sudah check in', doneA + doneB) +
+        card('Belum check in', (totalA + totalB) - (doneA + doneB)) +
+        card('Pos A (ganjil), dari ' + totalA, doneA) +
+        card('Pos B (genap), dari ' + totalB, doneB);
       var pawradePets = 0, pawradeFee = 0;
       pawradeOwners.forEach(function(o){
         pawradePets += (o.pawrade_pets || []).length;

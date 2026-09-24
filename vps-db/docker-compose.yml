@@ -54,12 +54,16 @@ services:
       - "traefik.http.middlewares.petblessing-api-headers.headers.customFrameOptionsValue=DENY"
       - "traefik.http.middlewares.petblessing-api-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
       - "traefik.http.middlewares.petblessing-api-headers.headers.stsSeconds=31536000"
-      # Rate limit per IP -- endpoint insert publik (owners/pets/wa_queue) kena
-      # akses langsung dari internet tanpa lewat form, jadi perlu dibatasi
-      # supaya tidak disalahgunakan untuk banjir data sampah / spam WhatsApp
-      # lewat nomor telepon siapa saja.
-      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.average=15"
-      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.burst=30"
+      # Rate limit per IP. Awalnya 15/menit (burst 30) karena endpoint insert
+      # publik dulu bisa diakses langsung dari internet. Sejak insert wajib
+      # lewat /api/register (captcha + JWT, lihat 04-captcha-gate.sql), batas
+      # itu tidak perlu seketat itu dan malah menghambat hari-H: semua
+      # perangkat panitia di lokasi berbagi satu IP wifi, dan tiap scan
+      # check in memakai 3 request, ditambah layar monitor yang memuat ulang
+      # tiap 3 detik. Dinaikkan jadi 240/menit (burst 120), 16x lebih longgar
+      # tapi tetap membatasi banjir request dari satu IP.
+      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.average=240"
+      - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.burst=120"
       - "traefik.http.middlewares.petblessing-api-ratelimit.ratelimit.period=1m"
       - "traefik.http.services.petblessing-api.loadbalancer.server.port=3000"
 

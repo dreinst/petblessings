@@ -53,9 +53,21 @@
   .logout-btn{font-size:12.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
   header h1{font-size:22px;color:var(--brand-deep);margin-top:8px;}
 
-  .post-select{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
-  .post-select button{padding:12px 8px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;}
-  .post-select button.active{background:var(--brand);border-color:var(--brand);color:#fff;}
+  .desk-help{font-size:13px;color:var(--ink-soft);margin:12px 0 0;}
+  .post-select{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 16px;}
+  .post-select button{padding:12px 8px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-family:inherit;cursor:pointer;}
+  .post-select button b{display:block;font-size:18px;font-weight:700;}
+  .post-select button span{display:block;font-size:12.5px;}
+  .post-select button[data-desk="A"].active{background:#0B6E5E;border-color:#0B6E5E;color:#fff;}
+  .post-select button[data-desk="B"].active{background:#B8410F;border-color:#B8410F;color:#fff;}
+  .monitor-btn{display:block;width:100%;margin:14px 0 0;padding:11px;border:1.5px solid var(--brand-deep);border-radius:10px;background:none;color:var(--brand-deep);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+  .desk-badge{display:inline-block;margin:0 0 6px;padding:6px 18px;border-radius:999px;font-size:16px;font-weight:700;color:#fff;}
+  .desk-badge.A{background:#0B6E5E;}
+  .desk-badge.B{background:#B8410F;}
+  .desk-alert{background:var(--accent-light);color:#5E4419;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin:0 0 14px;text-align:left;}
+  .manual-row .desk{flex:none;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;}
+  .manual-row .desk.A{background:#0B6E5E;}
+  .manual-row .desk.B{background:#B8410F;}
 
   .scan-box{position:relative;width:100%;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px;}
   .scan-box video{width:100%;height:100%;object-fit:cover;}
@@ -134,13 +146,13 @@
     <h1>Check-in Pet Blessing</h1>
   </header>
 
+  <p class="desk-help">Satu titik, dua pos. Nomor urut ganjil di Pos A, genap di Pos B. Pilih pos untuk perangkat ini.</p>
   <div class="post-select" id="postSelect">
-    <button type="button" data-post="reg_ulang">Reg ulang</button>
-    <button type="button" data-post="pos1">Pos 1</button>
-    <button type="button" data-post="pos2">Pos 2</button>
-    <button type="button" data-post="pos3">Pos 3</button>
+    <button type="button" data-desk="A"><b>Pos A</b><span>nomor ganjil</span></button>
+    <button type="button" data-desk="B"><b>Pos B</b><span>nomor genap</span></button>
   </div>
   <div class="count" id="postCount"></div>
+  <button type="button" class="monitor-btn" id="monitorBtn">Buka layar monitor</button>
 
   <div class="scan-box" id="scanBox" style="margin-top:16px;">
     <video id="video" playsinline muted></video>
@@ -175,13 +187,21 @@
 (function(){
   var API_URL = window.PETBLESSING_API_URL;
   var TOKEN_KEY = 'petblessing_panitia_token';
-  var POST_KEY = 'petblessing_checkin_post';
+  var DESK_KEY = 'petblessing_checkin_desk';
+  // Check in sekarang 1 titik dengan 2 pos: nomor urut GANJIL di Pos A, GENAP di
+  // Pos B. Pos tidak disimpan di database (kolom checkins.post selalu
+  // 'reg_ulang'), karena pos selalu bisa dihitung dari nomor urutnya.
+  var DB_POST = 'reg_ulang';
   if(!API_URL){
     document.getElementById('loginWrap').innerHTML = '<div class="camera-error">API belum dikonfigurasi.</div>';
     return;
   }
 
-  var currentPost = localStorage.getItem(POST_KEY) || 'reg_ulang';
+  var currentDesk = localStorage.getItem(DESK_KEY) === 'B' ? 'B' : 'A';
+  var bc = null;
+  try{ bc = new BroadcastChannel('pb-checkin'); }catch(e){ bc = null; }
+  function deskOf(queueNumber){ return Number(queueNumber) % 2 === 1 ? 'A' : 'B'; }
+  function deskName(desk){ return 'Pos ' + desk + ' (' + (desk === 'A' ? 'ganjil' : 'genap') + ')'; }
   var scanning = false;
   var paused = false;
   var stream = null;
@@ -203,7 +223,7 @@
     if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
-    setPost(currentPost);
+    setDesk(currentDesk);
     startCamera();
   }
   function showLogin(){
@@ -255,27 +275,41 @@
     showLogin();
   });
 
-  function setPost(post){
-    currentPost = post;
-    localStorage.setItem(POST_KEY, post);
+  function setDesk(desk){
+    currentDesk = desk;
+    localStorage.setItem(DESK_KEY, desk);
     document.querySelectorAll('#postSelect button').forEach(function(b){
-      b.classList.toggle('active', b.dataset.post === post);
+      b.classList.toggle('active', b.dataset.desk === desk);
     });
     loadCount();
   }
   document.querySelectorAll('#postSelect button').forEach(function(b){
-    b.addEventListener('click', function(){ setPost(b.dataset.post); });
+    b.addEventListener('click', function(){ setDesk(b.dataset.desk); });
   });
 
+  // Layar monitor dibuka lewat window.open (bukan link biasa) supaya sesi login
+  // ikut terbawa dan tidak perlu login dua kali.
+  document.getElementById('monitorBtn').addEventListener('click', function(){
+    window.open('monitor-checkin.html', 'pbmonitor');
+  });
+
+  // Hitung per pos dari satu request: semua pemilik + tanda sudah check in.
   async function loadCount(){
     var el = document.getElementById('postCount');
     try{
-      var res = await fetch(API_URL + '/checkins?post=eq.' + currentPost + '&select=id', {
-        headers: { Authorization: 'Bearer ' + token(), Prefer: 'count=exact' }
+      var res = await fetch(API_URL + '/owners?select=queue_number,checkins(post)', {
+        headers: { Authorization: 'Bearer ' + token() }
       });
-      var contentRange = res.headers.get('content-range');
-      var total = contentRange ? contentRange.split('/')[1] : (await res.json()).length;
-      el.textContent = total + ' orang sudah check-in di pos ini';
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      var rows = await res.json();
+      var t = { A: 0, B: 0 }, c = { A: 0, B: 0 };
+      rows.forEach(function(o){
+        var d = deskOf(o.queue_number);
+        t[d]++;
+        if((o.checkins || []).some(function(x){ return x.post === DB_POST; })) c[d]++;
+      });
+      el.innerHTML = '<b>' + deskName(currentDesk) + ': ' + c[currentDesk] + ' dari ' + t[currentDesk] + '</b> nomor sudah check in<br>' +
+        'Pos ' + (currentDesk === 'A' ? 'B' : 'A') + ': ' + c[currentDesk === 'A' ? 'B' : 'A'] + ' dari ' + t[currentDesk === 'A' ? 'B' : 'A'];
     }catch(e){ el.textContent = ''; }
   }
 
@@ -391,24 +425,21 @@
           Authorization: 'Bearer ' + token(),
           Prefer: 'return=minimal'
         },
-        body: JSON.stringify({ owner_id: ownerId, post: currentPost })
+        body: JSON.stringify({ owner_id: ownerId, post: DB_POST })
       });
 
       if(checkinRes.status === 201){
-        renderResult('ok', owner, 'Check-in berhasil di ' + postLabel(currentPost) + '.');
+        renderResult('ok', owner, 'Check in berhasil.');
         loadCount();
+        if(bc) bc.postMessage('refresh'); // kabari layar monitor di browser yang sama
       } else if(checkinRes.status === 409){
-        renderResult('warn', owner, 'Sudah check-in sebelumnya di ' + postLabel(currentPost) + '.');
+        renderResult('warn', owner, 'Sudah check in sebelumnya.');
       } else {
         renderResult('err', owner, 'Gagal menyimpan check-in (' + checkinRes.status + ').');
       }
     }catch(e){
       renderResult('err', null, 'Terjadi kesalahan: ' + e.message);
     }
-  }
-
-  function postLabel(post){
-    return { reg_ulang: 'Reg ulang', pos1: 'Pos 1', pos2: 'Pos 2', pos3: 'Pos 3' }[post] || post;
   }
 
   // --- Pencarian manual (QR rusak / WhatsApp tidak masuk) ---
@@ -445,10 +476,12 @@
     }
     box.innerHTML = '<div class="manual-results">' + rows.map(function(o){
       var pets = (o.pets || []).map(function(p){ return p.name; }).join(', ');
+      var d = deskOf(o.queue_number);
       return '<button type="button" class="manual-row" data-id="' + escapeHtml(o.id) + '">' +
         '<span class="num">#' + escapeHtml(String(o.queue_number)) + '</span>' +
         '<span class="info"><span class="name">' + escapeHtml(o.name) + '</span>' +
         '<span class="meta">' + escapeHtml(o.phone) + ' &middot; ' + escapeHtml(pets) + '</span></span>' +
+        '<span class="desk ' + d + '">Pos ' + d + '</span>' +
         '</button>';
     }).join('') + '</div>';
   }
@@ -489,7 +522,12 @@
   }
 
   function renderResult(kind, owner, statusText){
-    feedback(kind);
+    // Nomor yang dipindai bukan bagian pos perangkat ini: tetap dicatat, tapi
+    // diberi peringatan (nada beda + kotak kuning) supaya panitia mengarahkan
+    // pemilik ke pos yang benar.
+    var desk = owner ? deskOf(owner.queue_number) : null;
+    var mismatch = !!owner && desk !== currentDesk && (kind === 'ok' || kind === 'warn');
+    feedback(mismatch && kind === 'ok' ? 'warn' : kind);
     document.getElementById('scanStatus').textContent = 'Menunggu konfirmasi panitia…';
 
     var sheet = document.getElementById('resultSheet');
@@ -499,7 +537,7 @@
     icon.textContent = kind === 'ok' ? '✓' : (kind === 'warn' ? '!' : '✕');
 
     var title = document.getElementById('resultTitle');
-    title.textContent = kind === 'ok' ? 'Check-in berhasil' : (kind === 'warn' ? 'Sudah check-in' : 'Tidak valid');
+    title.textContent = kind === 'ok' ? 'Check in berhasil' : (kind === 'warn' ? 'Sudah check in' : 'Tidak valid');
 
     var body = document.getElementById('resultBody');
     if(!owner){
@@ -509,6 +547,10 @@
         return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
       }).join('');
       body.innerHTML =
+        '<div class="desk-badge ' + desk + '">Pos ' + desk + '</div>' +
+        (mismatch
+          ? '<div class="desk-alert">Nomor ' + (desk === 'A' ? 'ganjil' : 'genap') + ' seharusnya di ' + deskName(desk) + '. Perangkat ini di Pos ' + currentDesk + '.' + (kind === 'ok' ? ' Check in tetap tercatat, arahkan pemilik ke Pos ' + desk + '.' : '') + '</div>'
+          : '') +
         '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
         '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
         '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
