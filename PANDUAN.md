@@ -12,7 +12,7 @@ Sistem ini terdiri dari beberapa halaman web, untuk dua acara: Pet Blessing dan 
 | Rekap Pet Blessing | https://petblessings.vercel.app/pendaftaran-masuk.html | Admin dan superadmin |
 | Rekap Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade-rekap.html | Admin dan superadmin |
 | Dashboard superadmin | https://petblessings.vercel.app/superadmin.html | Superadmin saja |
-| Check in Pet Blessing (scanner Pos A dan Pos B) | https://petblessings.vercel.app/checkin.html | Superadmin saja |
+| Reg ulang Pet Blessing (scanner Pos A dan Pos B) | https://petblessings.vercel.app/checkin.html | Superadmin saja |
 | Monitor check in Pet Blessing (layar tambahan) | https://petblessings.vercel.app/monitor-checkin.html | Superadmin saja |
 | Reg ulang Fashion Pawrade Competition 2026 | https://petblessings.vercel.app/pawrade-checkin.html | Superadmin saja |
 | Database QR | https://petblessings.vercel.app/qr-database.html | Superadmin saja |
@@ -128,7 +128,7 @@ Export selalu mengambil seluruh data, bukan hanya hasil pencarian yang sedang ta
 - Halaman rekap tidak menampilkan status check-in. Jumlah yang sudah hadir dilihat di dashboard superadmin atau di halaman check-in, per pos.
 - Pesan "Sesi habis, silakan login lagi" berarti 12 jam sudah lewat. Login ulang saja.
 - Pesan "Belum bisa memuat data" biasanya soal koneksi internet. Cek koneksi lalu tekan Muat ulang.
-- Tombol **Dashboard**, **Check-in Pet Blessing**, **Reg ulang Fashion Pawrade Competition 2026**, dan **Database QR** di bilah navigasi atas hanya tampil untuk superadmin. Admin tidak melihat tombol itu dan memang tidak bisa membuka halaman tersebut.
+- Tombol **Dashboard**, **Reg ulang Pet Blessing**, **Reg ulang Fashion Pawrade Competition 2026**, dan **Database QR** di bilah navigasi atas hanya tampil untuk superadmin. Admin tidak melihat tombol itu dan memang tidak bisa membuka halaman tersebut.
 
 ---
 
@@ -161,6 +161,8 @@ Halaman: https://petblessings.vercel.app/checkin.html
 ### Memilih pos
 
 Tekan **Pos A** (nomor ganjil, hijau) atau **Pos B** (nomor genap, oranye) di bagian atas. Pilihan ini tersimpan di perangkat tersebut, jadi cukup dipilih sekali di awal acara. Pos hanya menentukan nomor mana yang seharusnya dilayani perangkat itu, pembagiannya tetap ganjil dan genap.
+
+**Perangkat tetap:** supaya dua perangkat reg ulang tinggal dibuka dan langsung scan, buka alamat khusus masing-masing: `https://petblessings.vercel.app/checkin.html?pos=A` untuk Pos A dan `https://petblessings.vercel.app/checkin.html?pos=B` untuk Pos B. Perangkat yang dibuka dengan alamat ini terkunci di posnya (tombol pilihan pos disembunyikan) dan kamera langsung menyala setelah login. Simpan sebagai bookmark di masing-masing perangkat. Dua pos ini adalah dua meja reg ulang di satu titik.
 
 Di bawah tombol pos tampil angka "X dari Y nomor sudah check in" untuk pos ini, dan angka pos satunya. Angka ini naik setiap ada scan yang berhasil.
 

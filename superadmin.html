@@ -130,7 +130,7 @@
   <div class="stats-col">
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
-    <h2 class="section">Check in Pet Blessing (Pos A ganjil, Pos B genap)</h2>
+    <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <h2 class="section">Pendaftaran Fashion Pawrade Competition 2026</h2>
     <div class="stats" id="statsPawrade"></div>
@@ -269,8 +269,8 @@
       });
       document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
       document.getElementById('statsPosts').innerHTML =
-        card('Sudah check in', doneA + doneB) +
-        card('Belum check in', (totalA + totalB) - (doneA + doneB)) +
+        card('Sudah reg ulang', doneA + doneB) +
+        card('Belum reg ulang', (totalA + totalB) - (doneA + doneB)) +
         card('Pos A (ganjil), dari ' + totalA, doneA) +
         card('Pos B (genap), dari ' + totalB, doneB);
       var pawradePets = 0, pawradeFee = 0;

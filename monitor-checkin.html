@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monitor Check in Pet Blessing 2026</title>
+<title>Monitor Reg ulang Pet Blessing 2026</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,7 +91,7 @@
 <div class="login-wrap" id="loginWrap">
   <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
   <h1>Login panitia</h1>
-  <p>Layar monitor check in ini khusus superadmin.</p>
+  <p>Layar monitor reg ulang ini khusus superadmin.</p>
   <div class="field">
     <label for="loginEmail">Username</label>
     <input type="text" id="loginEmail" autocomplete="username">
@@ -107,7 +107,7 @@
 <div id="screen">
   <div class="topbar">
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
-    <h1>Check in Pet Blessing 2026</h1>
+    <h1>Reg ulang Pet Blessing 2026</h1>
     <div class="spacer"></div>
     <div class="status"><span class="dot" id="dot"></span><span id="statusText">memuat</span></div>
     <button type="button" class="fs-btn" id="fsBtn">Layar penuh</button>
@@ -226,13 +226,13 @@
   }
   function renderSide(key, data){
     var K = key.toUpperCase();
-    document.getElementById('prog' + K).textContent = data.checked + ' dari ' + data.total + ' nomor sudah check in';
+    document.getElementById('prog' + K).textContent = data.checked + ' dari ' + data.total + ' nomor sudah reg ulang';
     var now = document.getElementById('now' + K);
     var recent = data.recent || [];
     var top = recent[0];
     if(!top){
       now.className = 'now empty';
-      now.innerHTML = '<div class="lbl">Nomor terbaru</div><div class="num">0</div><div class="name">Menunggu check in pertama</div>';
+      now.innerHTML = '<div class="lbl">Nomor terbaru</div><div class="num">0</div><div class="name">Menunggu reg ulang pertama</div>';
       document.getElementById('recent' + K).innerHTML = '';
       lastTop[key] = null;
       return;
