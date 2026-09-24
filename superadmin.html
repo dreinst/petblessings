@@ -132,6 +132,7 @@
     <div class="stats stats-reg" id="statsReg"></div>
     <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
     <div class="stats posts" id="statsPosts"></div>
+    <p class="note" id="wrongNote" style="margin:-6px 0 14px;font-size:13px;color:var(--ink-soft);"></p>
     <h2 class="section">Pendaftaran Fashion Pawrade Competition 2026</h2>
     <div class="stats" id="statsPawrade"></div>
   </div>
@@ -243,7 +244,7 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=queue_number,companions,donation_amount,pets(id),checkins(post)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,companions,donation_amount,pets(id),checkins(post,desk,wrong_desk)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
@@ -261,18 +262,23 @@
         donation += digits ? parseInt(digits, 10) : 0;
       });
       // Check in 1 titik, 2 pos: nomor urut ganjil = Pos A, genap = Pos B.
-      var totalA = 0, totalB = 0, doneA = 0, doneB = 0;
+      var totalA = 0, totalB = 0, doneA = 0, doneB = 0, wrong = [];
       owners.forEach(function(o){
         var odd = Number(o.queue_number) % 2 === 1;
         var done = (o.checkins || []).some(function(c){ return c.post === 'reg_ulang'; });
         if(odd){ totalA++; if(done) doneA++; } else { totalB++; if(done) doneB++; }
+        (o.checkins || []).forEach(function(c){ if(c.post === 'reg_ulang' && c.wrong_desk) wrong.push({ n: o.queue_number, desk: c.desk }); });
       });
+      wrong.sort(function(a, b){ return a.n - b.n; });
       document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
       document.getElementById('statsPosts').innerHTML =
         card('Sudah reg ulang', doneA + doneB) +
         card('Belum reg ulang', (totalA + totalB) - (doneA + doneB)) +
         card('Pos A (ganjil), dari ' + totalA, doneA) +
         card('Pos B (genap), dari ' + totalB, doneB);
+      document.getElementById('wrongNote').textContent = wrong.length
+        ? 'Salah pos: ' + wrong.length + ' nomor, ' + wrong.map(function(w){ return '#' + w.n + ' di Pos ' + w.desk; }).join(', ') + '.'
+        : 'Belum ada nomor yang reg ulang di pos yang salah.';
       var pawradePets = 0, pawradeFee = 0;
       pawradeOwners.forEach(function(o){
         pawradePets += (o.pawrade_pets || []).length;

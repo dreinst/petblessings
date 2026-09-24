@@ -61,10 +61,6 @@
   .post-select button[data-desk="A"].active{background:#0B6E5E;border-color:#0B6E5E;color:#fff;}
   .post-select button[data-desk="B"].active{background:#B8410F;border-color:#B8410F;color:#fff;}
   .monitor-btn{display:block;width:100%;margin:14px 0 0;padding:11px;border:1.5px solid var(--brand-deep);border-radius:10px;background:none;color:var(--brand-deep);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
-  .desk-badge{display:inline-block;margin:0 0 6px;padding:6px 18px;border-radius:999px;font-size:16px;font-weight:700;color:#fff;}
-  .desk-badge.A{background:#0B6E5E;}
-  .desk-badge.B{background:#B8410F;}
-  .desk-alert{background:var(--accent-light);color:#5E4419;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin:0 0 14px;text-align:left;}
   .manual-row .desk{flex:none;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;}
   .manual-row .desk.A{background:#0B6E5E;}
   .manual-row .desk.B{background:#B8410F;}
@@ -433,7 +429,7 @@
           Authorization: 'Bearer ' + token(),
           Prefer: 'return=minimal'
         },
-        body: JSON.stringify({ owner_id: ownerId, post: DB_POST })
+        body: JSON.stringify({ owner_id: ownerId, post: DB_POST, desk: currentDesk })
       });
 
       if(checkinRes.status === 201){
@@ -530,12 +526,10 @@
   }
 
   function renderResult(kind, owner, statusText){
-    // Nomor yang dipindai bukan bagian pos perangkat ini: tetap dicatat, tapi
-    // diberi peringatan (nada beda + kotak kuning) supaya panitia mengarahkan
-    // pemilik ke pos yang benar.
-    var desk = owner ? deskOf(owner.queue_number) : null;
-    var mismatch = !!owner && desk !== currentDesk && (kind === 'ok' || kind === 'warn');
-    feedback(mismatch && kind === 'ok' ? 'warn' : kind);
+    // Salah pos TIDAK ditampilkan sebagai peringatan: reg ulang tetap
+    // dicatat dan database menandainya (checkins.wrong_desk, lihat
+    // vps-db/init/16-checkin-desk.sql) untuk bahan evaluasi antrean.
+    feedback(kind);
     document.getElementById('scanStatus').textContent = 'Menunggu konfirmasi panitia…';
 
     var sheet = document.getElementById('resultSheet');
@@ -555,10 +549,6 @@
         return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
       }).join('');
       body.innerHTML =
-        '<div class="desk-badge ' + desk + '">Pos ' + desk + '</div>' +
-        (mismatch
-          ? '<div class="desk-alert">Nomor ' + (desk === 'A' ? 'ganjil' : 'genap') + ' seharusnya di ' + deskName(desk) + '. Perangkat ini di Pos ' + currentDesk + '.' + (kind === 'ok' ? ' Reg ulang tetap tercatat, arahkan pemilik ke Pos ' + desk + '.' : '') + '</div>'
-          : '') +
         '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
         '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
         '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
