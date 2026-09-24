@@ -166,7 +166,7 @@ Tekan **Pos A** (nomor ganjil, hijau) atau **Pos B** (nomor genap, oranye) di ba
 
 Di bawah tombol pos tampil angka "X dari Y nomor sudah check in" untuk pos ini, dan angka pos satunya. Angka ini naik setiap ada scan yang berhasil.
 
-Kalau perangkat di Pos A memindai nomor genap (atau sebaliknya), check in **tetap tercatat**, tapi layar menampilkan kotak kuning "Nomor genap seharusnya di Pos B" dan bunyinya berbeda. Arahkan pemilik ke pos yang benar. Pos yang benar juga tampil sebagai label hijau (Pos A) atau oranye (Pos B) di lembar hasil dan di tiap baris hasil pencarian manual.
+Kalau ada nomor yang dipindai di pos yang "salah" (nomor genap di Pos A atau sebaliknya), reg ulang **tetap tercatat dan layar tidak menampilkan peringatan apa pun**, supaya antrean tidak terhambat. Database menandainya sebagai salah pos, dan dashboard superadmin menampilkan daftarnya (misalnya "Salah pos: 1 nomor, #60 di Pos A") sebagai bahan evaluasi pengaturan antrean.
 
 ### Alur scan
 
