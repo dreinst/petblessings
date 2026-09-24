@@ -431,7 +431,7 @@
     document.getElementById('scanStatus').textContent = 'Memeriksa…';
 
     try{
-      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(ownerId) + '&select=id,queue_number,name,phone,companions,pets(name,type)', {
+      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(ownerId) + '&select=id,queue_number,name,phone,companions,is_test,pets(name,type)', {
         headers: { Authorization: 'Bearer ' + token() }
       });
       if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
@@ -569,6 +569,7 @@
         return '<div class="pet-row">' + escapeHtml(p.name) + ' &middot; ' + escapeHtml(p.type) + '</div>';
       }).join('');
       body.innerHTML =
+        (owner.is_test && !TEST ? '<div class="test-banner">Ini data uji. Tercatat, tapi TIDAK tampil di monitor biasa. Buka scanner dan monitor dengan ?uji=1 untuk mode uji.</div>' : '') +
         '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
         '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
         '<div class="owner-phone">' + escapeHtml(owner.phone) + '</div>' +
