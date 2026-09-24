@@ -306,13 +306,23 @@
       });
       if(!res.ok) throw new Error('HTTP ' + res.status);
       var rows = await res.json();
-      var t = { A: 0, B: 0 }, c = { A: 0, B: 0 };
+      var t = { A: 0, B: 0 }, c = { A: 0, B: 0 }, maxDone = { A: 0, B: 0 }, waiting = { A: [], B: [] };
       rows.forEach(function(o){
         var d = deskOf(o.queue_number);
+        var n = Number(o.queue_number);
         t[d]++;
-        if((o.checkins || []).some(function(x){ return x.post === DB_POST; })) c[d]++;
+        if((o.checkins || []).some(function(x){ return x.post === DB_POST; })){ c[d]++; if(n > maxDone[d]) maxDone[d] = n; }
+        else waiting[d].push(n);
+      });
+      // Berikutnya dipanggil: nomor terkecil yang belum reg ulang dan lebih besar
+      // dari nomor tertinggi yang sudah reg ulang (antrean berurutan per pos).
+      var nextNo = {};
+      ['A', 'B'].forEach(function(d){
+        var cand = waiting[d].filter(function(n){ return n > maxDone[d]; });
+        nextNo[d] = cand.length ? Math.min.apply(null, cand) : null;
       });
       el.innerHTML = '<b>' + deskName(currentDesk) + ': ' + c[currentDesk] + ' dari ' + t[currentDesk] + '</b> nomor sudah reg ulang<br>' +
+        'Berikutnya dipanggil: <b>' + (nextNo[currentDesk] != null ? '#' + nextNo[currentDesk] : 'tidak ada') + '</b><br>' +
         'Pos ' + (currentDesk === 'A' ? 'B' : 'A') + ': ' + c[currentDesk === 'A' ? 'B' : 'A'] + ' dari ' + t[currentDesk === 'A' ? 'B' : 'A'];
     }catch(e){ el.textContent = ''; }
   }

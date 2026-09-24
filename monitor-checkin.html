@@ -50,8 +50,8 @@
   .clock{font-family:'Fraunces',serif;font-size:clamp(20px,3.4vh,38px);font-weight:600;color:var(--brand-deep);min-width:5.2ch;text-align:right;}
   .fs-btn{font-family:inherit;font-size:clamp(12px,1.9vh,18px);font-weight:600;color:var(--brand-deep);background:none;border:1.5px solid var(--brand-deep);border-radius:999px;padding:.7vh 1.4vw;cursor:pointer;}
 
-  .cols{display:grid;grid-template-columns:1fr 1fr;min-height:0;}
-  .side{display:flex;flex-direction:column;min-height:0;padding:2vh 1.6vw 2vh;gap:2vh;}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:0;}
+  .side{display:flex;flex-direction:column;min-height:0;min-width:0;padding:2vh 1.6vw 2vh;gap:2vh;}
   .side + .side{border-left:3px solid var(--line);}
   .side.a{--c:var(--a);--soft:var(--a-soft);}
   .side.b{--c:var(--b);--soft:var(--b-soft);}
@@ -63,11 +63,15 @@
 
   .now{background:var(--card);border:3px solid var(--c);border-radius:2vh;padding:2vh 1.6vw;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:1vh;flex:0 0 auto;min-height:0;}
   .now .lbl{font-size:clamp(12px,2vh,22px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c);}
-  .now .num{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(72px,24vh,300px);line-height:.95;color:var(--c);}
+  .now .num{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(64px,19vh,260px);line-height:.95;color:var(--c);}
   .now .name{font-size:clamp(22px,5vh,60px);font-weight:700;line-height:1.1;overflow-wrap:anywhere;}
   .now .pets{display:flex;flex-wrap:wrap;gap:.8vh .8vw;justify-content:center;}
   .now .chip{background:var(--soft);color:var(--ink);border-radius:999px;padding:.6vh 1.2vw;font-size:clamp(14px,2.7vh,30px);font-weight:600;}
   .now .extra{font-size:clamp(13px,2.2vh,24px);color:var(--ink-soft);}
+  .nextbar{display:flex;align-items:center;gap:1.4vw;background:var(--soft);border-radius:1.6vh;padding:1.2vh 1.6vw;flex-wrap:wrap;flex:0 0 auto;}
+  .nextbar .lbl{font-size:clamp(13px,2.2vh,24px);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);}
+  .nextbar .val{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(30px,7vh,84px);color:var(--c);line-height:1;}
+  .nextbar .skip{margin-left:auto;font-size:clamp(13px,2.1vh,24px);font-weight:600;color:var(--ink);}
   .now.empty .num{color:#B9AEB3;}
   .now.empty .name{color:var(--ink-soft);font-weight:500;font-size:clamp(18px,3.2vh,36px);}
   .now.flash{animation:flash 1.6s ease-out 1;}
@@ -76,7 +80,7 @@
 
   .recent{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:1vh;}
   .recent h2{font-size:clamp(12px,2vh,22px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-family:'Work Sans',sans-serif;}
-  .row{display:flex;align-items:center;gap:1.2vw;background:var(--card);border:1px solid var(--line);border-radius:1.4vh;padding:1vh 1.2vw;min-height:0;}
+  .row{flex:0 0 auto;display:flex;align-items:center;gap:1.2vw;background:var(--card);border:1px solid var(--line);border-radius:1.4vh;padding:1vh 1.2vw;min-height:0;}
   .row .n{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(20px,4.2vh,48px);color:var(--c);min-width:3.2ch;}
   .row .t{min-width:0;}
   .row .who{font-size:clamp(14px,2.7vh,30px);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -117,11 +121,13 @@
     <section class="side a" id="sideA" aria-label="Pos A, nomor ganjil">
       <div class="head"><span class="pos">POS A</span><span class="kind">Nomor ganjil</span><span class="prog" id="progA"></span></div>
       <div class="now empty" id="nowA" aria-live="polite"></div>
+      <div class="nextbar" id="nextA"></div>
       <div class="recent"><h2>Sebelumnya</h2><div id="recentA"></div></div>
     </section>
     <section class="side b" id="sideB" aria-label="Pos B, nomor genap">
       <div class="head"><span class="pos">POS B</span><span class="kind">Nomor genap</span><span class="prog" id="progB"></span></div>
       <div class="now empty" id="nowB" aria-live="polite"></div>
+      <div class="nextbar" id="nextB"></div>
       <div class="recent"><h2>Sebelumnya</h2><div id="recentB"></div></div>
     </section>
   </div>
@@ -132,7 +138,7 @@
 (function(){
   var API_URL = window.PETBLESSING_API_URL;
   var TOKEN_KEY = 'petblessing_panitia_token';
-  var RECENT_LIMIT = 6;     // sebelumnya yang ditampilkan per sisi (di luar kartu "sekarang")
+  var RECENT_LIMIT = 5;     // sebelumnya yang ditampilkan per sisi (di luar kartu "sekarang")
   var POLL_MS = 3000;
   if(!API_URL){
     document.getElementById('loginWrap').innerHTML = '<p>API belum dikonfigurasi.</p>';
@@ -227,6 +233,16 @@
   function renderSide(key, data){
     var K = key.toUpperCase();
     document.getElementById('prog' + K).textContent = data.checked + ' dari ' + data.total + ' nomor sudah reg ulang';
+    // Antrean dipanggil berurutan per sisi: tampilkan nomor berikutnya dan yang terlewat.
+    var nb = document.getElementById('next' + K);
+    if(data.next != null){
+      nb.innerHTML = '<span class="lbl">Berikutnya dipanggil</span><span class="val">' + escapeHtml(data.next) + '</span>';
+    }else{
+      nb.innerHTML = '<span class="lbl">' + (data.checked >= data.total ? 'Semua nomor sudah reg ulang' : 'Tidak ada nomor berikutnya') + '</span>';
+    }
+    if((data.skipped || []).length){
+      nb.innerHTML += '<span class="skip">Terlewat: ' + data.skipped.map(function(n){ return escapeHtml(n); }).join(', ') + '</span>';
+    }
     var now = document.getElementById('now' + K);
     var recent = data.recent || [];
     var top = recent[0];
@@ -255,6 +271,15 @@
     }).join('');
   }
 
+  function fitRecent(){
+    ['A', 'B'].forEach(function(K){
+      var list = document.getElementById('recent' + K);
+      var box = list.parentElement;
+      while(box.scrollHeight > box.clientHeight + 1 && list.lastChild){ list.removeChild(list.lastChild); }
+    });
+  }
+  window.addEventListener('resize', function(){ if(running) load(); });
+
   function setStatus(ok, text){
     document.getElementById('dot').className = 'dot' + (ok ? '' : ' bad');
     document.getElementById('statusText').textContent = text;
@@ -277,6 +302,7 @@
         var d = await res.json();
         renderSide('a', d.odd);
         renderSide('b', d.even);
+        fitRecent();
         firstRender = false;
         setStatus(true, 'tersambung ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
       }
