@@ -8,9 +8,15 @@
 -- Fungsi ini mengembalikan semuanya dalam SATU request supaya hemat: API
 -- dibatasi request per menit, dan monitor memuat ulang data tiap beberapa
 -- detik. Hasil JSON:
---   { odd:  { total, checked, recent:[{queue_number,name,companions,checked_in_at,pets:[{name,type}]}] },
+--   { odd:  { total, checked, next, skipped:[nomor], recent:[{queue_number,name,companions,checked_in_at,pets:[{name,type}]}] },
 --     even: { ... } }
--- recent = check-in terbaru dulu, paling banyak recent_limit per sisi.
+-- recent  = reg ulang terbaru dulu, paling banyak recent_limit per sisi.
+-- next    = nomor berikutnya yang dipanggil di sisi itu: nomor terkecil yang
+--           belum reg ulang DAN lebih besar dari nomor tertinggi yang sudah
+--           reg ulang (null kalau tidak ada lagi). Antrean dipanggil berurutan,
+--           jadi yang absen tidak menahan "berikutnya".
+-- skipped = nomor yang belum reg ulang padahal nomor di atasnya sudah (yang
+--           terlewat/absen), paling banyak 10 nomor terkecil.
 -- Tidak mengembalikan nomor HP (layar monitor dilihat banyak orang).
 --
 -- SECURITY INVOKER (default): jalan sebagai web_superadmin, jadi RLS di
@@ -31,6 +37,11 @@ as $$
     from api.owners o
     join api.checkins c on c.owner_id = o.id and c.post = 'reg_ulang'
   ),
+  unchecked as (
+    select o.queue_number
+    from api.owners o
+    where not exists (select 1 from api.checkins c where c.owner_id = o.id and c.post = 'reg_ulang')
+  ),
   side(odd) as (values (true), (false)),
   recent as (
     select s.odd, r.*
@@ -47,6 +58,14 @@ as $$
     'odd',  json_build_object(
       'total',   (select count(*) from api.owners where queue_number % 2 = 1),
       'checked', (select count(*) from checked where queue_number % 2 = 1),
+      'next',    (select min(u.queue_number) from unchecked u
+                  where u.queue_number % 2 = 1
+                    and u.queue_number > coalesce((select max(queue_number) from checked where queue_number % 2 = 1), 0)),
+      'skipped', coalesce((select json_agg(x.n order by x.n) from (
+                    select u.queue_number as n from unchecked u
+                    where u.queue_number % 2 = 1
+                      and u.queue_number < coalesce((select max(queue_number) from checked where queue_number % 2 = 1), 0)
+                    order by 1 limit 10) x), '[]'::json),
       'recent',  coalesce((
         select json_agg(json_build_object(
           'queue_number', r.queue_number, 'name', r.name, 'companions', r.companions,
@@ -59,6 +78,14 @@ as $$
     'even', json_build_object(
       'total',   (select count(*) from api.owners where queue_number % 2 = 0),
       'checked', (select count(*) from checked where queue_number % 2 = 0),
+      'next',    (select min(u.queue_number) from unchecked u
+                  where u.queue_number % 2 = 0
+                    and u.queue_number > coalesce((select max(queue_number) from checked where queue_number % 2 = 0), 0)),
+      'skipped', coalesce((select json_agg(x.n order by x.n) from (
+                    select u.queue_number as n from unchecked u
+                    where u.queue_number % 2 = 0
+                      and u.queue_number < coalesce((select max(queue_number) from checked where queue_number % 2 = 0), 0)
+                    order by 1 limit 10) x), '[]'::json),
       'recent',  coalesce((
         select json_agg(json_build_object(
           'queue_number', r.queue_number, 'name', r.name, 'companions', r.companions,
