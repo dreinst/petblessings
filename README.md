@@ -38,3 +38,5 @@ Bukti transfer donasi (maks 1280 px) dan foto hewan (maks 1024 px) dikompres di 
 ## Rencana eskalasi
 
 Langkah berikutnya, sesuai urutan prioritas: upload foto sungguhan (dengan kompresi di sisi browser), integrasi photobooth (mcfbooth, lewat `POST /api/sessions` dengan kode referensi yang disisipkan di `guest_name`), lalu sertifikat digital per hewan.
+
+**Mode uji:** `owners.is_test` menandai pendaftar uji ("Testing Nomor N"), lihat `vps-db/init/17-test-owners.sql`. Alamat scanner dan monitor dengan `?uji=1` hanya memakai data uji; tanpa parameter data uji diabaikan. Hapus sebelum acara: `delete from api.owners where is_test;`.

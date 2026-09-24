@@ -60,6 +60,7 @@
   .post-select button span{display:block;font-size:12.5px;}
   .post-select button[data-desk="A"].active{background:#0B6E5E;border-color:#0B6E5E;color:#fff;}
   .post-select button[data-desk="B"].active{background:#B8410F;border-color:#B8410F;color:#fff;}
+  .test-banner{background:#F2B705;color:#241B2E;font-weight:700;font-size:13.5px;border-radius:10px;padding:9px 12px;margin:12px 0 0;text-align:center;}
   .monitor-url{font-size:12.5px;color:var(--ink-soft);text-align:center;margin:8px 0 0;overflow-wrap:anywhere;}
   .monitor-btn{display:block;width:100%;margin:14px 0 0;padding:11px;text-align:center;text-decoration:none;border:1.5px solid var(--brand-deep);border-radius:10px;background:none;color:var(--brand-deep);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
   .manual-row .desk{flex:none;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;}
@@ -149,6 +150,7 @@
     <button type="button" data-desk="B"><b>Pos B</b><span>nomor genap</span></button>
   </div>
   <div class="count" id="postCount"></div>
+  <div class="test-banner" id="testBanner" hidden>MODE UJI: hitungan hanya dari data Testing Nomor N, tidak memengaruhi data asli.</div>
   <a class="monitor-btn" id="monitorBtn" href="monitor-checkin.html" target="pbmonitor" rel="opener">Buka layar monitor</a>
   <p class="monitor-url" id="monitorUrl"></p>
 
@@ -190,6 +192,9 @@
   // Pos B. Pos tidak disimpan di database (kolom checkins.post selalu
   // 'reg_ulang'), karena pos selalu bisa dihitung dari nomor urutnya.
   var DB_POST = 'reg_ulang';
+  // ?uji=1 = mode uji: hitungan hanya dari data "Testing Nomor N" (owners.is_test),
+  // tanpa parameter data uji diabaikan. Scan tetap tercatat seperti biasa.
+  var TEST = new URLSearchParams(location.search).get('uji') === '1';
   if(!API_URL){
     document.getElementById('loginWrap').innerHTML = '<div class="camera-error">API belum dikonfigurasi.</div>';
     return;
@@ -297,17 +302,20 @@
   // tidak diblokir pemblokir popup dan sesi login ikut terbawa (tanpa opener,
   // tab baru harus login lagi). Alamatnya juga ditulis di bawah tombol untuk
   // dibuka manual di perangkat lain; di sana tinggal login superadmin.
-  document.getElementById('monitorUrl').textContent = 'Atau buka di layar lain: ' + location.host + '/monitor-checkin.html (login superadmin)';
+  var monitorPath = '/monitor-checkin.html' + (TEST ? '?uji=1' : '');
+  document.getElementById('monitorBtn').setAttribute('href', 'monitor-checkin.html' + (TEST ? '?uji=1' : ''));
+  document.getElementById('testBanner').hidden = !TEST;
+  document.getElementById('monitorUrl').textContent = 'Atau buka di layar lain: ' + location.host + monitorPath + ' (login superadmin)';
 
   // Hitung per pos dari satu request: semua pemilik + tanda sudah check in.
   async function loadCount(){
     var el = document.getElementById('postCount');
     try{
-      var res = await fetch(API_URL + '/owners?select=queue_number,checkins(post)', {
+      var res = await fetch(API_URL + '/owners?select=queue_number,is_test,checkins(post)', {
         headers: { Authorization: 'Bearer ' + token() }
       });
       if(!res.ok) throw new Error('HTTP ' + res.status);
-      var rows = await res.json();
+      var rows = (await res.json()).filter(function(o){ return !!o.is_test === TEST; });
       var t = { A: 0, B: 0 }, c = { A: 0, B: 0 }, maxDone = { A: 0, B: 0 }, waiting = { A: [], B: [] };
       rows.forEach(function(o){
         var d = deskOf(o.queue_number);

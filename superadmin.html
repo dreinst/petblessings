@@ -132,6 +132,7 @@
     <div class="stats stats-reg" id="statsReg"></div>
     <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
     <div class="stats posts" id="statsPosts"></div>
+    <p class="note" id="testNote" style="display:none;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:var(--accent-light);color:#5E4419;font-size:13px;font-weight:600;"></p>
     <p class="note" id="wrongNote" style="margin:-6px 0 14px;font-size:13px;color:var(--ink-soft);"></p>
     <h2 class="section">Pendaftaran Fashion Pawrade Competition 2026</h2>
     <div class="stats" id="statsPawrade"></div>
@@ -244,13 +245,16 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=queue_number,companions,donation_amount,pets(id),checkins(post,desk,wrong_desk)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,is_test,companions,donation_amount,pets(id),checkins(post,desk,wrong_desk)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
       if(results.some(function(r){ return r.status === 401; })){ expired(); return; }
       if(results.some(function(r){ return !r.ok; })) throw new Error('HTTP ' + results.find(function(r){ return !r.ok; }).status);
       var owners = await results[0].json();
+      // Data uji ("Testing Nomor N", owners.is_test) tidak ikut dihitung; cukup diingatkan.
+      var testCount = owners.filter(function(o){ return o.is_test; }).length;
+      owners = owners.filter(function(o){ return !o.is_test; });
       var pawradeOwners = await results[1].json();
       var pawradeCheckins = await results[2].json();
       var pets = 0, companions = 0, donation = 0;
@@ -276,6 +280,9 @@
         card('Belum reg ulang', (totalA + totalB) - (doneA + doneB)) +
         card('Pos A (ganjil), dari ' + totalA, doneA) +
         card('Pos B (genap), dari ' + totalB, doneB);
+      var tn = document.getElementById('testNote');
+      tn.style.display = testCount ? 'block' : 'none';
+      tn.textContent = 'Masih ada ' + testCount + ' pemilik data uji (Testing Nomor N) di database. Tidak dihitung di angka di atas. Hapus sebelum acara.';
       document.getElementById('wrongNote').textContent = wrong.length
         ? 'Salah pos: ' + wrong.length + ' nomor, ' + wrong.map(function(w){ return '#' + w.n + ' di Pos ' + w.desk; }).join(', ') + '.'
         : 'Belum ada nomor yang reg ulang di pos yang salah.';
