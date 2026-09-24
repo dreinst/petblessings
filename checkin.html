@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Check-in, Pet Blessing 2026</title>
+<title>Reg ulang, Pet Blessing 2026</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -123,7 +123,7 @@
 <div class="login-wrap" id="loginWrap">
   <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
   <h1>Login panitia</h1>
-  <p>Halaman ini khusus superadmin untuk scan check-in di tiap pos.</p>
+  <p>Halaman ini khusus superadmin untuk scan reg ulang di Pos A dan Pos B.</p>
   <div class="field">
     <label for="loginEmail">Username</label>
     <input type="text" id="loginEmail" autocomplete="username">
@@ -143,10 +143,10 @@
       <button type="button" class="logout-btn" id="logoutBtn" hidden>Keluar</button>
     </div>
     <picture><source srcset="assets/pet-blessing-badge.webp" type="image/webp"><img class="brand-badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing 2026"></picture>
-    <h1>Check-in Pet Blessing</h1>
+    <h1>Reg ulang Pet Blessing</h1>
   </header>
 
-  <p class="desk-help">Satu titik, dua pos. Nomor urut ganjil di Pos A, genap di Pos B. Pilih pos untuk perangkat ini.</p>
+  <p class="desk-help" id="deskHelp">Satu titik, dua pos untuk reg ulang. Nomor urut ganjil di Pos A, genap di Pos B. Pilih pos untuk perangkat ini, atau buka langsung <b>checkin.html?pos=A</b> / <b>checkin.html?pos=B</b> supaya perangkat terkunci di posnya.</p>
   <div class="post-select" id="postSelect">
     <button type="button" data-desk="A"><b>Pos A</b><span>nomor ganjil</span></button>
     <button type="button" data-desk="B"><b>Pos B</b><span>nomor genap</span></button>
@@ -163,7 +163,7 @@
 
   <section class="manual">
     <h2>Tanpa QR? Cari manual</h2>
-    <p>Untuk pemilik yang QR-nya tidak terbaca atau tidak menerima WhatsApp. Cari, lalu tekan namanya untuk check-in.</p>
+    <p>Untuk pemilik yang QR-nya tidak terbaca atau tidak menerima WhatsApp. Cari, lalu tekan namanya untuk reg ulang.</p>
     <form id="manualForm" autocomplete="off">
       <input type="text" id="manualQuery" placeholder="Kode 8 karakter, nama, atau no. HP">
       <button type="submit">Cari</button>
@@ -197,7 +197,11 @@
     return;
   }
 
-  var currentDesk = localStorage.getItem(DESK_KEY) === 'B' ? 'B' : 'A';
+  // Perangkat tetap: checkin.html?pos=A atau ?pos=B mengunci perangkat di pos itu
+  // (tanpa pilihan pos), jadi tinggal dibuka dan langsung scan.
+  var lockedParam = (new URLSearchParams(location.search).get('pos') || '').toUpperCase();
+  var lockedDesk = (lockedParam === 'A' || lockedParam === 'B') ? lockedParam : null;
+  var currentDesk = lockedDesk || (localStorage.getItem(DESK_KEY) === 'B' ? 'B' : 'A');
   var bc = null;
   try{ bc = new BroadcastChannel('pb-checkin'); }catch(e){ bc = null; }
   function deskOf(queueNumber){ return Number(queueNumber) % 2 === 1 ? 'A' : 'B'; }
@@ -217,12 +221,16 @@
     try{ var p = token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))).level || null; }catch(e){ return null; }
   }
   var LOGIN_ERR_DEFAULT = 'Username atau password salah.';
-  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman check-in. Akun admin cukup untuk halaman rekap.';
+  var LOGIN_ERR_LEVEL = 'Hanya superadmin yang bisa membuka halaman reg ulang. Akun admin cukup untuk halaman rekap.';
 
   function showApp(){
     if(window.PanitiaNav) PanitiaNav.render();
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('appWrap').style.display = 'block';
+    if(lockedDesk){
+      document.getElementById('postSelect').style.display = 'none';
+      document.getElementById('deskHelp').innerHTML = 'Perangkat ini dikunci di <b>' + deskName(lockedDesk) + '</b> untuk reg ulang. Arahkan kamera ke QR pendaftaran.';
+    }
     setDesk(currentDesk);
     startCamera();
   }
@@ -277,7 +285,7 @@
 
   function setDesk(desk){
     currentDesk = desk;
-    localStorage.setItem(DESK_KEY, desk);
+    if(!lockedDesk) localStorage.setItem(DESK_KEY, desk);
     document.querySelectorAll('#postSelect button').forEach(function(b){
       b.classList.toggle('active', b.dataset.desk === desk);
     });
@@ -308,7 +316,7 @@
         t[d]++;
         if((o.checkins || []).some(function(x){ return x.post === DB_POST; })) c[d]++;
       });
-      el.innerHTML = '<b>' + deskName(currentDesk) + ': ' + c[currentDesk] + ' dari ' + t[currentDesk] + '</b> nomor sudah check in<br>' +
+      el.innerHTML = '<b>' + deskName(currentDesk) + ': ' + c[currentDesk] + ' dari ' + t[currentDesk] + '</b> nomor sudah reg ulang<br>' +
         'Pos ' + (currentDesk === 'A' ? 'B' : 'A') + ': ' + c[currentDesk === 'A' ? 'B' : 'A'] + ' dari ' + t[currentDesk === 'A' ? 'B' : 'A'];
     }catch(e){ el.textContent = ''; }
   }
@@ -429,13 +437,13 @@
       });
 
       if(checkinRes.status === 201){
-        renderResult('ok', owner, 'Check in berhasil.');
+        renderResult('ok', owner, 'Reg ulang berhasil.');
         loadCount();
         if(bc) bc.postMessage('refresh'); // kabari layar monitor di browser yang sama
       } else if(checkinRes.status === 409){
-        renderResult('warn', owner, 'Sudah check in sebelumnya.');
+        renderResult('warn', owner, 'Sudah reg ulang sebelumnya.');
       } else {
-        renderResult('err', owner, 'Gagal menyimpan check-in (' + checkinRes.status + ').');
+        renderResult('err', owner, 'Gagal menyimpan reg ulang (' + checkinRes.status + ').');
       }
     }catch(e){
       renderResult('err', null, 'Terjadi kesalahan: ' + e.message);
@@ -537,7 +545,7 @@
     icon.textContent = kind === 'ok' ? '✓' : (kind === 'warn' ? '!' : '✕');
 
     var title = document.getElementById('resultTitle');
-    title.textContent = kind === 'ok' ? 'Check in berhasil' : (kind === 'warn' ? 'Sudah check in' : 'Tidak valid');
+    title.textContent = kind === 'ok' ? 'Reg ulang berhasil' : (kind === 'warn' ? 'Sudah reg ulang' : 'Tidak valid');
 
     var body = document.getElementById('resultBody');
     if(!owner){
@@ -549,7 +557,7 @@
       body.innerHTML =
         '<div class="desk-badge ' + desk + '">Pos ' + desk + '</div>' +
         (mismatch
-          ? '<div class="desk-alert">Nomor ' + (desk === 'A' ? 'ganjil' : 'genap') + ' seharusnya di ' + deskName(desk) + '. Perangkat ini di Pos ' + currentDesk + '.' + (kind === 'ok' ? ' Check in tetap tercatat, arahkan pemilik ke Pos ' + desk + '.' : '') + '</div>'
+          ? '<div class="desk-alert">Nomor ' + (desk === 'A' ? 'ganjil' : 'genap') + ' seharusnya di ' + deskName(desk) + '. Perangkat ini di Pos ' + currentDesk + '.' + (kind === 'ok' ? ' Reg ulang tetap tercatat, arahkan pemilik ke Pos ' + desk + '.' : '') + '</div>'
           : '') +
         '<div class="queue-number">#' + escapeHtml(String(owner.queue_number)) + '</div>' +
         '<div class="owner-name">' + escapeHtml(owner.name) + '</div>' +
