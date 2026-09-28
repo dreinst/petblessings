@@ -134,6 +134,9 @@
     <div class="stats posts" id="statsPosts"></div>
     <p class="note" id="testNote" style="display:none;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:var(--accent-light);color:#5E4419;font-size:13px;font-weight:600;"></p>
     <p class="note" id="wrongNote" style="margin:-6px 0 14px;font-size:13px;color:var(--ink-soft);"></p>
+    <h2 class="section">Pendaftar Pet Blessing per hari (dibanding status iklan)</h2>
+    <div class="stat" style="text-align:left;padding:12px;margin-bottom:6px;"><table id="perDay" style="width:100%;border-collapse:collapse;font-size:13px;"></table></div>
+    <p class="note" style="margin:0 0 18px;font-size:12px;color:var(--ink-soft);">Status iklan dicatat manual dari Ads Manager: iklan lama aktif sampai 23 Sep, mati 24 sampai 25 Sep karena dana habis, iklan Instagram aktif mulai 26 Sep. Bukti sebab-akibat lemah: pendaftar juga datang dari pengumuman gereja dan WhatsApp.</p>
     <h2 class="section">Pendaftaran Fashion Pawrade Competition 2026</h2>
     <div class="stats" id="statsPawrade"></div>
   </div>
@@ -245,7 +248,7 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=queue_number,is_test,companions,donation_amount,pets(id),checkins(post,desk,wrong_desk)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,is_test,submitted_at,companions,donation_amount,pets(id),checkins(post,desk,wrong_desk)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
@@ -286,6 +289,21 @@
       document.getElementById('wrongNote').textContent = wrong.length
         ? 'Salah pos: ' + wrong.length + ' nomor, ' + wrong.map(function(w){ return '#' + w.n + ' di Pos ' + w.desk; }).join(', ') + '.'
         : 'Belum ada nomor yang reg ulang di pos yang salah.';
+      // Pendaftar per hari (WIB) sejak 20 Sep, dengan catatan status iklan.
+      var perDay = {};
+      owners.forEach(function(o){
+        var day = new Date(o.submitted_at).toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' });
+        perDay[day] = (perDay[day] || 0) + 1;
+      });
+      function adState(day){ return day <= '2026-09-23' ? 'Iklan lama aktif' : day <= '2026-09-25' ? 'Iklan mati' : 'Iklan Instagram aktif'; }
+      var rows = Object.keys(perDay).sort().filter(function(d){ return d >= '2026-09-20'; });
+      var byState = {};
+      document.getElementById('perDay').innerHTML = rows.map(function(d){
+        var st = adState(d); byState[st] = byState[st] || { n: 0, days: 0 }; byState[st].n += perDay[d]; byState[st].days++;
+        return '<tr><td style="padding:3px 0;">' + d + '</td><td>' + escapeHtml(st) + '</td><td style="text-align:right;font-weight:700;">' + perDay[d] + '</td></tr>';
+      }).join('') + Object.keys(byState).map(function(k){
+        return '<tr style="border-top:1px solid var(--line);"><td colspan="2" style="padding:3px 0;font-weight:700;">Rata-rata: ' + escapeHtml(k) + '</td><td style="text-align:right;font-weight:700;">' + (byState[k].n / byState[k].days).toFixed(1) + '</td></tr>';
+      }).join('');
       var pawradePets = 0, pawradeFee = 0;
       pawradeOwners.forEach(function(o){
         pawradePets += (o.pawrade_pets || []).length;
