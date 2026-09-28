@@ -279,6 +279,60 @@ var currentSock = null;
 var connected = false;
 var workerStarted = false;
 
+// Layanan pelanggan: chat dari nomor pendaftar ditaruh di INBOX untuk worker CS (bot D'Pro Ops di VPS, Kimi),
+// balasannya kembali lewat OUTBOX ({ jid, text }). Chat yang baru dibalas admin dari HP (30 menit) tidak disentuh.
+const fs = require('node:fs');
+const INBOX = '/data/inbox';
+const OUTBOX = '/data/outbox';
+const humanAt = new Map();
+// ponytail: pesan kiriman Baileys ber-ID "3EB0...", dari HP tidak. Cukup untuk membedakan admin dari bot.
+const byHuman = (msg) => msg.key.fromMe && !String(msg.key.id || '').startsWith('3EB0');
+
+async function registrantName(phone) {
+  if (phone.length < 10) return null;
+  const res = await pool.query(
+    `select owner_name from api.wa_queue where right(regexp_replace(phone, '\\D', '', 'g'), 10) = right($1, 10)
+     union all select owner_name from api.pawrade_wa_queue where right(regexp_replace(phone, '\\D', '', 'g'), 10) = right($1, 10)
+     limit 1`,
+    [phone]
+  );
+  return res.rows.length ? res.rows[0].owner_name || '-' : null;
+}
+
+async function csInbox(msg) {
+  const jid = msg.key.remoteJid || '';
+  if (msg.key.fromMe || !jid || jid.endsWith('@g.us') || jid === 'status@broadcast' || jid.endsWith('@newsletter')) return;
+  const m = msg.message || {};
+  const text = (m.conversation || (m.extendedTextMessage && m.extendedTextMessage.text) || '').trim();
+  if (!text || Date.now() - (humanAt.get(jid) || 0) < 30 * 60000) return;
+  const phone = String(msg.key.senderPn || msg.key.remoteJidAlt || jid).replace(/@.*/, '').replace(/\D/g, '');
+  const owner = await registrantName(phone);
+  if (owner === null) return; // bukan pendaftar Pet Blessing
+  fs.mkdirSync(INBOX, { recursive: true });
+  fs.writeFileSync(INBOX + '/' + msg.key.id + '.json', JSON.stringify({
+    id: msg.key.id, bot: 'petblessing', jid: jid, phone: phone, nama: msg.pushName || '', pendaftar: owner,
+    text: text.slice(0, 1000), waktu: Date.now(),
+  }));
+}
+
+async function processOutbox() {
+  if (!connected || !currentSock) return;
+  fs.mkdirSync(OUTBOX, { recursive: true });
+  for (const f of fs.readdirSync(OUTBOX).filter((x) => x.endsWith('.json')).sort()) {
+    const item = JSON.parse(fs.readFileSync(OUTBOX + '/' + f, 'utf8'));
+    fs.unlinkSync(OUTBOX + '/' + f);
+    try {
+      await currentSock.sendPresenceUpdate('composing', item.jid).catch(() => {});
+      await sleep(randomBetween(1500, 4000));
+      await currentSock.sendMessage(item.jid, { text: item.text });
+      logger.info({ jid: item.jid, topik: item.topik }, 'balasan CS terkirim');
+    } catch (e) {
+      logger.error({ jid: item.jid, err: e.message }, 'gagal kirim balasan CS');
+    }
+  }
+}
+setInterval(() => processOutbox().catch((e) => logger.error({ err: e.message }, 'outbox CS gagal')), 5000);
+
 async function runWorkerLoop() {
   var sentCount = 0;
   while (true) {
@@ -363,6 +417,14 @@ async function start() {
   });
 
   sock.ev.on('creds.update', saveCreds);
+
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    for (const m of messages) if (byHuman(m)) humanAt.set(m.key.remoteJid, Date.now());
+    if (type !== 'notify') return;
+    for (const m of messages) {
+      try { await csInbox(m); } catch (e) { logger.error({ err: e.message }, 'gagal memproses pesan masuk'); }
+    }
+  });
 
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
