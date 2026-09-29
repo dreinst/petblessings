@@ -68,6 +68,25 @@ function buildCaption(name, code, queueNumber) {
   return text + (Math.random() < 0.5 ? ' ' : '');
 }
 
+// Caption koreksi: dipakai saat pendaftaran ganda digabung dan pendaftar perlu
+// tahu QR mana yang berlaku di hari H (QR lama, dari data yang dihapus, sudah
+// tidak valid). Pola kalimat & sisipan sama seperti CAPTION_TEMPLATES supaya
+// gaya bahasanya konsisten dengan blast biasa.
+const CORRECTION_CAPTION_TEMPLATES = [
+  (name, code, g, c, e) => `${g} ${name} ${e}\n\nAda sedikit koreksi data pendaftaran Pet Blessing 2026 kamu, jadi ini kami kirim ulang QR-nya.\n\n*Ini QR yang fix* (kode: ${code}). Saat hari H, pakai QR ini untuk reg ulang ya, bukan yang dikirim sebelumnya.${c ? '\n\n' + c : ''}`,
+  (name, code, g, c, e) => `${g} ${name}! ${e}\n\nData pendaftaran Pet Blessing 2026 kamu barusan kami rapikan, jadi QR-nya kami kirim ulang.\n\nQR ini yang fix (kode ${code}) -- saat hari H, ini yang dipakai untuk reg ulang.${c ? '\n' + c : ''}`,
+];
+
+function buildCorrectionCaption(name, code, queueNumber) {
+  var template = pick(CORRECTION_CAPTION_TEMPLATES);
+  var text = template(name, code, pick(GREETINGS), pick(CLOSERS), pick(EMOJI_SETS));
+  if (queueNumber) {
+    text += `\n\nNomor urut pendaftaran: *${queueNumber}*\n(cocokkan dengan stiker nomor saat reg ulang)`;
+  }
+  text += '\n\n' + committeeContactBlock();
+  return text + (Math.random() < 0.5 ? ' ' : '');
+}
+
 const SHORT_INTROS = [
   'QR pendaftaran kamu ya, ditunggu di acaranya 🙏',
   'Ini QR bukti pendaftaran kamu.',
@@ -106,6 +125,43 @@ async function markAttemptFailed(id, attempts, errMessage) {
     `update api.wa_queue set attempts = $2, status = $3, error = $4 where id = $1`,
     [id, attempts + 1, status, errMessage]
   );
+}
+
+async function fetchNextCorrection() {
+  var res = await pool.query(
+    `select * from api.wa_correction_queue where status = 'pending' and attempts < 3 order by created_at asc limit 1`
+  );
+  return res.rows[0] || null;
+}
+
+async function markCorrectionSent(id) {
+  await pool.query(`update api.wa_correction_queue set status = 'sent', sent_at = now() where id = $1`, [id]);
+}
+
+async function markCorrectionAttemptFailed(id, attempts, errMessage) {
+  var status = attempts + 1 >= 3 ? 'failed' : 'pending';
+  await pool.query(
+    `update api.wa_correction_queue set attempts = $2, status = $3, error = $4 where id = $1`,
+    [id, attempts + 1, status, errMessage]
+  );
+}
+
+async function sendCorrection(sock, row) {
+  var jid = normalizePhone(row.phone);
+  var queueNumber = await fetchQueueNumber(row.owner_id);
+  var caption = buildCorrectionCaption(row.owner_name, row.short_code, queueNumber);
+
+  var base64 = row.qr_image_base64.replace(/^data:image\/\w+;base64,/, '');
+  var buffer = Buffer.from(base64, 'base64');
+  var fileName = `QR-PetBlessing-${row.short_code}.png`;
+
+  await typingPause(sock, jid);
+  await sock.sendMessage(jid, {
+    document: buffer,
+    mimetype: 'image/png',
+    fileName: fileName,
+    caption: caption,
+  });
 }
 
 // Antrian susulan: pesan singkat berisi info kontak panitia saja (tanpa QR ulang),
@@ -343,11 +399,16 @@ async function runWorkerLoop() {
     var row = null;
     var isFollowup = false;
     var isPawrade = false;
+    var isCorrection = false;
     try {
       row = await fetchNextPending();
       if (!row) {
         row = await fetchNextPawrade();
         isPawrade = Boolean(row);
+      }
+      if (!row) {
+        row = await fetchNextCorrection();
+        isCorrection = Boolean(row);
       }
       if (!row) {
         row = await fetchNextFollowup();
@@ -363,8 +424,11 @@ async function runWorkerLoop() {
     }
 
     try {
-      logger.info({ id: row.id, phone: row.phone, followup: isFollowup, pawrade: isPawrade }, 'mengirim pesan WhatsApp');
-      if (isFollowup) {
+      logger.info({ id: row.id, phone: row.phone, followup: isFollowup, pawrade: isPawrade, correction: isCorrection }, 'mengirim pesan WhatsApp');
+      if (isCorrection) {
+        await sendCorrection(sock, row);
+        await markCorrectionSent(row.id);
+      } else if (isFollowup) {
         await sendFollowup(sock, row);
         await markFollowupSent(row.id);
       } else if (isPawrade) {
@@ -385,7 +449,8 @@ async function runWorkerLoop() {
         continue;
       }
       logger.error({ id: row.id, err: e.message }, 'gagal kirim, akan dicoba lagi');
-      if (isFollowup) await markFollowupAttemptFailed(row.id, row.attempts, e.message);
+      if (isCorrection) await markCorrectionAttemptFailed(row.id, row.attempts, e.message);
+      else if (isFollowup) await markFollowupAttemptFailed(row.id, row.attempts, e.message);
       else if (isPawrade) await markPawradeAttemptFailed(row.id, row.attempts, e.message);
       else await markAttemptFailed(row.id, row.attempts, e.message);
     }
