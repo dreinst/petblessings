@@ -284,9 +284,8 @@ var workerStarted = false;
 const fs = require('node:fs');
 const INBOX = '/data/inbox';
 const OUTBOX = '/data/outbox';
-const humanAt = new Map();
-// ponytail: pesan kiriman Baileys ber-ID "3EB0...", dari HP tidak. Cukup untuk membedakan admin dari bot.
-const byHuman = (msg) => msg.key.fromMe && !String(msg.key.id || '').startsWith('3EB0');
+// ID pesan yang dikirim bot ini (blast dan balasan CS), supaya worker CS bisa membedakan balasan bot dari balasan admin.
+const SENT_IDS = '/data/sent-ids.txt';
 
 async function registrantName(phone) {
   if (phone.length < 10) return null;
@@ -304,7 +303,7 @@ async function csInbox(msg) {
   if (msg.key.fromMe || !jid || jid.endsWith('@g.us') || jid === 'status@broadcast' || jid.endsWith('@newsletter')) return;
   const m = msg.message || {};
   const text = (m.conversation || (m.extendedTextMessage && m.extendedTextMessage.text) || '').trim();
-  if (!text || Date.now() - (humanAt.get(jid) || 0) < 30 * 60000) return;
+  if (!text) return;
   const phone = String(msg.key.senderPn || msg.key.remoteJidAlt || jid).replace(/@.*/, '').replace(/\D/g, '');
   const owner = await registrantName(phone);
   if (owner === null) return; // bukan pendaftar Pet Blessing
@@ -417,9 +416,14 @@ async function start() {
   });
 
   sock.ev.on('creds.update', saveCreds);
+  const send = sock.sendMessage.bind(sock);
+  sock.sendMessage = async (...args) => {
+    const sent = await send(...args);
+    if (sent && sent.key && sent.key.id) fs.appendFileSync(SENT_IDS, sent.key.id + '\n');
+    return sent;
+  };
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    for (const m of messages) if (byHuman(m)) humanAt.set(m.key.remoteJid, Date.now());
     if (type !== 'notify') return;
     for (const m of messages) {
       try { await csInbox(m); } catch (e) { logger.error({ err: e.message }, 'gagal memproses pesan masuk'); }
