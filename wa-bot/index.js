@@ -259,8 +259,8 @@ async function fetchPawradeQueueNumber(ownerId) {
   return res.rows[0] ? res.rows[0].queue_number : null;
 }
 
-async function sendPawrade(sock, row) {
-  var jid = normalizePhone(row.phone);
+async function sendPawrade(sock, row, toJid) {
+  var jid = toJid || normalizePhone(row.phone);
   var queueNumber = await fetchPawradeQueueNumber(row.owner_id);
   var caption = buildPawradeCaption(row.owner_name, row.short_code, queueNumber);
 
@@ -300,8 +300,8 @@ async function typingPause(sock, jid) {
   }
 }
 
-async function sendOne(sock, row) {
-  var jid = normalizePhone(row.phone);
+async function sendOne(sock, row, toJid) {
+  var jid = toJid || normalizePhone(row.phone);
   var queueNumber = await fetchQueueNumber(row.owner_id);
   // koreksi = pendaftar ini sempat mendaftar ganda dan QR lamanya sudah
   // terkirim (lihat vps-db/init/25), jadi QR ini dikirim sebagai "QR yang fix".
@@ -358,6 +358,98 @@ const OUTBOX = '/data/outbox';
 // ID pesan yang dikirim bot ini (blast dan balasan CS), supaya worker CS bisa membedakan balasan bot dari balasan admin.
 const SENT_IDS = '/data/sent-ids.txt';
 
+// Chat dulu, baru QR (1 Okt 2026, setelah nomor kantor dibatasi WhatsApp karena kiriman massal): QR tidak lagi
+// dikirim otomatis ke nomor di formulir. Pendaftar menekan tombol "Minta QR lewat WhatsApp" di halaman konfirmasi
+// atau beranda, pesannya memuat kode 8 huruf; bot membalas dengan QR reg ulang yang berlaku. Tanpa kode, nomor HP
+// pengirim dicocokkan dengan nomor di formulir. KIRIM_OTOMATIS=1 menyalakan lagi kiriman otomatis antrian QR.
+const KIRIM_OTOMATIS = process.env.KIRIM_OTOMATIS === '1';
+// Antrian pesan susulan (pengingat, info H-1) dikirim bertahap: hanya JAM_KIRIM_MULAI sampai JAM_KIRIM_SELESAI WIB,
+// paling banyak PENGINGAT_PER_JAM pesan per jam, jeda 4 sampai 8 menit. PENGINGAT=0 mematikannya.
+const PENGINGAT = process.env.PENGINGAT !== '0';
+const PENGINGAT_PER_JAM = Number(process.env.PENGINGAT_PER_JAM || 8);
+const JAM_KIRIM_MULAI = Number(process.env.JAM_KIRIM_MULAI || 8);
+const JAM_KIRIM_SELESAI = Number(process.env.JAM_KIRIM_SELESAI || 20);
+// Mode nomor pribadi (PRIBADI=1): sama dengan bot KUWERA. Sesi login sendiri (AUTH_DIR), hanya chat pendaftar yang
+// disentuh, kiriman hanya ke chat yang sudah menghubungi nomor ini. Nomor PRIBADI_IZIN (owner, staf) bukan pendaftar.
+const PRIBADI = process.env.PRIBADI === '1';
+const AUTH_DIR = process.env.AUTH_DIR || '/data/auth';
+const PRIBADI_IZIN = (process.env.PRIBADI_IZIN || '').split(',').map((x) => x.replace(/\D/g, '')).filter(Boolean);
+const PRIBADI_FILE = '/data/pribadi-chat.json';
+const OUTBOX_TAHAN = '/data/outbox-ditahan';
+const PRIBADI_INFO = process.env.PRIBADI_INFO || 'Halo Kak 🙏 Untuk sementara WhatsApp kantor D\'Production sedang gangguan, jadi layanan Pet Blessing 2026 kami jalankan dari nomor ini dulu ya. Semua data pendaftaran tetap tercatat seperti biasa.';
+var pribadiChat = {};
+try { pribadiChat = JSON.parse(fs.readFileSync(PRIBADI_FILE, 'utf8')); } catch (e) { pribadiChat = {}; }
+const phoneOf = (msg) => String(msg.key.senderPn || msg.key.remoteJidAlt || msg.key.remoteJid || '').replace(/@.*/, '').replace(/:.*/, '').replace(/\D/g, '');
+const internal = (phone) => PRIBADI_IZIN.some((n) => phone.endsWith(n.slice(-10)));
+const textOf = (msg) => { const m = msg.message || {}; return (m.conversation || (m.extendedTextMessage && m.extendedTextMessage.text) || '').trim(); };
+
+// Chat pendaftar yang pertama kali menghubungi nomor pribadi: dicatat dan dikabari sekali.
+async function catatPelanggan(sock, jid) {
+  if (!PRIBADI || pribadiChat[jid]) return;
+  pribadiChat[jid] = Date.now();
+  fs.writeFileSync(PRIBADI_FILE, JSON.stringify(pribadiChat));
+  await sock.sendMessage(jid, { text: PRIBADI_INFO }).catch((e) => logger.error({ jid, err: e.message }, 'gagal kirim kabar nomor sementara'));
+}
+
+async function cariQr(kode, phone) {
+  var byPhone = phone.length >= 10 ? phone : '';
+  var pb = await pool.query(
+    `select q.* from api.wa_queue q join api.owners o on o.id = q.owner_id
+      where upper(q.short_code) = $1 or ($2 <> '' and right(regexp_replace(q.phone, '\\D', '', 'g'), 10) = right($2, 10))
+      order by q.created_at desc`, [kode || '', byPhone]);
+  var pr = await pool.query(
+    `select q.* from api.pawrade_wa_queue q join api.pawrade_owners o on o.id = q.owner_id
+      where upper(q.short_code) = $1 or ($2 <> '' and right(regexp_replace(q.phone, '\\D', '', 'g'), 10) = right($2, 10))
+      order by q.created_at desc`, [kode || '', byPhone]);
+  var seen = {};
+  var hasil = [];
+  pb.rows.map((r) => ({ row: r, pawrade: false })).concat(pr.rows.map((r) => ({ row: r, pawrade: true }))).forEach((x) => {
+    var key = (x.pawrade ? 'pr:' : 'pb:') + x.row.owner_id;
+    if (!seen[key]) { seen[key] = true; hasil.push(x); }
+  });
+  return hasil.slice(0, 3);
+}
+
+var terakhirMinta = {}; // jid -> waktu QR terakhir dikirim, supaya pesan beruntun tidak membuat QR dobel
+async function mintaQr(sock, msg) {
+  var jid = msg.key.remoteJid;
+  var text = textOf(msg);
+  var phone = phoneOf(msg);
+  if (!text || internal(phone)) return false;
+  var kodeMatch = text.match(/\b[0-9A-F]{8}\b/i);
+  var kode = kodeMatch ? kodeMatch[0].toUpperCase() : '';
+  var sebutAcara = /pet ?blessing|pawrade/i.test(text);
+  if (!kode && !(sebutAcara && /\bqr\b|reg(istrasi)? ?ulang|kode/i.test(text))) return false;
+  var hasil = await cariQr(kode, sebutAcara ? phone : '');
+  if (!hasil.length) {
+    if (!sebutAcara) return false;
+    await catatPelanggan(sock, jid);
+    await typingPause(sock, jid);
+    await sock.sendMessage(jid, { text: 'Mohon maaf Kak, pendaftarannya belum kami temukan 🙏 Boleh kirimkan kode pendaftaran 8 huruf yang ada di halaman konfirmasi? Kalau tidak ada, silakan hubungi panitia ya.\n\n' + committeeContactBlock() });
+    logger.info({ jid, kode }, 'minta QR: pendaftaran tidak ditemukan');
+    return true;
+  }
+  await catatPelanggan(sock, jid);
+  if (Date.now() - (terakhirMinta[jid] || 0) < 10 * 60000) return true;
+  terakhirMinta[jid] = Date.now();
+  for (var x of hasil) {
+    if (x.pawrade) await sendPawrade(sock, x.row, jid);
+    else await sendOne(sock, x.row, jid);
+    if (x.row.status !== 'sent') {
+      if (x.pawrade) await markPawradeSent(x.row.id); else await markSent(x.row.id);
+    }
+    logger.info({ jid, id: x.row.id, kode: x.row.short_code, pawrade: x.pawrade }, 'QR dikirim atas permintaan pendaftar');
+    await sleep(randomBetween(2000, 5000));
+  }
+  return true;
+}
+
+async function jumlahPengingatSejam() {
+  var res = await pool.query(`select count(*)::int as n from api.wa_followup_queue where sent_at > now() - interval '1 hour'`);
+  return res.rows[0].n;
+}
+const jamWib = () => Number(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour: 'numeric', hourCycle: 'h23' }));
+
 async function registrantName(phone) {
   if (phone.length < 10) return null;
   const res = await pool.query(
@@ -376,8 +468,10 @@ async function csInbox(msg) {
   const text = (m.conversation || (m.extendedTextMessage && m.extendedTextMessage.text) || '').trim();
   if (!text) return;
   const phone = String(msg.key.senderPn || msg.key.remoteJidAlt || jid).replace(/@.*/, '').replace(/\D/g, '');
+  if (internal(phone)) return;
   const owner = await registrantName(phone);
   if (owner === null) return; // bukan pendaftar Pet Blessing
+  await catatPelanggan(currentSock, jid);
   fs.mkdirSync(INBOX, { recursive: true });
   fs.writeFileSync(INBOX + '/' + msg.key.id + '.json', JSON.stringify({
     id: msg.key.id, bot: 'petblessing', jid: jid, phone: phone, nama: msg.pushName || '', pendaftar: owner,
@@ -390,6 +484,12 @@ async function processOutbox() {
   fs.mkdirSync(OUTBOX, { recursive: true });
   for (const f of fs.readdirSync(OUTBOX).filter((x) => x.endsWith('.json')).sort()) {
     const item = JSON.parse(fs.readFileSync(OUTBOX + '/' + f, 'utf8'));
+    if (PRIBADI && !(pribadiChat[item.jid] || internal(String(item.jid || '').replace(/@.*/, '')))) {
+      fs.mkdirSync(OUTBOX_TAHAN, { recursive: true });
+      fs.renameSync(OUTBOX + '/' + f, OUTBOX_TAHAN + '/' + f);
+      logger.warn({ f, jid: item.jid }, 'mode pribadi: kiriman outbox ditahan');
+      continue;
+    }
     fs.unlinkSync(OUTBOX + '/' + f);
     try {
       await currentSock.sendPresenceUpdate('composing', item.jid).catch(() => {});
@@ -416,16 +516,19 @@ async function runWorkerLoop() {
     var isPawrade = false;
     var isCorrection = false;
     try {
-      row = await fetchNextPending();
-      if (!row) {
-        row = await fetchNextPawrade();
-        isPawrade = Boolean(row);
+      if (KIRIM_OTOMATIS) {
+        row = await fetchNextPending();
+        if (!row) {
+          row = await fetchNextPawrade();
+          isPawrade = Boolean(row);
+        }
+        if (!row) {
+          row = await fetchNextCorrection();
+          isCorrection = Boolean(row);
+        }
       }
-      if (!row) {
-        row = await fetchNextCorrection();
-        isCorrection = Boolean(row);
-      }
-      if (!row) {
+      var jam = jamWib();
+      if (!row && PENGINGAT && jam >= JAM_KIRIM_MULAI && jam < JAM_KIRIM_SELESAI && (await jumlahPengingatSejam()) < PENGINGAT_PER_JAM) {
         row = await fetchNextFollowup();
         isFollowup = Boolean(row);
       }
@@ -473,14 +576,15 @@ async function runWorkerLoop() {
     // Delay acak antar pengiriman -- inti dari "tidak dianggap spam".
     // 1-3 menit per pesan (Donny 30 Sep, sebelumnya 2-5 menit), supaya pola
     // kirim beruntun tetap terlihat seperti orang membalas satu-satu, bukan bot.
-    var delay = randomBetween(60000, 180000);
+    // Pesan susulan dijeda lebih lama (4 sampai 8 menit) karena dikirim ke banyak orang sekaligus.
+    var delay = isFollowup ? randomBetween(240000, 480000) : randomBetween(60000, 180000);
     logger.info({ delayMs: delay }, 'jeda sebelum pesan berikutnya');
     await sleep(delay);
   }
 }
 
 async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState('/data/auth');
+  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
   const { version, isLatest } = await fetchLatestBaileysVersion();
   logger.info({ version, isLatest }, 'pakai versi protokol WhatsApp Web');
 
@@ -501,7 +605,11 @@ async function start() {
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const m of messages) {
-      try { await csInbox(m); } catch (e) { logger.error({ err: e.message }, 'gagal memproses pesan masuk'); }
+      const jid = m.key.remoteJid || '';
+      if (m.key.fromMe || !jid || jid.endsWith('@g.us') || jid === 'status@broadcast' || jid.endsWith('@newsletter')) continue;
+      try {
+        if (!(await mintaQr(sock, m))) await csInbox(m);
+      } catch (e) { logger.error({ err: e.message }, 'gagal memproses pesan masuk'); }
     }
   });
 
