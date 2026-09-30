@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layar ruang tunggu, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hari-h.css">
+<script src="api-config.js"></script>
+<script src="hari-h.js"></script>
+<style>
+  /* Layar besar di ruang tunggu: nomor yang sedang dipanggil + nomor berikutnya. */
+  body{background:var(--brand-deep);color:#fff;overflow:hidden;}
+  .layar{height:100vh;display:grid;grid-template-rows:auto 1fr auto;padding:3vh 3vw 76px;gap:2vh;}
+  .atas{display:flex;align-items:center;gap:16px;}
+  .atas img{width:clamp(40px,6vh,70px);}
+  .atas h1{color:#fff;font-size:clamp(20px,3.6vh,42px);flex:1;}
+  .atas .jam{font-size:clamp(20px,3.4vh,40px);font-weight:600;}
+  .utama{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+  .utama .lbl{font-size:clamp(22px,4vh,48px);font-weight:600;color:#F7D8A8;}
+  .utama .n{font-size:clamp(140px,40vh,460px);line-height:.95;font-weight:700;color:#fff;}
+  .utama .pt{font-size:clamp(20px,3.6vh,44px);color:#F3E9FF;max-width:90vw;}
+  .utama .ajak{font-size:clamp(18px,3vh,34px);margin-top:1.5vh;color:#F7D8A8;}
+  .bawah{display:flex;align-items:center;gap:2vw;flex-wrap:wrap;background:rgba(255,255,255,.12);border-radius:20px;padding:2vh 2vw;}
+  .bawah .lbl{font-size:clamp(18px,3vh,34px);font-weight:600;}
+  .bawah .n{font-size:clamp(34px,6vh,72px);font-weight:700;background:#fff;color:var(--brand-deep);border-radius:14px;padding:.2vh 1.4vw;}
+  .kedip{animation:kedip 1s ease-in-out 3;}
+  @keyframes kedip{50%{opacity:.25;}}
+  #suaraBtn{position:fixed;right:16px;bottom:16px;min-height:44px;opacity:.85;}
+  .server-badge{position:fixed;left:50%;top:8px;transform:translateX(-50%);opacity:.85;}
+</style>
+</head>
+<body>
+<div id="loginWrap" hidden style="background:var(--bg);color:var(--ink)"></div>
+<div id="appWrap" hidden>
+  <div class="layar">
+    <div class="atas"><img src="assets/pet-blessing-badge.png" alt=""><h1>Pet Blessing 2026</h1><span class="jam num" id="jam"></span></div>
+    <div class="utama">
+      <div class="lbl">Nomor yang dipanggil</div>
+      <div class="n num" id="n">…</div>
+      <div class="pt" id="pt"></div>
+      <div class="ajak" id="ajak"></div>
+    </div>
+    <div class="bawah"><span class="lbl">Berikutnya:</span><span id="next" style="display:flex;gap:1.2vw;flex-wrap:wrap"></span></div>
+  </div>
+  <button class="btn" id="suaraBtn">Aktifkan suara</button>
+  <span class="server-badge" id="serverBadge"></span>
+</div>
+<script>
+HariH.mulai(function(){
+  var H = HariH, $ = function(id){ return document.getElementById(id); };
+  // Browser baru mengizinkan suara setelah layar disentuh/diklik sekali.
+  var suara = false, kunci;
+  $('suaraBtn').addEventListener('click', function(){
+    suara = !suara;
+    this.textContent = suara ? 'Suara aktif' : 'Aktifkan suara';
+    if(suara) umumkan(null);
+  });
+  function umumkan(nomor){
+    H.bunyi(660, 200); setTimeout(function(){ H.bunyi(880, 300); }, 220);
+    if(!suara || nomor == null || !window.speechSynthesis) return;
+    var u = new SpeechSynthesisUtterance('Nomor ' + nomor + ', silakan menuju area pemberkatan.');
+    u.lang = 'id-ID'; u.rate = 0.9;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }
+  setInterval(function(){ $('jam').textContent = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }); }, 1000);
+  H.ulang(async function(){
+    var st = await H.status(1);
+    H.labelServer(st);
+    var d = st.dipanggil;
+    $('n').textContent = d ? d.nomor : '…';
+    $('pt').textContent = d ? d.pets.map(function(p){ return p.label + ' ' + p.name; }).join(' · ') : '';
+    $('ajak').textContent = d ? 'Silakan menuju area pemberkatan' : 'Mohon menunggu, nomor akan segera dipanggil';
+    $('next').innerHTML = st.menunggu.slice(0, 6).map(function(m){ return '<span class="n num">' + m.nomor + '</span>'; }).join('') || '<span class="lbl">belum ada</span>';
+    // Panggilan baru atau panggil ulang (jumlah berubah): bunyi + kedip.
+    var k = d ? d.nomor + ':' + d.jumlah + ':' + d.called_at : null;
+    if(kunci !== undefined && k && k !== kunci){
+      umumkan(d.nomor);
+      $('n').classList.remove('kedip'); void $('n').offsetWidth; $('n').classList.add('kedip');
+    }
+    kunci = k;
+  }, 1500);
+});
+</script>
+</body>
+</html>
