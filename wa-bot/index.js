@@ -359,8 +359,8 @@ const OUTBOX = '/data/outbox';
 const SENT_IDS = '/data/sent-ids.txt';
 
 // Chat dulu, baru QR (1 Okt 2026, setelah nomor kantor dibatasi WhatsApp karena kiriman massal): QR tidak lagi
-// dikirim otomatis ke nomor di formulir. Pendaftar menekan tombol "Minta QR lewat WhatsApp" di halaman konfirmasi
-// atau beranda, pesannya memuat kode 8 huruf; bot membalas dengan QR reg ulang yang berlaku. Tanpa kode, nomor HP
+// dikirim otomatis ke nomor di formulir. Pendaftar menekan tombol WhatsApp di halaman konfirmasi atau beranda,
+// pesannya memuat kode 8 huruf; bot menanyakan screenshot QR dulu (lihat mintaQr). Tanpa kode, nomor HP
 // pengirim dicocokkan dengan nomor di formulir. KIRIM_OTOMATIS=1 menyalakan lagi kiriman otomatis antrian QR.
 const KIRIM_OTOMATIS = process.env.KIRIM_OTOMATIS === '1';
 // Antrian pesan susulan (pengingat, info H-1) dikirim bertahap: hanya JAM_KIRIM_MULAI sampai JAM_KIRIM_SELESAI WIB,
@@ -411,26 +411,8 @@ async function cariQr(kode, phone) {
 }
 
 var terakhirMinta = {}; // jid -> waktu QR terakhir dikirim, supaya pesan beruntun tidak membuat QR dobel
-async function mintaQr(sock, msg) {
-  var jid = msg.key.remoteJid;
-  var text = textOf(msg);
-  var phone = phoneOf(msg);
-  if (!text || internal(phone)) return false;
-  var kodeMatch = text.match(/\b[0-9A-F]{8}\b/i);
-  var kode = kodeMatch ? kodeMatch[0].toUpperCase() : '';
-  var sebutAcara = /pet ?blessing|pawrade/i.test(text);
-  if (!kode && !(sebutAcara && /\bqr\b|reg(istrasi)? ?ulang|kode/i.test(text))) return false;
-  var hasil = await cariQr(kode, sebutAcara ? phone : '');
-  if (!hasil.length) {
-    if (!sebutAcara) return false;
-    await catatPelanggan(sock, jid);
-    await typingPause(sock, jid);
-    await sock.sendMessage(jid, { text: 'Mohon maaf Kak, pendaftarannya belum kami temukan 🙏 Boleh kirimkan kode pendaftaran 8 huruf yang ada di halaman konfirmasi? Kalau tidak ada, silakan hubungi panitia ya.\n\n' + committeeContactBlock() });
-    logger.info({ jid, kode }, 'minta QR: pendaftaran tidak ditemukan');
-    return true;
-  }
-  await catatPelanggan(sock, jid);
-  if (Date.now() - (terakhirMinta[jid] || 0) < 10 * 60000) return true;
+async function kirimQr(sock, jid, hasil) {
+  if (Date.now() - (terakhirMinta[jid] || 0) < 10 * 60000) return;
   terakhirMinta[jid] = Date.now();
   for (var x of hasil) {
     if (x.pawrade) await sendPawrade(sock, x.row, jid);
@@ -441,6 +423,66 @@ async function mintaQr(sock, msg) {
     logger.info({ jid, id: x.row.id, kode: x.row.short_code, pawrade: x.pawrade }, 'QR dikirim atas permintaan pendaftar');
     await sleep(randomBetween(2000, 5000));
   }
+}
+
+// Alur tombol WhatsApp (Donny 1 Okt): pendaftar menyapa "aku udah daftar", bot bertanya apakah QR di halaman
+// konfirmasi sudah di-screenshot. SUDAH = chat selesai, BELUM = QR dikirim. Permintaan QR yang jelas ("minta QR")
+// langsung dikirimi QR. Pertanyaan yang belum dijawab disimpan di TANYA_FILE (jid -> kode, nomor, waktu).
+const TANYA_FILE = '/data/tanya-screenshot.json';
+var tanyaSs = {};
+try { tanyaSs = JSON.parse(fs.readFileSync(TANYA_FILE, 'utf8')); } catch (e) { tanyaSs = {}; }
+const simpanTanya = () => fs.writeFileSync(TANYA_FILE, JSON.stringify(tanyaSs));
+
+async function mintaQr(sock, msg) {
+  var jid = msg.key.remoteJid;
+  var text = textOf(msg);
+  var phone = phoneOf(msg);
+  if (!text || internal(phone)) return false;
+
+  var tanya = tanyaSs[jid];
+  // Sapaan tombol ("aku udah daftar Pet Blessing") bukan jawaban, walau memuat kata "udah".
+  if (tanya && Date.now() - tanya.waktu < 24 * 3600000 && !/pet ?blessing|pawrade/i.test(text)) {
+    var belum = /\b(belum|blm|belom|lom|tidak|tdk|gak|ga|nggak|ngga|enggak)\b/i.test(text);
+    var sudah = !belum && /\b(sudah|udah|udh|sdh|dah|done|ok|oke|okay|siap)\b/i.test(text);
+    if (belum || sudah) {
+      delete tanyaSs[jid];
+      simpanTanya();
+      if (belum) {
+        await kirimQr(sock, jid, await cariQr(tanya.kode, tanya.phone));
+      } else {
+        await typingPause(sock, jid);
+        await sock.sendMessage(jid, { text: 'Siap Kak, terima kasih! 🙏 QR di screenshot itu yang ditunjukkan ke panitia saat reg ulang di lokasi acara ya. Sampai jumpa 🐾' });
+        logger.info({ jid }, 'pendaftar sudah screenshot QR, chat selesai');
+      }
+      return true;
+    }
+  }
+
+  var kodeMatch = text.match(/\b[0-9A-F]{8}\b/i);
+  var kode = kodeMatch ? kodeMatch[0].toUpperCase() : '';
+  var sebutAcara = /pet ?blessing|pawrade/i.test(text);
+  if (!kode && !(sebutAcara && /\bqr\b|reg(istrasi)? ?ulang|kode|daftar/i.test(text))) return false;
+  var cariPhone = sebutAcara ? phone : '';
+  var hasil = await cariQr(kode, cariPhone);
+  if (!hasil.length) {
+    if (!sebutAcara) return false;
+    await catatPelanggan(sock, jid);
+    await typingPause(sock, jid);
+    await sock.sendMessage(jid, { text: 'Mohon maaf Kak, pendaftarannya belum kami temukan 🙏 Boleh kirimkan kode pendaftaran 8 huruf yang ada di halaman konfirmasi? Kalau tidak ada, silakan hubungi panitia ya.\n\n' + committeeContactBlock() });
+    logger.info({ jid, kode }, 'minta QR: pendaftaran tidak ditemukan');
+    return true;
+  }
+  await catatPelanggan(sock, jid);
+  if (/(minta|kirim)\w*\s+(ulang\s+)?qr|\bqr\b.*\b(lagi|ulang|hilang)\b/i.test(text)) {
+    await kirimQr(sock, jid, hasil);
+    return true;
+  }
+  tanyaSs[jid] = { kode: kode, phone: cariPhone, waktu: Date.now() };
+  simpanTanya();
+  var acara = hasil[0].pawrade ? 'Fashion Pawrade 2026' : 'Pet Blessing 2026';
+  await typingPause(sock, jid);
+  await sock.sendMessage(jid, { text: 'Halo Kak ' + (hasil[0].row.owner_name || '') + ' 🐾 Terima kasih sudah mendaftar ' + acara + '!\n\nApakah Kakak sudah screenshot QR di halaman konfirmasi pendaftaran? Balas *SUDAH* kalau sudah, atau *BELUM* kalau belum, nanti QR-nya kami kirimkan di sini.' });
+  logger.info({ jid, kode }, 'pendaftar ditanya sudah screenshot QR');
   return true;
 }
 

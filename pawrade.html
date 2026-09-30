@@ -238,7 +238,7 @@
         <div class="field">
           <label for="ownerPhone">Kontak / no. HP (WhatsApp)<span class="req">*</span></label>
           <input type="tel" id="ownerPhone" autocomplete="tel" placeholder="08xx xxxx xxxx">
-          <div class="fill-hint">Pastikan nomor benar dan aktif di WhatsApp. Setelah mendaftar, QR bisa diminta lewat tombol WhatsApp.</div>
+          <div class="fill-hint">Pastikan nomor benar dan aktif di WhatsApp. Setelah mendaftar, screenshot QR di halaman konfirmasi.</div>
           <div class="field-error" id="err-ownerPhone">Nomor HP wajib diisi.</div>
         </div>
         <div class="field">
@@ -331,8 +331,8 @@
         <div class="qr-hint">Kode ini mewakili pendaftaran Anda dan seluruh hewan di atas.</div>
       </div>
       <div class="screenshot-notice">Screenshot halaman ini (termasuk QR di atas) sebagai bukti pendaftaran. Tunjukkan ke panitia saat check-in Fashion Pawrade Competition 2026 di lokasi acara.</div>
-      <a class="wa-qr-btn" id="waQrBtn" target="_blank" rel="noopener">Minta QR lewat WhatsApp</a>
-      <div class="wa-qr-hint">Tekan tombol di atas lalu kirim pesannya. QR reg ulang dibalas otomatis ke WhatsApp Anda.</div>
+      <a class="wa-qr-btn" id="waQrBtn" target="_blank" rel="noopener">Chat panitia lewat WhatsApp</a>
+      <div class="wa-qr-hint">Jangan lupa screenshot QR di atas. Kalau belum sempat, tekan tombol ini dan kirim pesannya, QR-nya kami kirim lewat WhatsApp.</div>
       <button class="again-btn" id="againBtn">Daftarkan pemilik lain</button>
     </div>
   </main>
@@ -807,7 +807,7 @@
     var qrBox = document.getElementById('confirmQrBox');
     document.getElementById('confirmQrCode').textContent = shortCode;
     document.getElementById('waQrBtn').href = 'https://wa.me/' + window.WA_PANITIA + '?text=' +
-      encodeURIComponent('Halo, saya mau minta QR Fashion Pawrade 2026. Kode pendaftaran: ' + shortCode);
+      encodeURIComponent('Hi kak, aku udah daftar Fashion Pawrade 2026. Kode pendaftaran: ' + shortCode);
     qrBox.innerHTML = '';
     try{
       new QRCode(qrBox, { text: ownerId, width: 200, height: 200, colorDark: '#3B1052', colorLight: '#FFFDF8' });
