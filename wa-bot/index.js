@@ -210,7 +210,7 @@ const INFO_NOMOR_TEMPLATES = [
 
 async function sendFollowup(sock, row) {
   var jid = normalizePhone(row.phone);
-  var caption = row.jenis === 'info_nomor'
+  var caption = row.pesan ? row.pesan : row.jenis === 'info_nomor'
     ? pick(INFO_NOMOR_TEMPLATES)(row.owner_name, pick(EMOJI_SETS)) + (Math.random() < 0.5 ? ' ' : '')
     : buildFollowupCaption(row.owner_name);
   await typingPause(sock, jid);
@@ -303,7 +303,11 @@ async function typingPause(sock, jid) {
 async function sendOne(sock, row) {
   var jid = normalizePhone(row.phone);
   var queueNumber = await fetchQueueNumber(row.owner_id);
-  var caption = buildCaption(row.owner_name, row.short_code, queueNumber);
+  // koreksi = pendaftar ini sempat mendaftar ganda dan QR lamanya sudah
+  // terkirim (lihat vps-db/init/25), jadi QR ini dikirim sebagai "QR yang fix".
+  var caption = row.koreksi
+    ? buildCorrectionCaption(row.owner_name, row.short_code, queueNumber)
+    : buildCaption(row.owner_name, row.short_code, queueNumber);
 
   var base64 = row.qr_image_base64.replace(/^data:image\/\w+;base64,/, '');
   var buffer = Buffer.from(base64, 'base64');

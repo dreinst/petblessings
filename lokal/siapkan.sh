@@ -44,7 +44,7 @@ if ! $PSQL -Atc "select 1 from pg_roles where rolname='authenticator'" | grep -q
   $PSQL < skema-vps.sql
   echo "Skema VPS dimuat"
 fi
-$PSQL < ../vps-db/init/22-hari-h.sql
+for m in 22-hari-h 24-perbaiki-trigger-huruf-stiker 25-gabung-pendaftaran-ganda; do $PSQL < ../vps-db/init/$m.sql; done
 # Server lokal baru memberi nomor setelah "Ambil alih" ditekan di halaman kendali.
 $PSQL -c "update api.hari_h set pemberi_nomor = false where id = 1 and lantai = 0 and not exists (select 1 from api.checkins)"
 docker compose up -d postgrest
