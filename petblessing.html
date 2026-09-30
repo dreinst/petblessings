@@ -11,6 +11,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
+<script>
+  // Pendaftaran online tutup 3 jam sebelum acara (4 Okt 2026, mulai 09.00 WIB).
+  // Waktu yang sama dicek ulang di api/register.js.
+  document.addEventListener('DOMContentLoaded', function(){
+    if(Date.now() < Date.parse('2026-10-04T06:00:00+07:00')) return;
+    document.getElementById('regForm').hidden = true;
+    document.getElementById('tutupInfo').hidden = false;
+  });
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
@@ -200,6 +209,10 @@
   </header>
 
   <main>
+    <section class="block" id="tutupInfo" hidden>
+      <h2>Pendaftaran online sudah ditutup</h2>
+      <p>Belum sempat daftar? Tenang, datang saja ke lokasi. Kamu tetap dilayani di meja reg ulang dan dapat nomor urut sesuai kedatangan. Sampai jumpa!</p>
+    </section>
     <form id="regForm" novalidate>
 
       <section class="block">
