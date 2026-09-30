@@ -75,6 +75,14 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // Pendaftaran online tutup 3 jam sebelum acara (Minggu 4 Okt 2026, mulai
+  // 09.00 WIB). Setelah itu peserta dilayani sebagai walk-in di meja reg ulang.
+  // Waktu yang sama dipakai di petblessing.html.
+  if (Date.now() >= Date.parse('2026-10-04T06:00:00+07:00')) {
+    res.status(403).json({ error: 'Pendaftaran online sudah ditutup. Silakan datang langsung, kamu tetap dilayani di meja reg ulang.' });
+    return;
+  }
+
   var body = req.body || {};
   var jwtSecret = process.env.PGRST_JWT_SECRET;
   var apiUrl = process.env.PETBLESSING_API_URL;
