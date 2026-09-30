@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cek foto dan sertifikat, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hari-h.css">
+<script src="api-config.js"></script>
+<script src="hari-h.js"></script>
+<style>
+  /* Untuk Andrew: cocokkan folder Drive per pemilik dengan data reg ulang,
+     dan buka sertifikat tiap hewan sebelum dipesan ke vendor. */
+  .wrap{max-width:1100px;margin:0 auto;padding:12px 14px 40px;}
+  header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px;}
+  header h1{font-size:22px;flex:1;}
+  .ringkas{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;}
+  .ringkas button{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer;min-height:40px;}
+  .ringkas button.on{background:var(--brand-deep);border-color:var(--brand-deep);color:#fff;}
+  .cari{width:100%;padding:12px;font-size:16px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:#fff;}
+  .pemilik{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+  .pemilik .folder{font-family:ui-monospace,Menlo,monospace;font-size:14.5px;font-weight:600;color:var(--brand-deep);overflow-wrap:anywhere;}
+  .pemilik .meta{font-size:13px;color:var(--ink-soft);}
+  .hewan{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:center;padding:8px 0;border-top:1px dashed var(--line);margin-top:8px;font-size:14px;}
+  .hewan .sub{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink-soft);overflow-wrap:anywhere;}
+  .st{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap;}
+  .st.ok{background:var(--ok-soft);color:var(--ok);}
+  .st.foto{background:var(--warn-soft);color:var(--warn);}
+  .st.belum{background:var(--danger-bg);color:var(--danger);}
+  .hewan a{font-weight:600;}
+</style>
+</head>
+<body>
+<div id="loginWrap" hidden></div>
+<div id="appWrap" class="wrap" hidden>
+  <header>
+    <h1>Cek foto dan sertifikat</h1>
+    <span class="server-badge" id="serverBadge"></span>
+    <button class="btn ghost" data-keluar style="min-height:40px;padding:8px 12px;font-size:13.5px;">Keluar</button>
+  </header>
+  <p class="muted" style="font-size:14px;margin:0 0 10px">Di Google Drive, folder hasil ada di <b>MCF Photobooth / 2. Result</b>. Tiap pemilik punya folder <b>nomor nama pemilik</b> (contoh 027 Budi), isinya satu folder per hewan (contoh 027A Boba) berisi foto dan sertifikat PDF. Nama di bawah ini harus sama persis dengan di Drive.</p>
+  <div class="ringkas" id="ringkas"></div>
+  <input class="cari" id="cari" placeholder="Cari nama pemilik, hewan, atau nomor">
+  <div id="daftar"></div>
+</div>
+<script>
+HariH.mulai(function(){
+  var H = HariH, $ = function(id){ return document.getElementById(id); };
+  var data = [], saring = 'semua';
+  function pad(n){ return ('00' + n).slice(-3); }
+  function statusHewan(p){
+    if(p.certificate_url) return ['ok', 'Sertifikat ada'];
+    if(p.mcfbooth_session_code) return ['foto', 'Sudah difoto, sertifikat belum'];
+    return ['belum', 'Belum difoto'];
+  }
+  function render(){
+    var q = $('cari').value.trim().toLowerCase();
+    var hit = { semua: 0, ok: 0, foto: 0, belum: 0 };
+    data.forEach(function(o){ o.pets.forEach(function(p){ hit.semua++; hit[statusHewan(p)[0]]++; }); });
+    $('ringkas').innerHTML = [['semua', 'Semua hewan hadir'], ['ok', 'Sertifikat ada'], ['foto', 'Difoto, belum sertifikat'], ['belum', 'Belum difoto']].map(function(x){
+      return '<button data-s="' + x[0] + '" class="' + (saring === x[0] ? 'on' : '') + '">' + x[1] + ': ' + hit[x[0]] + '</button>';
+    }).join('');
+    $('daftar').innerHTML = data.filter(function(o){
+      var teks = (o.nomor + ' ' + o.name + ' ' + o.pets.map(function(p){ return p.name; }).join(' ')).toLowerCase();
+      return (!q || teks.indexOf(q) >= 0) && o.pets.some(function(p){ return saring === 'semua' || statusHewan(p)[0] === saring; });
+    }).map(function(o){
+      return '<div class="pemilik"><div class="folder">' + pad(o.nomor) + ' ' + H.esc(o.name) + '</div>' +
+        '<div class="meta">Nomor kedatangan ' + o.nomor + ' · nomor pendaftaran ' + o.queue_number + (o.is_walkin ? ' · walk-in' : '') + '</div>' +
+        o.pets.map(function(p){
+          var s = statusHewan(p), label = pad(o.nomor) + (p.sticker_letter || '');
+          return '<div class="hewan"><span class="st ' + s[0] + '">' + s[1] + '</span><span><b>' + H.esc(p.name) + '</b> (' + H.esc(p.type) + ')<br>' +
+            '<span class="sub">' + label + ' ' + H.esc(p.name) + ' / ' + label + '_' + H.esc(p.name.replace(/\s+/g, '_')) + '_(pemilik).pdf</span></span>' +
+            (p.certificate_url ? '<a href="' + H.esc(p.certificate_url) + '" target="_blank" rel="noopener">Buka</a>' : '<span></span>') + '</div>';
+        }).join('') + '</div>';
+    }).join('') || '<p class="muted">Tidak ada yang cocok.</p>';
+  }
+  $('ringkas').addEventListener('click', function(e){ var b = e.target.closest('[data-s]'); if(b){ saring = b.dataset.s; render(); } });
+  $('cari').addEventListener('input', render);
+  H.ulang(async function(){
+    var rows = await H.api('/checkins?post=eq.reg_ulang&arrival_number=not.is.null&select=arrival_number,owners(name,queue_number,is_walkin,is_test,pets(name,type,sticker_letter,hadir,mcfbooth_session_code,certificate_url))&order=arrival_number');
+    H.labelServer(await H.status(1));
+    data = rows.filter(function(r){ return r.owners && r.owners.is_test === H.UJI; }).map(function(r){
+      var o = r.owners;
+      return { nomor: r.arrival_number, name: o.name, queue_number: o.queue_number, is_walkin: o.is_walkin,
+        pets: (o.pets || []).filter(function(p){ return p.hadir !== false; }).sort(function(a, b){ return String(a.sticker_letter).localeCompare(String(b.sticker_letter)); }) };
+    });
+    render();
+  }, 15000);
+});
+</script>
+</body>
+</html>

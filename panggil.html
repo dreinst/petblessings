@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pemanggil ruang tunggu, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hari-h.css">
+<script src="api-config.js"></script>
+<script src="hari-h.js"></script>
+<style>
+  /* Untuk petugas yang mengurutkan peserta di ruang tunggu (HP/tablet/laptop). */
+  .wrap{max-width:1100px;margin:0 auto;padding:12px 14px 40px;}
+  header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px;}
+  header h1{font-size:22px;flex:1;}
+  .grid{display:grid;gap:14px;}
+  @media (min-width:900px){ .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;} }
+  .sekarang{text-align:center;}
+  .sekarang .lbl{font-weight:600;color:var(--ink-soft);}
+  .sekarang .n{font-size:clamp(96px,22vw,170px);line-height:1;color:var(--brand-deep);margin:4px 0;}
+  .sekarang .nm{font-size:20px;font-weight:700;}
+  .sekarang .pt{color:var(--ink-soft);margin-bottom:12px;}
+  .tombol{display:grid;gap:10px;}
+  .tombol .btn{min-height:60px;font-size:18px;}
+  h2{font-size:18px;margin:0 0 8px;}
+  .list{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;}
+  .row{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;}
+  .row .n{font-size:26px;color:var(--brand-deep);min-width:52px;}
+  .row .t{flex:1;min-width:0;font-size:14px;}
+  .row .t b{display:block;font-size:15px;}
+  .row .btn{min-height:44px;padding:8px 12px;font-size:14px;}
+  .tab{display:flex;gap:8px;margin-bottom:10px;}
+  .tab .btn{flex:1;min-height:44px;}
+  .tab .btn.on{background:var(--brand-deep);color:#fff;border-color:var(--brand-deep);}
+</style>
+</head>
+<body>
+<div id="loginWrap" hidden></div>
+<div id="appWrap" class="wrap" hidden>
+  <header>
+    <h1>Pemanggil ruang tunggu</h1>
+    <span class="server-badge" id="serverBadge"></span>
+    <a class="btn ghost" href="layar-panggil.html" target="layarpanggil" style="min-height:40px;padding:8px 12px;font-size:13.5px;">Buka layar ruang tunggu</a>
+    <button class="btn ghost" data-keluar style="min-height:40px;padding:8px 12px;font-size:13.5px;">Keluar</button>
+  </header>
+  <div id="galat"></div>
+  <div class="grid">
+    <section class="card sekarang">
+      <div class="lbl">Sedang dipanggil</div>
+      <div class="n num" id="nSekarang">…</div>
+      <div class="nm" id="nmSekarang"></div>
+      <div class="pt" id="ptSekarang"></div>
+      <div class="tombol">
+        <button class="btn primary" id="btnBerikut">Panggil berikutnya</button>
+        <button class="btn" id="btnUlang" disabled>Panggil ulang</button>
+      </div>
+      <p class="muted" style="font-size:13.5px;margin:12px 0 0">Nomor dipanggil urut dari yang terkecil yang belum dipanggil. Peserta yang terlambat bisa dipanggil lagi dari daftar.</p>
+    </section>
+    <section class="card">
+      <div class="tab"><button class="btn on" data-tab="menunggu"><span>Menunggu (<span id="jmlTunggu">0</span>)</span></button><button class="btn" data-tab="riwayat">Sudah dipanggil</button></div>
+      <div class="list" id="list"></div>
+    </section>
+  </div>
+</div>
+<script>
+HariH.mulai(function(){
+  var H = HariH, $ = function(id){ return document.getElementById(id); };
+  var st = null, tab = 'menunggu';
+  function petsTeks(pets){ return (pets || []).map(function(p){ return p.label + ' ' + p.name; }).join(', '); }
+  function render(){
+    if(!st) return;
+    var d = st.dipanggil;
+    $('nSekarang').textContent = d ? d.nomor : '…';
+    $('nmSekarang').textContent = d ? d.name + (d.jumlah > 1 ? ' (dipanggil ' + d.jumlah + ' kali)' : '') : 'Belum ada yang dipanggil';
+    $('ptSekarang').textContent = d ? petsTeks(d.pets) : '';
+    var next = st.menunggu[0];
+    $('btnBerikut').textContent = next ? 'Panggil berikutnya: ' + next.nomor : 'Belum ada yang menunggu';
+    $('btnBerikut').disabled = !next;
+    $('btnUlang').disabled = !d;
+    $('btnUlang').textContent = d ? 'Panggil ulang ' + d.nomor : 'Panggil ulang';
+    $('jmlTunggu').textContent = st.menunggu.length;
+    if(tab === 'menunggu'){
+      $('list').innerHTML = st.menunggu.length ? st.menunggu.map(function(m){
+        return '<div class="row"><span class="n num">' + m.nomor + '</span><span class="t"><b>' + H.esc(m.name) + '</b>' + H.esc(petsTeks(m.pets)) + '</span>' +
+          '<button class="btn" data-panggil="' + m.nomor + '">Panggil</button></div>';
+      }).join('') : '<p class="muted">Belum ada peserta yang menunggu.</p>';
+    }else{
+      $('list').innerHTML = st.riwayat_panggil.length ? st.riwayat_panggil.map(function(m){
+        return '<div class="row"><span class="n num">' + m.nomor + '</span><span class="t">Jam ' + H.jam(m.called_at) + (m.jumlah > 1 ? ', ' + m.jumlah + ' kali' : '') + '</span>' +
+          '<button class="btn" data-panggil="' + m.nomor + '">Panggil ulang</button></div>';
+      }).join('') : '<p class="muted">Belum ada.</p>';
+    }
+  }
+  async function muat(){
+    try{ st = await H.status(5); H.labelServer(st); $('galat').innerHTML = ''; render(); }
+    catch(e){ $('galat').innerHTML = '<div class="alert err">Tidak tersambung: ' + H.esc(e.message) + '</div>'; }
+  }
+  async function panggil(nomor){
+    try{ await H.rpc('panggil', { p_nomor: nomor == null ? null : Number(nomor), p_uji: H.UJI }); H.bunyi(880, 120); await muat(); }
+    catch(e){ $('galat').innerHTML = '<div class="alert err">' + H.esc(e.message) + '</div>'; }
+  }
+  $('btnBerikut').addEventListener('click', function(){ panggil(null); });
+  $('btnUlang').addEventListener('click', function(){ if(st && st.dipanggil) panggil(st.dipanggil.nomor); });
+  $('list').addEventListener('click', function(e){ var b = e.target.closest('[data-panggil]'); if(b) panggil(b.dataset.panggil); });
+  document.querySelectorAll('[data-tab]').forEach(function(b){
+    b.addEventListener('click', function(){
+      tab = b.dataset.tab;
+      document.querySelectorAll('[data-tab]').forEach(function(x){ x.classList.toggle('on', x === b); });
+      render();
+    });
+  });
+  H.ulang(muat, 2000);
+});
+</script>
+</body>
+</html>

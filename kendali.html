@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kendali hari-H, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hari-h.css">
+<script src="assets/vendor/qrcode.min.js"></script>
+<script src="api-config.js"></script>
+<script src="hari-h.js"></script>
+<style>
+  /* Dibuka di Mac (server lokal): status, serah terima pemberi nomor, QR alamat device.
+     Dibuka online (Vercel): lihat detak server lokal + aktifkan cadangan online. */
+  .wrap{max-width:1100px;margin:0 auto;padding:12px 14px 40px;}
+  header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px;}
+  header h1{font-size:22px;flex:1;}
+  .grid{display:grid;gap:14px;}
+  @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr;align-items:start;} }
+  h2{font-size:18px;margin:0 0 10px;}
+  .besar{font-size:22px;font-weight:700;margin:4px 0 10px;}
+  .besar.on{color:var(--ok);} .besar.off{color:var(--danger);}
+  .baris{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
+  .aksi{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+  .qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  .qr{text-align:center;font-size:13px;}
+  .qr div{background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);}
+  .qr img{width:100%;height:auto;display:block;}
+  .qr b{display:block;margin-top:6px;font-size:14px;}
+  .qr span{overflow-wrap:anywhere;color:var(--ink-soft);}
+  .log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;max-height:260px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<div id="loginWrap" hidden></div>
+<div id="appWrap" class="wrap" hidden>
+  <header>
+    <h1 id="judul">Kendali hari-H</h1>
+    <span class="server-badge" id="serverBadge"></span>
+    <button class="btn ghost" data-keluar style="min-height:40px;padding:8px 12px;font-size:13.5px;">Keluar</button>
+  </header>
+  <div id="galat"></div>
+  <div class="grid">
+    <section class="card">
+      <h2>Pemberi nomor</h2>
+      <div class="besar" id="pemberi">...</div>
+      <div id="rincian"></div>
+      <div class="aksi" id="aksi"></div>
+    </section>
+    <section class="card" id="kartuKanan"></section>
+  </div>
+</div>
+<script>
+HariH.mulai(function(){
+  var H = HariH, $ = function(id){ return document.getElementById(id); };
+  function galat(m){ $('galat').innerHTML = m ? '<div class="alert err">' + H.esc(m) + '</div>' : ''; }
+  function baris(a, b){ return '<div class="baris"><span>' + a + '</span><b>' + b + '</b></div>'; }
+  function tombol(id, teks, kelas){ return '<button class="btn ' + (kelas || '') + ' block" id="' + id + '">' + teks + '</button>'; }
+
+  if(H.LOKAL){
+    $('judul').textContent = 'Kendali server lokal (Mac)';
+    var HALAMAN = [['checkin.html?meja=A', 'Meja A'], ['checkin.html?meja=B', 'Meja B'], ['monitor-checkin.html', 'Monitor pos'],
+                   ['panggil.html', 'Pemanggil'], ['layar-panggil.html', 'Layar ruang tunggu'], ['kendali.html', 'Kendali ini']];
+    async function perintah(p, konfirmasi){
+      if(konfirmasi && !confirm(konfirmasi)) return;
+      galat('');
+      try{
+        var r = await fetch('/lokal/' + p, { method: 'POST', headers: { Authorization: 'Bearer ' + H.token() } });
+        var d = await r.json();
+        if(!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+      }catch(e){ galat(e.message); }
+      muat();
+    }
+    var qrDibuat = '';
+    async function muat(){
+      var s = await (await fetch('/lokal/status')).json();
+      var st = null; try{ st = await H.status(1); H.labelServer(st); }catch(e){}
+      var lokalAktif = s.pemberi === 'lokal';
+      $('pemberi').className = 'besar ' + (lokalAktif ? 'on' : 'off');
+      $('pemberi').textContent = lokalAktif ? 'Server lokal (Mac) ini' : s.pemberi === 'vps' ? 'Server online (VPS)' : 'Belum ada';
+      $('rincian').innerHTML =
+        baris('Database lokal', s.lokal_ok ? 'jalan' : 'MATI') +
+        baris('Internet / VPS', s.vps_ok ? 'tersambung' : 'tidak terjangkau') +
+        baris('Sinkron terakhir', s.terakhir_sinkron ? H.jam(s.terakhir_sinkron) + ' (' + Math.round((Date.now() - new Date(s.terakhir_sinkron)) / 1000) + ' dtk lalu)' : 'belum ada') +
+        (st ? baris('Sudah reg ulang', st.hadir + ' dari ' + st.terdaftar) : '') +
+        baris('Keterangan', H.esc(s.pesan || 'belum ada')) +
+        (s.konflik.length ? '<div class="alert err"><b>Nomor bentrok, cek manual:</b><br>' + s.konflik.map(H.esc).join('<br>') + '</div>' : '');
+      $('aksi').innerHTML = lokalAktif
+        ? tombol('bSinkron', 'Sinkron sekarang') + tombol('bSerah', 'Serahkan ke server online (Mac mau dimatikan)', 'ghost')
+        : tombol('bAmbil', 'Ambil alih: server lokal jadi pemberi nomor', 'primary') + tombol('bPaksa', 'Paksa ambil alih tanpa internet (darurat)', 'danger');
+      if($('bSinkron')) $('bSinkron').onclick = function(){ perintah('sinkron'); };
+      if($('bSerah')) $('bSerah').onclick = function(){ perintah('serahkan', 'Pemberi nomor pindah ke server online. Semua device harus membuka alamat online. Lanjut?'); };
+      if($('bAmbil')) $('bAmbil').onclick = function(){ perintah('ambil-alih', 'Server lokal akan memberi nomor dan server online berhenti. Lanjut?'); };
+      if($('bPaksa')) $('bPaksa').onclick = function(){ perintah('ambil-alih?paksa=1', 'Hanya untuk darurat: server online tidak bisa dihubungi dan tidak ada yang memakainya. Nomor dilanjutkan dari nomor tertinggi di Mac + 10. Lanjut?'); };
+      // QR alamat untuk device lain (dibuat sekali, kecuali alamat berubah).
+      var kunci = s.alamat.join(',');
+      if(kunci !== qrDibuat){
+        qrDibuat = kunci;
+        $('kartuKanan').innerHTML = '<h2>Buka di device lain</h2><p class="muted" style="font-size:13.5px;margin:0 0 10px">Sambungkan device ke WiFi router lokasi, lalu scan QR. Pertama kali muncul peringatan keamanan: pilih "Lanjutkan" / "Advanced, Proceed". Itu normal untuk server lokal.</p>' +
+          s.alamat.filter(function(ip){ return !/^100\./.test(ip); }).map(function(ip){
+            return '<p style="font-weight:600;margin:10px 0 6px">Alamat ' + ip + '</p><div class="qr-grid">' + HALAMAN.map(function(h){
+              var url = 'https://' + ip + ':8443/' + h[0];
+              var qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+              return '<div class="qr"><div>' + qr.createImgTag(4, 0) + '</div><b>' + h[1] + '</b><span>' + url + '</span></div>';
+            }).join('') + '</div>';
+          }).join('') +
+          '<h2 style="margin-top:16px">Catatan</h2><div class="log" id="log"></div>';
+      }
+      if($('log')) $('log').textContent = s.log.join('\n') || 'belum ada';
+    }
+    H.ulang(function(){ return muat().catch(function(e){ galat('Server lokal tidak menjawab: ' + e.message); }); }, 2500);
+  } else {
+    // Online: pantau detak server lokal, aktifkan cadangan kalau Mac mati.
+    $('judul').textContent = 'Kendali cadangan online';
+    async function muat(){
+      var h = (await H.api('/hari_h?id=eq.1'))[0];
+      var st = await H.status(1); H.labelServer(st);
+      var umur = h.lokal_terakhir ? Math.round((Date.now() - new Date(h.lokal_terakhir)) / 1000) : null;
+      $('pemberi').className = 'besar ' + (h.pemberi_nomor ? 'on' : 'off');
+      $('pemberi').textContent = h.pemberi_nomor ? 'Server online (VPS) ini' : 'Server lokal di lokasi';
+      $('rincian').innerHTML =
+        baris('Detak terakhir server lokal', umur == null ? 'belum pernah' : umur < 60 ? umur + ' dtk lalu' : Math.round(umur / 60) + ' menit lalu') +
+        baris('Sudah reg ulang (tersinkron)', st.hadir + ' dari ' + st.terdaftar) +
+        baris('Nomor berikutnya minimal', (h.lantai + 1));
+      $('aksi').innerHTML = h.pemberi_nomor ? '<p class="muted">Server online sedang memberi nomor. Untuk kembali ke server lokal, tekan "Ambil alih" di halaman kendali Mac.</p>'
+        : tombol('bCadangan', 'Aktifkan server online sebagai pemberi nomor', 'danger') +
+          '<p class="muted" style="font-size:13.5px">Hanya kalau Mac mati atau tidak bisa dipakai. Nomor dilanjutkan dari nomor tertinggi yang tersinkron + 10, supaya tidak bentrok dengan nomor di Mac yang belum sempat terkirim. Setelah ini semua device membuka alamat online.</p>';
+      if($('bCadangan')) $('bCadangan').onclick = async function(){
+        if(!confirm('Server online akan memberi nomor. Pastikan Mac benar-benar tidak dipakai lagi. Lanjut?')) return;
+        try{
+          var c = await H.api('/checkins?post=eq.reg_ulang&select=arrival_number&order=arrival_number.desc.nullslast&limit=1');
+          await H.rpc('ambil_alih', { p_lantai: ((c[0] && c[0].arrival_number) || 0) + 10 });
+          galat('');
+        }catch(e){ galat(e.message); }
+        muat();
+      };
+      $('kartuKanan').innerHTML = '<h2>Alamat online</h2><p>Meja: <b>' + location.host + '/checkin.html?meja=A</b> dan <b>?meja=B</b><br>Monitor: <b>' + location.host + '/monitor-checkin.html</b><br>Pemanggil: <b>' + location.host + '/panggil.html</b><br>Layar ruang tunggu: <b>' + location.host + '/layar-panggil.html</b></p>';
+    }
+    H.ulang(function(){ return muat().catch(function(e){ galat(e.message); }); }, 4000);
+  }
+});
+</script>
+</body>
+</html>

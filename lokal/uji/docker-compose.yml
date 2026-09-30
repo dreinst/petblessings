@@ -1,0 +1,37 @@
+# VPS TIRUAN untuk uji di Mac (bukan produksi). Sama dengan lokal/docker-compose.yml, beda nama dan port.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pbuji-vps-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: petblessing
+      POSTGRES_USER: petblessing
+      POSTGRES_PASSWORD: ${DB_PW}
+    volumes:
+      - ./data-vps/pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petblessing"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: pbuji-vps-api
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTH_PW}@db:5432/petblessing
+      PGRST_DB_SCHEMAS: api
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_JWT_ROLE_CLAIM_KEY: .role
+      PGRST_DB_POOL: "10"
+      PGRST_SERVER_PORT: "3000"
+    ports:
+      - "127.0.0.1:3102:3000"
+    depends_on:
+      db:
+        condition: service_healthy
