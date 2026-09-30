@@ -60,7 +60,7 @@ function buildCaption(name, code, queueNumber) {
   var template = pick(CAPTION_TEMPLATES);
   var text = template(name, code, pick(GREETINGS), pick(CLOSERS), pick(EMOJI_SETS));
   if (queueNumber) {
-    text += `\n\nNomor urut pendaftaran: *${queueNumber}*\n(cocokkan dengan stiker nomor saat reg ulang)`;
+    text += `\n\nNomor pendaftaran: *${queueNumber}*\nNomor urut pemberkatan dibagikan saat reg ulang di lokasi, sesuai urutan kedatangan.`;
   }
   text += '\n\n' + committeeContactBlock();
   // Variasi kecil whitespace di akhir, supaya byte teks tidak pernah identik
@@ -81,7 +81,7 @@ function buildCorrectionCaption(name, code, queueNumber) {
   var template = pick(CORRECTION_CAPTION_TEMPLATES);
   var text = template(name, code, pick(GREETINGS), pick(CLOSERS), pick(EMOJI_SETS));
   if (queueNumber) {
-    text += `\n\nNomor urut pendaftaran: *${queueNumber}*\n(cocokkan dengan stiker nomor saat reg ulang)`;
+    text += `\n\nNomor pendaftaran: *${queueNumber}*\nNomor urut pemberkatan dibagikan saat reg ulang di lokasi, sesuai urutan kedatangan.`;
   }
   text += '\n\n' + committeeContactBlock();
   return text + (Math.random() < 0.5 ? ' ' : '');
