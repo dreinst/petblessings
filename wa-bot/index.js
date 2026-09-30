@@ -182,9 +182,7 @@ function buildFollowupCaption(name) {
 
 async function fetchNextFollowup() {
   var res = await pool.query(
-    `select * from api.wa_followup_queue where status = 'pending' and attempts < 3
-       and (jenis <> 'info_nomor' or extract(hour from now() at time zone 'Asia/Jakarta') between 7 and 20)
-     order by created_at asc limit 1`
+    `select * from api.wa_followup_queue where status = 'pending' and attempts < 3 order by created_at asc limit 1`
   );
   return res.rows[0] || null;
 }
