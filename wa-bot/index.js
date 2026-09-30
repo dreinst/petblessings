@@ -472,11 +472,6 @@ async function runWorkerLoop() {
     // 1-3 menit per pesan (Donny 30 Sep, sebelumnya 2-5 menit), supaya pola
     // kirim beruntun tetap terlihat seperti orang membalas satu-satu, bukan bot.
     var delay = randomBetween(60000, 180000);
-    // Sesekali kasih jeda lebih panjang lagi, meniru pola istirahat manusia.
-    if (sentCount > 0 && sentCount % 10 === 0) {
-      delay = randomBetween(600000, 1200000);
-      logger.info('jeda panjang setelah 10 pesan berturut-turut');
-    }
     logger.info({ delayMs: delay }, 'jeda sebelum pesan berikutnya');
     await sleep(delay);
   }
