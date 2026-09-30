@@ -469,9 +469,9 @@ async function runWorkerLoop() {
     }
 
     // Delay acak antar pengiriman -- inti dari "tidak dianggap spam".
-    // 2-5 menit per pesan, supaya pola kirim beruntun (misal 10+ pendaftar
-    // sekaligus) tetap terlihat seperti orang membalas satu-satu, bukan bot.
-    var delay = randomBetween(120000, 300000);
+    // 1-3 menit per pesan (Donny 30 Sep, sebelumnya 2-5 menit), supaya pola
+    // kirim beruntun tetap terlihat seperti orang membalas satu-satu, bukan bot.
+    var delay = randomBetween(60000, 180000);
     // Sesekali kasih jeda lebih panjang lagi, meniru pola istirahat manusia.
     if (sentCount > 0 && sentCount % 10 === 0) {
       delay = randomBetween(600000, 1200000);
