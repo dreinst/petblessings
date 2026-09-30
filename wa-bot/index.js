@@ -182,7 +182,9 @@ function buildFollowupCaption(name) {
 
 async function fetchNextFollowup() {
   var res = await pool.query(
-    `select * from api.wa_followup_queue where status = 'pending' and attempts < 3 order by created_at asc limit 1`
+    `select * from api.wa_followup_queue where status = 'pending' and attempts < 3
+       and (jenis <> 'info_nomor' or extract(hour from now() at time zone 'Asia/Jakarta') between 7 and 20)
+     order by created_at asc limit 1`
   );
   return res.rows[0] || null;
 }
@@ -199,9 +201,20 @@ async function markFollowupAttemptFailed(id, attempts, errMessage) {
   );
 }
 
+// Info nomor urut (30 Sep 2026): pendaftar lama menerima teks "Nomor urut
+// pendaftaran ... cocokkan dengan stiker". Sekarang nomor urut = urutan
+// kedatangan saat reg ulang, jadi mereka dikabari sekali.
+const INFO_NOMOR_TEMPLATES = [
+  (name, e) => `Halo ${name} ${e}\n\nTerima kasih sudah mendaftar Pet Blessing 2026. Ada info kecil soal nomor ya.\n\nNomor di pesan QR sebelumnya adalah nomor pendaftaran, bukan nomor urut pemberkatan. Nomor urut akan dibagikan saat reg ulang di lokasi, sesuai urutan kedatangan. Jadi yang datang lebih awal akan dipanggil lebih dulu.\n\nCukup bawa QR yang sudah kami kirim dan tunjukkan di meja reg ulang. Sampai jumpa hari Minggu, 4 Oktober!`,
+  (name, e) => `Hai ${name} ${e}\n\nSedikit info untuk Pet Blessing 2026 hari Minggu, 4 Oktober: nomor di pesan QR kamu sebelumnya adalah nomor pendaftaran. Nomor urut pemberkatan dibagikan saat reg ulang di lokasi, urut sesuai kedatangan.\n\nJadi cukup datang dan tunjukkan QR yang sudah kami kirim di meja reg ulang ya. Sampai ketemu!`,
+  (name, e) => `Halo ${name}! ${e}\n\nMenjelang Pet Blessing 2026 (Minggu, 4 Oktober), kami mau kabari: nomor urut pemberkatan akan dibagikan saat reg ulang di lokasi sesuai urutan kedatangan. Nomor di pesan QR sebelumnya adalah nomor pendaftaran saja.\n\nBawa QR yang sudah kami kirim dan tunjukkan di meja reg ulang ya. Terima kasih!`,
+];
+
 async function sendFollowup(sock, row) {
   var jid = normalizePhone(row.phone);
-  var caption = buildFollowupCaption(row.owner_name);
+  var caption = row.jenis === 'info_nomor'
+    ? pick(INFO_NOMOR_TEMPLATES)(row.owner_name, pick(EMOJI_SETS)) + (Math.random() < 0.5 ? ' ' : '')
+    : buildFollowupCaption(row.owner_name);
   await typingPause(sock, jid);
   await sock.sendMessage(jid, { text: caption });
 }
