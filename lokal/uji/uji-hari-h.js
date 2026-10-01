@@ -57,6 +57,7 @@ const sinkronSekarang = () => call(SERVER, '/lokal/sinkron', {});
   const nomor = hasil.map((h) => h.data.nomor).sort((a, b) => a - b);
   cek(hasil.every((h) => h.status === 200 && h.data.status === 'baru'), 'semua dapat nomor baru');
   cek(JSON.stringify(nomor) === JSON.stringify([...Array(20)].map((_, i) => i + 1)), 'nomor 1 sampai 20 tanpa ganda dan tanpa lompat', nomor);
+  cek(hasil.every((h, i) => h.data.nomor % 2 === (i % 2 ? 0 : 1)), 'Pos A memberi nomor ganjil, Pos B genap', hasil.map((h) => h.data.nomor));
 
   console.log('4. Scan ulang orang yang sama');
   r = await rpc(LOKAL, 'reg_ulang', { p_owner: owners[0].id, p_desk: 'B' });
@@ -111,12 +112,12 @@ const sinkronSekarang = () => call(SERVER, '/lokal/sinkron', {});
 
   console.log('10. Mac mati, cadangan online diaktifkan dari VPS (+10)');
   // Nomor 24 dibuat di lokal tapi belum sempat tersinkron ketika "Mac mati".
-  r = await rpc(LOKAL, 'reg_ulang', { p_owner: bebas[1].id, p_desk: 'A' });
+  r = await rpc(LOKAL, 'reg_ulang', { p_owner: bebas[1].id, p_desk: 'B' });
   cek(r.data.nomor === 24, 'nomor 24 di lokal, belum tersinkron');
   const maxVps = Number(psql('pbuji-vps-db', "select max(arrival_number) from api.checkins"));
   r = await rpc(VPS, 'ambil_alih', { p_lantai: maxVps + 10 });
   cek(r.status === 200 && r.data.lantai === 33, 'VPS jadi pemberi nomor, lantai 33', r.data);
-  r = await rpc(VPS, 'reg_ulang', { p_owner: bebas[2].id, p_desk: 'A' });
+  r = await rpc(VPS, 'reg_ulang', { p_owner: bebas[2].id, p_desk: 'B' });
   cek(r.data.nomor === 34, 'nomor berikutnya di VPS 34 (tidak bentrok dengan 24 yang belum tersinkron)', r.data);
 
   console.log('11. Mac hidup lagi: lokal melihat VPS pemberi nomor, lokal berhenti');
@@ -132,7 +133,7 @@ const sinkronSekarang = () => call(SERVER, '/lokal/sinkron', {});
   console.log('12. Kembali ke lokal');
   r = await call(SERVER, '/lokal/ambil-alih', {});
   cek(r.status === 200, 'ambil alih lagi', r.data);
-  r = await rpc(LOKAL, 'reg_ulang', { p_owner: bebas[3].id, p_desk: 'B' });
+  r = await rpc(LOKAL, 'reg_ulang', { p_owner: bebas[3].id, p_desk: 'A' });
   cek(r.data.nomor === 35, 'lanjut dari 35', r.data);
   await sinkronSekarang();
   cek(psql('pbuji-vps-db', "select string_agg(arrival_number::text, ',' order by arrival_number) from api.checkins where arrival_number > 22") === '23,24,34,35', 'VPS akhirnya punya 24 juga, semua nomor unik', psql('pbuji-vps-db', "select string_agg(arrival_number::text, ',' order by arrival_number) from api.checkins where arrival_number > 22"));

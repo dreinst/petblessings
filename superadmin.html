@@ -132,7 +132,7 @@
     <h2 class="panel-title">Rekap Pet Blessing</h2>
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
-    <h2 class="section">Reg ulang Pet Blessing (nomor urut sesuai kedatangan)</h2>
+    <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <p class="note" id="testNote" style="display:none;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:var(--accent-light);color:#5E4419;font-size:13px;font-weight:600;"></p>
     <p class="note" id="wrongNote" style="margin:-6px 0 14px;font-size:13px;color:var(--ink-soft);"></p>
@@ -273,27 +273,27 @@
         var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
         donation += digits ? parseInt(digits, 10) : 0;
       });
-      // Hari-H: nomor urut = urutan kedatangan saat reg ulang (checkins.arrival_number).
-      // Nomor di QR yang dikirim ke pendaftar adalah nomor pendaftaran (queue_number), bukan nomor urut.
-      var sudah = 0, terakhir = 0, perMeja = {};
+      // Reg ulang 2 pos: nomor pendaftaran ganjil ke Pos A, genap ke Pos B. Pos A membagikan
+      // nomor urut ganjil, Pos B genap (checkins.arrival_number, desk = pos yang melayani).
+      var pos = { A: { total: 0, sudah: 0, terakhir: 0 }, B: { total: 0, sudah: 0, terakhir: 0 } };
       owners.forEach(function(o){
-        var c = (o.checkins || []).find(function(x){ return x.post === 'reg_ulang'; });
+        var x = pos[Number(o.queue_number) % 2 ? 'A' : 'B'];
+        x.total++;
+        var c = (o.checkins || []).find(function(k){ return k.post === 'reg_ulang'; });
         if(!c) return;
-        sudah++;
-        terakhir = Math.max(terakhir, Number(c.arrival_number) || 0);
-        var m = c.desk || '?';
-        perMeja[m] = (perMeja[m] || 0) + 1;
+        x.sudah++;
+        var d = pos[c.desk]; if(d) d.terakhir = Math.max(d.terakhir, Number(c.arrival_number) || 0);
       });
       document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
       document.getElementById('statsPosts').innerHTML =
-        card('Sudah reg ulang', sudah) +
-        card('Belum reg ulang', owners.length - sudah) +
-        card('Nomor urut terakhir', terakhir || '-') +
-        card('Meja', Object.keys(perMeja).sort().map(function(m){ return m + ': ' + perMeja[m]; }).join(' · ') || '-');
+        card('Sudah reg ulang', pos.A.sudah + pos.B.sudah) +
+        card('Belum reg ulang', owners.length - pos.A.sudah - pos.B.sudah) +
+        card('Pos A (ganjil), dari ' + pos.A.total, pos.A.sudah) +
+        card('Pos B (genap), dari ' + pos.B.total, pos.B.sudah);
       var tn = document.getElementById('testNote');
       tn.style.display = testCount ? 'block' : 'none';
       tn.textContent = 'Masih ada ' + testCount + ' pemilik data uji (Testing Nomor N) di database. Tidak dihitung di angka di atas. Hapus sebelum acara.';
-      document.getElementById('wrongNote').textContent = 'Nomor di QR yang dikirim ke pendaftar adalah nomor pendaftaran. Nomor urut pemberkatan dibagikan saat reg ulang, sesuai urutan kedatangan.';
+      document.getElementById('wrongNote').textContent = 'Pos ditentukan nomor pendaftaran (nomor di QR). Nomor urut pemberkatan terakhir: Pos A #' + (pos.A.terakhir || '-') + ', Pos B #' + (pos.B.terakhir || '-') + '.';
       // Pendaftar per hari (WIB) sejak 20 Sep, dengan catatan status iklan.
       var perDay = {};
       owners.forEach(function(o){
