@@ -67,9 +67,12 @@
   .error{background:var(--danger-bg);color:var(--danger);padding:12px 14px;border-radius:10px;font-size:13.5px;margin-bottom:16px;}
 
   /* Log login: siapa masuk dari perangkat apa, setujui/tolak login admin */
-  .log{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 18px 4px;margin-bottom:18px;}
+  .panel-title{font-family:'Fraunces',serif;font-size:19px;color:var(--brand-deep);margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .panel .stats{margin-bottom:14px;}
+  .log{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;}
   .log-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
-  .log h2{font-size:16px;color:var(--brand-deep);}
+  .log h2{font-family:'Fraunces',serif;font-size:19px;color:var(--brand-deep);}
   .log-pending{font-size:12.5px;color:#5E4419;background:var(--accent-light);padding:2px 10px;border-radius:6px;}
   .log-pending:empty{display:none;}
   .log-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px;flex-wrap:wrap;}
@@ -86,12 +89,8 @@
 
   @media (min-width:880px){
     .wrap{max-width:960px;}
-    #appWrap{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start;}
-    #appWrap > header,
-    #appWrap > #panitiaNav,
-    #appWrap > .error{grid-column:1 / -1;}
-    .stats-col{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;}
-    .log{align-self:start;}
+    .panel{padding:22px 24px 8px;}
+    .log{padding:20px 24px;}
   }
 </style>
 </head>
@@ -127,7 +126,10 @@
   </header>
 
   <div class="error" id="statsError" style="display:none;"></div>
-  <div class="stats-col">
+  <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
+
+  <section class="panel" id="rekapPb">
+    <h2 class="panel-title">Rekap Pet Blessing</h2>
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
     <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
@@ -137,10 +139,13 @@
     <h2 class="section">Pendaftar Pet Blessing per hari (dibanding status iklan)</h2>
     <div class="stat" style="text-align:left;padding:12px;margin-bottom:6px;"><table id="perDay" style="width:100%;border-collapse:collapse;font-size:13px;"></table></div>
     <p class="note" style="margin:0 0 18px;font-size:12px;color:var(--ink-soft);">Status iklan dicatat manual dari Ads Manager: iklan lama aktif sampai 23 Sep, mati 24 sampai 25 Sep karena dana habis, iklan Instagram aktif mulai 26 Sep. Bukti sebab-akibat lemah: pendaftar juga datang dari pengumuman gereja dan WhatsApp.</p>
+  </section>
+
+  <section class="panel" id="rekapPawrade">
+    <h2 class="panel-title">Rekap Fashion Pawrade</h2>
     <h2 class="section">Pendaftaran Fashion Pawrade Competition 2026</h2>
     <div class="stats" id="statsPawrade"></div>
-  </div>
-  <div class="refresh-line"><span id="updatedAt"></span><button type="button" id="refreshBtn">Muat ulang</button></div>
+  </section>
 
   <section class="log" id="loginLog">
     <div class="log-head"><h2>Log login</h2><span class="log-pending" id="logPending"></span></div>
