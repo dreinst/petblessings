@@ -132,7 +132,7 @@
     <h2 class="panel-title">Rekap Pet Blessing</h2>
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
-    <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
+    <h2 class="section">Reg ulang Pet Blessing (nomor urut sesuai kedatangan)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <p class="note" id="testNote" style="display:none;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:var(--accent-light);color:#5E4419;font-size:13px;font-weight:600;"></p>
     <p class="note" id="wrongNote" style="margin:-6px 0 14px;font-size:13px;color:var(--ink-soft);"></p>
@@ -253,7 +253,7 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=queue_number,is_test,submitted_at,companions,donation_amount,pets(id),checkins(post,desk,wrong_desk)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,is_test,submitted_at,companions,donation_amount,pets(id),checkins(post,desk,arrival_number)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
@@ -273,27 +273,27 @@
         var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
         donation += digits ? parseInt(digits, 10) : 0;
       });
-      // Check in 1 titik, 2 pos: nomor urut ganjil = Pos A, genap = Pos B.
-      var totalA = 0, totalB = 0, doneA = 0, doneB = 0, wrong = [];
+      // Hari-H: nomor urut = urutan kedatangan saat reg ulang (checkins.arrival_number).
+      // Nomor di QR yang dikirim ke pendaftar adalah nomor pendaftaran (queue_number), bukan nomor urut.
+      var sudah = 0, terakhir = 0, perMeja = {};
       owners.forEach(function(o){
-        var odd = Number(o.queue_number) % 2 === 1;
-        var done = (o.checkins || []).some(function(c){ return c.post === 'reg_ulang'; });
-        if(odd){ totalA++; if(done) doneA++; } else { totalB++; if(done) doneB++; }
-        (o.checkins || []).forEach(function(c){ if(c.post === 'reg_ulang' && c.wrong_desk) wrong.push({ n: o.queue_number, desk: c.desk }); });
+        var c = (o.checkins || []).find(function(x){ return x.post === 'reg_ulang'; });
+        if(!c) return;
+        sudah++;
+        terakhir = Math.max(terakhir, Number(c.arrival_number) || 0);
+        var m = c.desk || '?';
+        perMeja[m] = (perMeja[m] || 0) + 1;
       });
-      wrong.sort(function(a, b){ return a.n - b.n; });
       document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
       document.getElementById('statsPosts').innerHTML =
-        card('Sudah reg ulang', doneA + doneB) +
-        card('Belum reg ulang', (totalA + totalB) - (doneA + doneB)) +
-        card('Pos A (ganjil), dari ' + totalA, doneA) +
-        card('Pos B (genap), dari ' + totalB, doneB);
+        card('Sudah reg ulang', sudah) +
+        card('Belum reg ulang', owners.length - sudah) +
+        card('Nomor urut terakhir', terakhir || '-') +
+        card('Meja', Object.keys(perMeja).sort().map(function(m){ return m + ': ' + perMeja[m]; }).join(' · ') || '-');
       var tn = document.getElementById('testNote');
       tn.style.display = testCount ? 'block' : 'none';
       tn.textContent = 'Masih ada ' + testCount + ' pemilik data uji (Testing Nomor N) di database. Tidak dihitung di angka di atas. Hapus sebelum acara.';
-      document.getElementById('wrongNote').textContent = wrong.length
-        ? 'Salah pos: ' + wrong.length + ' nomor, ' + wrong.map(function(w){ return '#' + w.n + ' di Pos ' + w.desk; }).join(', ') + '.'
-        : 'Belum ada nomor yang reg ulang di pos yang salah.';
+      document.getElementById('wrongNote').textContent = 'Nomor di QR yang dikirim ke pendaftar adalah nomor pendaftaran. Nomor urut pemberkatan dibagikan saat reg ulang, sesuai urutan kedatangan.';
       // Pendaftar per hari (WIB) sejak 20 Sep, dengan catatan status iklan.
       var perDay = {};
       owners.forEach(function(o){
