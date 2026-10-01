@@ -21,7 +21,9 @@ ENV
   chmod 600 .env
   echo "lokal/.env dibuat"
 fi
-set -a; . ./.env; set +a
+# Hanya tiga nilai yang dibutuhkan skrip ini. .env tidak di-source utuh karena
+# hash password ($2b$...) di dalamnya dibaca bash sebagai variabel.
+for k in JWT_SECRET DB_PW AUTH_PW; do export "$k=$(grep "^$k=" .env | cut -d= -f2-)"; done
 
 # 2. Sertifikat HTTPS untuk IP Mac di jaringan (kamera di HP butuh HTTPS).
 #    Kalau IP Mac berubah (router lain), hapus data/cert.pem lalu jalankan ulang.
@@ -44,7 +46,9 @@ if ! $PSQL -Atc "select 1 from pg_roles where rolname='authenticator'" | grep -q
   $PSQL < skema-vps.sql
   echo "Skema VPS dimuat"
 fi
-for m in 22-hari-h 24-perbaiki-trigger-huruf-stiker 25-gabung-pendaftaran-ganda; do $PSQL < ../vps-db/init/$m.sql; done
+# 22 tidak aman diulang (policy), jadi hanya dimuat sekali.
+$PSQL -Atc "select to_regclass('api.hari_h')" | grep -q hari_h || $PSQL < ../vps-db/init/22-hari-h.sql
+for m in 24-perbaiki-trigger-huruf-stiker 25-gabung-pendaftaran-ganda 26-pos-ganjil-genap; do $PSQL < ../vps-db/init/$m.sql; done
 # Server lokal baru memberi nomor setelah "Ambil alih" ditekan di halaman kendali.
 $PSQL -c "update api.hari_h set pemberi_nomor = false where id = 1 and lantai = 0 and not exists (select 1 from api.checkins)"
 docker compose up -d postgrest

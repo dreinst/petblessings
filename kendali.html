@@ -60,7 +60,7 @@ HariH.mulai(function(){
 
   if(H.LOKAL){
     $('judul').textContent = 'Kendali server lokal (Mac)';
-    var HALAMAN = [['checkin.html?meja=A', 'Meja A'], ['checkin.html?meja=B', 'Meja B'], ['monitor-checkin.html', 'Monitor pos'],
+    var HALAMAN = [['checkin.html?meja=A', 'Pos A (ganjil)'], ['checkin.html?meja=B', 'Pos B (genap)'], ['monitor-checkin.html', 'Monitor pos'],
                    ['panggil.html', 'Pemanggil'], ['layar-panggil.html', 'Layar ruang tunggu'], ['kendali.html', 'Kendali ini']];
     async function perintah(p, konfirmasi){
       if(konfirmasi && !confirm(konfirmasi)) return;
@@ -135,7 +135,7 @@ HariH.mulai(function(){
         }catch(e){ galat(e.message); }
         muat();
       };
-      $('kartuKanan').innerHTML = '<h2>Alamat online</h2><p>Meja: <b>' + location.host + '/checkin.html?meja=A</b> dan <b>?meja=B</b><br>Monitor: <b>' + location.host + '/monitor-checkin.html</b><br>Pemanggil: <b>' + location.host + '/panggil.html</b><br>Layar ruang tunggu: <b>' + location.host + '/layar-panggil.html</b></p>';
+      $('kartuKanan').innerHTML = '<h2>Alamat online</h2><p>Pos A dan B: <b>' + location.host + '/checkin.html?meja=A</b> dan <b>?meja=B</b><br>Monitor: <b>' + location.host + '/monitor-checkin.html</b><br>Pemanggil: <b>' + location.host + '/panggil.html</b><br>Layar ruang tunggu: <b>' + location.host + '/layar-panggil.html</b></p>';
     }
     H.ulang(function(){ return muat().catch(function(e){ galat(e.message); }); }, 4000);
   }

@@ -25,6 +25,7 @@
   .pilih-meja h2{font-size:24px;margin-bottom:6px;}
   .pilih-meja .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;}
   .pilih-meja button{min-height:120px;border-radius:18px;border:none;color:#fff;font-size:26px;font-weight:700;cursor:pointer;}
+  .pilih-meja button small{font-size:15px;font-weight:500;opacity:.9;}
   .pilih-meja button[data-meja="A"]{background:var(--a);}
   .pilih-meja button[data-meja="B"]{background:var(--b);}
 
@@ -97,17 +98,17 @@
     <h1>Reg ulang Pet Blessing</h1>
     <span class="meja-chip" id="mejaChip" hidden></span>
     <span class="server-badge" id="serverBadge"></span>
-    <button class="btn ghost" id="gantiMeja" hidden style="min-height:40px;padding:8px 12px;font-size:13.5px;">Ganti meja</button>
+    <button class="btn ghost" id="gantiMeja" hidden style="min-height:40px;padding:8px 12px;font-size:13.5px;">Ganti pos</button>
     <button class="btn ghost" data-keluar style="min-height:40px;padding:8px 12px;font-size:13.5px;">Keluar</button>
   </header>
   <div id="alertServer"></div>
 
   <section class="pilih-meja" id="pilihMeja" hidden>
-    <h2>Perangkat ini di meja mana?</h2>
-    <p class="muted">Dua meja memberi nomor dari satu penghitung, jadi peserta boleh antre di meja mana saja.</p>
+    <h2>Perangkat ini di pos mana?</h2>
+    <p class="muted">Pos A melayani nomor pendaftaran ganjil dan membagikan nomor urut ganjil. Pos B melayani nomor pendaftaran genap dan membagikan nomor urut genap. Walk-in boleh di pos mana saja.</p>
     <div class="grid">
-      <button type="button" data-meja="A">Meja A</button>
-      <button type="button" data-meja="B">Meja B</button>
+      <button type="button" data-meja="A">Pos A<br><small>ganjil</small></button>
+      <button type="button" data-meja="B">Pos B<br><small>genap</small></button>
     </div>
   </section>
 
@@ -161,7 +162,7 @@ HariH.mulai(function(){
     meja = m;
     if(!mejaTerkunci) localStorage.setItem(MEJA_KEY, m);
     $('pilihMeja').hidden = true; $('kerja').hidden = false;
-    $('mejaChip').hidden = false; $('mejaChip').textContent = 'Meja ' + m; $('mejaChip').className = 'meja-chip ' + m;
+    $('mejaChip').hidden = false; $('mejaChip').textContent = 'Pos ' + m + (m === 'A' ? ' · ganjil' : ' · genap'); $('mejaChip').className = 'meja-chip ' + m;
     $('gantiMeja').hidden = mejaTerkunci;
     if(localStorage.getItem('pb_kamera') !== '0' && window.matchMedia('(max-width:899px)').matches) nyalakanKamera();
     else if(localStorage.getItem('pb_kamera') === '1') nyalakanKamera();
@@ -184,9 +185,9 @@ HariH.mulai(function(){
         '<span>Sudah reg ulang: <b>' + status.hadir + '</b> dari ' + status.terdaftar + ' pendaftar</span>' +
         '<span>Walk-in: <b>' + status.walkin + '</b></span>' +
         '<span>Hewan hadir: <b>' + status.hewan_hadir + '</b></span>' +
-        '<span>Terakhir: Meja A <b>#' + (status.terakhir_per_meja.A || '…') + '</b>, Meja B <b>#' + (status.terakhir_per_meja.B || '…') + '</b></span>';
+        '<span>Terakhir: Pos A <b>#' + (status.terakhir_per_meja.A || '…') + '</b>, Pos B <b>#' + (status.terakhir_per_meja.B || '…') + '</b></span>';
       var mine = status.recent.filter(function(r){ return r.meja === meja; }).slice(0, 5);
-      $('terakhir').innerHTML = mine.length ? '<h3>Terakhir di Meja ' + meja + '</h3>' + mine.map(function(r){
+      $('terakhir').innerHTML = mine.length ? '<h3>Terakhir di Pos ' + meja + '</h3>' + mine.map(function(r){
         return '<div class="it"><span class="n num">#' + r.nomor + '</span><span><b>' + H.esc(r.name) + '</b><br><span class="muted">' +
           r.pets.map(function(p){ return H.esc(p.label + ' ' + p.name); }).join(', ') + '</span></span></div>';
       }).join('') : '';
@@ -337,15 +338,20 @@ HariH.mulai(function(){
       var ujiNote = o.is_test && !H.UJI ? '<div class="alert warn">Ini data uji (Testing). Tercatat, tapi tidak dihitung di monitor biasa.</div>' : '';
       if(c){
         H.bunyi(520, 220);
-        tampil('<div class="judul-hasil warn">Sudah reg ulang di Meja ' + H.esc(c.desk || '?') + ', jam ' + H.jam(c.checked_in_at) + '</div>' + ujiNote +
+        tampil('<div class="judul-hasil warn">Sudah reg ulang di Pos ' + H.esc(c.desk || '?') + ', jam ' + H.jam(c.checked_in_at) + '</div>' + ujiNote +
           '<div class="nomor-besar num">' + c.arrival_number + '</div>' +
           '<div class="owner-nm" style="text-align:center">' + H.esc(o.name) + '</div>' +
           '<p class="muted" style="text-align:center;margin:4px 0 0">Nomornya tetap. Tidak ada nomor baru.</p>' +
           stikerHtml(c.arrival_number, o.pets) + tombolSelesai());
         return;
       }
-      H.bunyi(700, 120);
-      tampil(ujiNote +
+      // Nomor pendaftaran ganjil ke Pos A, genap ke Pos B. Salah pos tetap boleh dilayani
+      // (misalnya pos lain sedang penuh), petugas cukup diingatkan.
+      var posSeharusnya = Number(o.queue_number) % 2 ? 'A' : 'B';
+      var salahPos = !o.is_walkin && o.queue_number && posSeharusnya !== meja
+        ? '<div class="alert warn">Nomor pendaftaran ' + o.queue_number + ' ' + (posSeharusnya === 'A' ? 'ganjil' : 'genap') + ', seharusnya reg ulang di Pos ' + posSeharusnya + '. Arahkan ke Pos ' + posSeharusnya + ', atau tetap beri nomor di sini kalau Pos ' + posSeharusnya + ' sedang penuh.</div>' : '';
+      H.bunyi(salahPos ? 420 : 700, 120);
+      tampil(ujiNote + salahPos +
         '<div class="muted">Nomor pendaftaran ' + o.queue_number + (o.is_walkin ? ' · walk-in' : '') + '</div>' +
         '<div class="owner-nm">' + H.esc(o.name) + '</div>' +
         '<div class="owner-meta">' + (o.companions > 0 ? o.companions + ' pendamping · ' : '') + o.pets.length + ' hewan terdaftar. Hilangkan centang hewan yang tidak dibawa.</div>' +
