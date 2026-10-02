@@ -26,6 +26,7 @@ fi
 # 22 tidak aman diulang (policy), jadi hanya dimuat sekali.
 $PSQL -Atc "select to_regclass('api.hari_h')" | grep -q hari_h || $PSQL < ../../vps-db/init/22-hari-h.sql
 $PSQL < ../../vps-db/init/26-pos-ganjil-genap.sql
+$PSQL < ../../vps-db/init/27-hasil-foto-publik.sql
 docker compose up -d postgrest
 docker exec pbuji-vps-db psql -U petblessing -d petblessing -qc "notify pgrst, 'reload schema'"
 echo "VPS tiruan siap di http://127.0.0.1:3102"

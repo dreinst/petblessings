@@ -48,7 +48,7 @@ if ! $PSQL -Atc "select 1 from pg_roles where rolname='authenticator'" | grep -q
 fi
 # 22 tidak aman diulang (policy), jadi hanya dimuat sekali.
 $PSQL -Atc "select to_regclass('api.hari_h')" | grep -q hari_h || $PSQL < ../vps-db/init/22-hari-h.sql
-for m in 24-perbaiki-trigger-huruf-stiker 25-gabung-pendaftaran-ganda 26-pos-ganjil-genap; do $PSQL < ../vps-db/init/$m.sql; done
+for m in 24-perbaiki-trigger-huruf-stiker 25-gabung-pendaftaran-ganda 26-pos-ganjil-genap 27-hasil-foto-publik; do $PSQL < ../vps-db/init/$m.sql; done
 # Server lokal baru memberi nomor setelah "Ambil alih" ditekan di halaman kendali.
 $PSQL -c "update api.hari_h set pemberi_nomor = false where id = 1 and lantai = 0 and not exists (select 1 from api.checkins)"
 docker compose up -d postgrest
