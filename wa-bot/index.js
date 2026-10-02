@@ -215,6 +215,8 @@ async function sendFollowup(sock, row) {
     : buildFollowupCaption(row.owner_name);
   await typingPause(sock, jid);
   await sock.sendMessage(jid, { text: caption });
+  // Mode pribadi: pesan susulan sudah memuat kabar nomor pengganti, jadi balasan penerima tidak perlu dikabari lagi.
+  if (PRIBADI && !pribadiChat[jid]) { pribadiChat[jid] = Date.now(); fs.writeFileSync(PRIBADI_FILE, JSON.stringify(pribadiChat)); }
 }
 
 const PAWRADE_CAPTION_TEMPLATES = [
@@ -369,6 +371,10 @@ const PENGINGAT = process.env.PENGINGAT !== '0';
 const PENGINGAT_PER_JAM = Number(process.env.PENGINGAT_PER_JAM || 8);
 const JAM_KIRIM_MULAI = Number(process.env.JAM_KIRIM_MULAI || 8);
 const JAM_KIRIM_SELESAI = Number(process.env.JAM_KIRIM_SELESAI || 20);
+// Jeda antar pesan susulan dalam menit (bawaan 4 sampai 8). Ada file /data/stop-susulan = pesan susulan berhenti tanpa restart.
+const JEDA_SUSULAN_MIN = Number(process.env.JEDA_SUSULAN_MIN || 4) * 60000;
+const JEDA_SUSULAN_MAX = Number(process.env.JEDA_SUSULAN_MAX || 8) * 60000;
+const STOP_SUSULAN = '/data/stop-susulan';
 // Mode nomor pribadi (PRIBADI=1): sama dengan bot KUWERA. Sesi login sendiri (AUTH_DIR), hanya chat pendaftar yang
 // disentuh, kiriman hanya ke chat yang sudah menghubungi nomor ini. Nomor PRIBADI_IZIN (owner, staf) bukan pendaftar.
 const PRIBADI = process.env.PRIBADI === '1';
@@ -570,7 +576,7 @@ async function runWorkerLoop() {
         }
       }
       var jam = jamWib();
-      if (!row && PENGINGAT && jam >= JAM_KIRIM_MULAI && jam < JAM_KIRIM_SELESAI && (await jumlahPengingatSejam()) < PENGINGAT_PER_JAM) {
+      if (!row && PENGINGAT && !fs.existsSync(STOP_SUSULAN) && jam >= JAM_KIRIM_MULAI && jam < JAM_KIRIM_SELESAI && (await jumlahPengingatSejam()) < PENGINGAT_PER_JAM) {
         row = await fetchNextFollowup();
         isFollowup = Boolean(row);
       }
@@ -619,7 +625,7 @@ async function runWorkerLoop() {
     // 1-3 menit per pesan (Donny 30 Sep, sebelumnya 2-5 menit), supaya pola
     // kirim beruntun tetap terlihat seperti orang membalas satu-satu, bukan bot.
     // Pesan susulan dijeda lebih lama (4 sampai 8 menit) karena dikirim ke banyak orang sekaligus.
-    var delay = isFollowup ? randomBetween(240000, 480000) : randomBetween(60000, 180000);
+    var delay = isFollowup ? randomBetween(JEDA_SUSULAN_MIN, JEDA_SUSULAN_MAX) : randomBetween(60000, 180000);
     logger.info({ delayMs: delay }, 'jeda sebelum pesan berikutnya');
     await sleep(delay);
   }
