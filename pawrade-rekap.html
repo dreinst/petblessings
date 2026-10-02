@@ -372,10 +372,11 @@
     var totalPets = regs.reduce(function(sum,r){ return sum + r.pets.length; }, 0);
     var totalCompanions = regs.reduce(function(sum,r){ return sum + (r.owner.companions || 0); }, 0);
     // Jumlah donasi ditulis bebas oleh pendaftar ("50000", "50.000", "Rp 50rb"),
-    // jadi diambil digitnya saja untuk dijumlahkan. Angka non-rupiah (misal "1"
+    // jadi diambil digitnya saja untuk dijumlahkan. Desimal di ujung ("150,000.00")
+    // dibuang dulu supaya tidak terbaca 15 juta. Angka non-rupiah (misal "1"
     // bekas data uji) tetap ikut terhitung apa adanya.
     var totalDonation = regs.reduce(function(sum,r){
-      var digits = String((r.donation && r.donation.amount) || '').replace(/[^0-9]/g, '');
+      var digits = String((r.donation && r.donation.amount) || '').trim().replace(/[.,]\d{1,2}$/, '').replace(/[^0-9]/g, '');
       return sum + (digits ? parseInt(digits, 10) : 0);
     }, 0);
     function statCard(label, num, cssClass){

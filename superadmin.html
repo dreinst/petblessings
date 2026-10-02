@@ -281,7 +281,8 @@
         });
         companions += o.companions || 0;
         // Jumlah donasi ditulis bebas oleh pendaftar, jadi diambil digitnya saja.
-        var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
+        // Desimal di ujung ("150,000.00") dibuang dulu supaya tidak terbaca 15 juta.
+        var digits = String(o.donation_amount || '').trim().replace(/[.,]\d{1,2}$/, '').replace(/[^0-9]/g, '');
         donation += digits ? parseInt(digits, 10) : 0;
       });
       // Reg ulang 2 pos: nomor pendaftaran ganjil ke Pos A, genap ke Pos B. Pos A membagikan
@@ -327,7 +328,7 @@
       var pawradePets = 0, pawradeFee = 0;
       pawradeOwners.forEach(function(o){
         pawradePets += (o.pawrade_pets || []).length;
-        var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
+        var digits = String(o.donation_amount || '').trim().replace(/[.,]\d{1,2}$/, '').replace(/[^0-9]/g, '');
         pawradeFee += digits ? parseInt(digits, 10) : 0;
       });
       document.getElementById('statsPawrade').innerHTML = card('Peserta', pawradeOwners.length) + card('Hewan', pawradePets) + card('Sudah reg ulang', pawradeCheckins.length) + card('Biaya Terkumpul', 'Rp' + pawradeFee.toLocaleString('id-ID'), 'money');
