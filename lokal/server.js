@@ -35,7 +35,7 @@ const SYNC_TOKEN = jwt.sign({ role: 'sync_worker' }, SECRET);
 // ---------- Penyelaras ----------
 const OWNER_COLS = 'id,name,phone,is_parishioner,parish_origin,donation_amount,donation_has_proof,agreed_tos,submitted_at,queue_number,companions,is_test,is_walkin';
 const PET_REG = ['id', 'owner_id', 'name', 'type', 'has_photo', 'notes', 'sticker_letter'];
-const PET_HARI_H = ['hadir', 'mcfbooth_session_code', 'certificate_url'];
+const PET_HARI_H = ['hadir', 'mcfbooth_session_code', 'certificate_url', 'photo_folder_url'];
 const CHECKIN_COLS = 'id,owner_id,post,checked_in_at,desk,arrival_number';
 
 const state = { vps_ok: false, lokal_ok: false, pemberi: null, terakhir_sinkron: null, pesan: '', konflik: [], log: [] };

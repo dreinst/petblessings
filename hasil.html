@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foto dan Sertifikat, Pet Blessing 2026</title>
+<meta name="description" content="Cari foto dan sertifikat Pet Blessing 2026 dengan nama pemilik atau nomor urut di stiker.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241B2E; --ink-soft:#6E6266; --bg:#FFF9F0; --card:#FFFDF8;
+    --brand:#0E8F7A; --brand-deep:#3B1052; --brand-light:#DCF3E8;
+    --accent:#E0762A; --accent-light:#FCE3C7; --pink:#D6236F; --line:#F0E4CC;
+    --shadow-card:0 2px 10px -2px rgba(59,16,82,.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(70px);opacity:.26;}
+  .aurora span:nth-child(1){width:300px;height:300px;top:-100px;right:-80px;background:var(--pink);}
+  .aurora span:nth-child(2){width:320px;height:320px;top:220px;left:-130px;background:var(--brand);}
+  .aurora span:nth-child(3){width:260px;height:260px;bottom:-90px;right:-50px;background:var(--accent);opacity:.2;}
+  .wrap{max-width:480px;margin:0 auto;padding:34px 20px 56px;position:relative;z-index:1;}
+  header{text-align:center;}
+  .badge{width:96px;height:96px;display:block;margin:0 auto 12px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:25px;color:var(--brand-deep);margin:0;}
+  .sub{font-size:14.5px;color:var(--ink-soft);margin:8px 0 22px;}
+  form{display:flex;gap:8px;}
+  input{flex:1;min-width:0;padding:14px 15px;font-size:16px;font-family:inherit;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);}
+  input:focus{outline:3px solid var(--brand-light);border-color:var(--brand);}
+  button{padding:0 18px;border:none;border-radius:14px;background:var(--brand-deep);color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;}
+  .hint{font-size:13px;color:var(--ink-soft);margin:10px 2px 0;min-height:20px;}
+  .hasil{display:flex;flex-direction:column;gap:14px;margin-top:16px;}
+  .pemilik{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow-card);}
+  .pemilik h2{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0;color:var(--ink);}
+  .pemilik .no{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .hewan{border-top:1px solid var(--line);margin-top:12px;padding-top:12px;}
+  .hewan .nm{font-weight:600;}
+  .hewan .nm .lbl{display:inline-block;background:var(--brand-light);color:#00594C;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:6px;}
+  .hewan .jenis{font-size:13px;color:var(--ink-soft);}
+  .aksi{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .aksi a{flex:1;min-width:150px;text-align:center;text-decoration:none;font-weight:600;font-size:14px;padding:11px 12px;border-radius:12px;}
+  .aksi a.foto{background:var(--brand-deep);color:#fff;}
+  .aksi a.srt{background:var(--accent-light);color:#7A3410;}
+  .belum{font-size:13px;color:#7A4A0F;background:#FFF1D6;border-radius:10px;padding:9px 11px;margin-top:10px;}
+  footer{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="aurora"><span></span><span></span><span></span></div>
+<div class="wrap">
+  <header>
+    <img class="badge" src="assets/pet-blessing-badge.png" alt="Pet Blessing SVAP Malang">
+    <h1>Foto dan Sertifikat</h1>
+    <p class="sub">Ketik nama pemilik atau nomor urut di stiker hewanmu, lalu buka foto dan sertifikatnya.</p>
+  </header>
+
+  <form id="cari" autocomplete="off">
+    <input id="q" type="search" placeholder="Nama pemilik atau nomor urut, misal 28" enterkeyhint="search" autocapitalize="words" aria-label="Nama pemilik atau nomor urut">
+    <button type="submit">Cari</button>
+  </form>
+  <p class="hint" id="hint" aria-live="polite"></p>
+  <div class="hasil" id="hasil"></div>
+
+  <footer>Pet Blessing 2026, Paroki St. Vincentius a Paulo, Malang</footer>
+</div>
+<script src="api-config.js"></script>
+<script>
+(function(){
+  var API = window.PETBLESSING_API_URL;
+  var $ = function(id){ return document.getElementById(id); };
+  var urut = 0, timer = null;
+
+  function el(tag, cls, teks){ var n = document.createElement(tag); if(cls) n.className = cls; if(teks != null) n.textContent = teks; return n; }
+  function tautan(cls, href, teks){ var a = el('a', cls, teks); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; }
+
+  function tampil(data){
+    var box = $('hasil'); box.textContent = '';
+    data.forEach(function(o){
+      var kartu = el('div', 'pemilik');
+      kartu.appendChild(el('h2', null, o.nama));
+      kartu.appendChild(el('div', 'no', 'Nomor urut ' + o.nomor));
+      o.hewan.forEach(function(h){
+        var b = el('div', 'hewan');
+        var nm = el('div', 'nm'); nm.appendChild(el('span', 'lbl', h.label)); nm.appendChild(document.createTextNode(h.nama || 'Hewan'));
+        b.appendChild(nm);
+        if(h.jenis) b.appendChild(el('div', 'jenis', h.jenis));
+        if(h.foto || h.sertifikat){
+          var aksi = el('div', 'aksi');
+          if(h.foto) aksi.appendChild(tautan('foto', h.foto, 'Foto dan sertifikat'));
+          if(h.sertifikat) aksi.appendChild(tautan('srt', h.sertifikat, 'Unduh sertifikat'));
+          b.appendChild(aksi);
+          if(!h.sertifikat) b.appendChild(el('div', 'belum', 'Sertifikat sedang dibuat. Folder fotonya sudah bisa dibuka, sertifikat menyusul di folder yang sama.'));
+        } else {
+          b.appendChild(el('div', 'belum', 'Foto belum tersedia. Kalau hewanmu sudah difoto, coba lagi beberapa menit lagi.'));
+        }
+        kartu.appendChild(b);
+      });
+      box.appendChild(kartu);
+    });
+  }
+
+  function cari(){
+    var q = $('q').value.trim(), ke = ++urut;
+    if(!/^\d{1,4}[a-zA-Z]?$/.test(q) && q.length < 3){ $('hasil').textContent = ''; $('hint').textContent = q ? 'Ketik minimal 3 huruf nama, atau nomor urut.' : ''; return; }
+    $('hint').textContent = 'Mencari...';
+    fetch(API + '/rpc/cari_hasil', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_q: q }) })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(data){
+        if(ke !== urut) return;
+        tampil(data);
+        $('hint').textContent = data.length ? '' : 'Belum ketemu. Pastikan nama sesuai pendaftaran, atau pakai nomor urut di stiker.';
+      })
+      .catch(function(){ if(ke === urut) $('hint').textContent = 'Koneksi bermasalah. Coba lagi sebentar.'; });
+  }
+
+  $('cari').addEventListener('submit', function(e){ e.preventDefault(); clearTimeout(timer); cari(); });
+  $('q').addEventListener('input', function(){ clearTimeout(timer); timer = setTimeout(cari, 400); });
+  var awal = new URLSearchParams(location.search).get('q');
+  if(awal){ $('q').value = awal; cari(); }
+})();
+</script>
+</body>
+</html>
