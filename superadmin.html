@@ -132,6 +132,7 @@
     <h2 class="panel-title">Rekap Pet Blessing</h2>
     <h2 class="section">Pendaftaran Pet Blessing</h2>
     <div class="stats stats-reg" id="statsReg"></div>
+    <div class="stat" style="text-align:left;padding:12px;margin-bottom:18px;" id="hewanRincian"></div>
     <h2 class="section">Reg ulang Pet Blessing (Pos A ganjil, Pos B genap)</h2>
     <div class="stats posts" id="statsPosts"></div>
     <p class="note" id="testNote" style="display:none;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:var(--accent-light);color:#5E4419;font-size:13px;font-weight:600;"></p>
@@ -178,6 +179,12 @@
   }
   function escapeHtml(s){
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  // Jenis hewan ditulis bebas oleh pendaftar ("Sugar Glider" vs "Sugar glider"),
+  // jadi dirapikan dulu (spasi dan huruf besar/kecil) sebelum dihitung per jenis.
+  function normJenis(s){
+    s = (s || '').trim().replace(/\s+/g, ' ');
+    return s ? s.replace(/\w\S*/g, function(w){ return w[0].toUpperCase() + w.slice(1).toLowerCase(); }) : 'Tidak diisi';
   }
   function formatTime(iso){
     var d = new Date(iso);
@@ -253,7 +260,7 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=queue_number,is_test,submitted_at,companions,donation_amount,pets(id),checkins(post,desk,arrival_number)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,is_test,submitted_at,companions,donation_amount,pets(id,type),checkins(post,desk,arrival_number)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
@@ -265,9 +272,13 @@
       owners = owners.filter(function(o){ return !o.is_test; });
       var pawradeOwners = await results[1].json();
       var pawradeCheckins = await results[2].json();
-      var pets = 0, companions = 0, donation = 0;
+      var pets = 0, companions = 0, donation = 0, jenisHewan = {};
       owners.forEach(function(o){
-        pets += (o.pets || []).length;
+        (o.pets || []).forEach(function(p){
+          pets++;
+          var j = normJenis(p.type);
+          jenisHewan[j] = (jenisHewan[j] || 0) + 1;
+        });
         companions += o.companions || 0;
         // Jumlah donasi ditulis bebas oleh pendaftar, jadi diambil digitnya saja.
         var digits = String(o.donation_amount || '').replace(/[^0-9]/g, '');
@@ -285,6 +296,10 @@
         var d = pos[c.desk]; if(d) d.terakhir = Math.max(d.terakhir, Number(c.arrival_number) || 0);
       });
       document.getElementById('statsReg').innerHTML = card('Pemilik', owners.length) + card('Hewan', pets) + card('Pendamping', companions) + card('Donasi', 'Rp' + donation.toLocaleString('id-ID'), 'money');
+      document.getElementById('hewanRincian').innerHTML = '<div style="font-weight:700;margin-bottom:6px;">Rincian jenis hewan</div>' +
+        Object.keys(jenisHewan).sort(function(a, b){ return jenisHewan[b] - jenisHewan[a]; }).map(function(j){
+          return '<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:14px;"><span>' + escapeHtml(j) + '</span><span style="font-weight:700;">' + jenisHewan[j] + '</span></div>';
+        }).join('');
       document.getElementById('statsPosts').innerHTML =
         card('Sudah reg ulang', pos.A.sudah + pos.B.sudah) +
         card('Belum reg ulang', owners.length - pos.A.sudah - pos.B.sudah) +
