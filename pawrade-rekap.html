@@ -787,7 +787,9 @@
     XLSX.utils.book_append_sheet(wb, ws, 'Pendaftaran');
 
     var stamp = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, 'pawrade-2026-pendaftaran-' + stamp + '.xlsx');
+    // Format baku Excel (teks lewat tabel sharedStrings, zip terkompresi). Tanpa ini
+    // penampil dokumen bawaan HP tidak menampilkan baris yang berisi data.
+    XLSX.writeFile(wb, 'pawrade-2026-pendaftaran-' + stamp + '.xlsx', { bookSST: true, compression: true });
   }
 
   document.getElementById('search').addEventListener('input', applySearch);
