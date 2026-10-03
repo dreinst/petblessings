@@ -33,8 +33,7 @@ CREATE FUNCTION api.admin_sessions_auto_approve() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 begin
-  if new.level = 'admin' and new.status = 'pending'
-     and now() < timestamptz '2026-10-01 05:20:00+07' then
+  if new.level = 'admin' and new.status = 'pending' then
     new.status := 'approved';
     new.decided_at := now();
   end if;

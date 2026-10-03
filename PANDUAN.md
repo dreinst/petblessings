@@ -71,15 +71,15 @@ Halaman: https://petblessings.vercel.app/pendaftaran-masuk.html
 Ada dua akun, keduanya diberikan oleh koordinator dan jangan disebar di grup terbuka:
 
 - **admin**: membuka rekap, mengubah data pendaftar, melihat bukti transfer, melihat dan mengunduh foto hewan, export xlsx. Tidak bisa membuka dashboard maupun halaman check-in.
-- **superadmin**: semua yang bisa dilakukan admin, ditambah dashboard superadmin (ringkasan angka dan Log login untuk menyetujui atau menolak login admin) serta halaman check-in.
+- **superadmin**: semua yang bisa dilakukan admin, ditambah dashboard superadmin (ringkasan angka dan Log login untuk memantau atau mencabut login admin) serta halaman check-in.
 
 Isi username dan password lalu tekan **Masuk** atau tombol Enter. Sesi login berlaku 12 jam, setelah itu halaman kembali ke layar login. Tombol **Keluar** di kanan atas mengakhiri sesi.
 
-### Login admin perlu persetujuan superadmin
+### Login admin langsung masuk
 
-Setiap kali seseorang masuk sebagai admin, halaman menampilkan "Menunggu verifikasi superadmin" beserta nama perangkat dan alamat IP-nya. Data belum bisa dibuka sampai superadmin menyetujuinya. Halaman itu mengecek sendiri tiap beberapa detik dan lanjut otomatis begitu disetujui. Kalau ditolak atau dicabut, halaman kembali ke layar login dengan pesan "Akses ditolak atau dicabut oleh superadmin."
+Admin yang memasukkan username dan password yang benar langsung bisa membuka data, tanpa menunggu superadmin (berlaku sejak 3 Oktober 2026).
 
-Superadmin melihat permintaan ini di panel **Log login** di dashboard superadmin (lihat Bagian 3). Tiap baris berisi level akun, nama perangkat (misalnya "iPhone, Safari" atau "Android SM-S911B, Chrome"), waktu, alamat IP, dan status. Tombol **Setujui** membuka akses, **Tolak** menolaknya, dan **Cabut** menutup akses yang sudah berjalan. Panel ini memuat ulang sendiri tiap 15 detik. Tidak ada notifikasi ke HP, jadi superadmin perlu membuka dashboard untuk melihat permintaan yang menunggu.
+Setiap login tetap tercatat di panel **Log login** di dashboard superadmin (lihat Bagian 3). Tiap baris berisi level akun, nama perangkat (misalnya "iPhone, Safari" atau "Android SM-S911B, Chrome"), waktu, alamat IP, dan status. Tombol **Cabut** menutup akses satu perangkat yang sudah berjalan, lalu halaman di perangkat itu kembali ke layar login dengan pesan "Akses ditolak atau dicabut oleh superadmin." Tombol **Setujui** membukanya lagi. Panel ini memuat ulang sendiri tiap 15 detik.
 
 ### Yang ditampilkan
 
@@ -141,7 +141,7 @@ Hanya akun superadmin yang bisa masuk; akun admin ditolak dengan pesan yang jela
 - Bilah navigasi tombol di bagian atas menuju semua halaman panitia. Karena sesi login dibagi antar halaman di browser yang sama, tidak perlu login lagi di sana.
 - Ringkasan pendaftaran Pet Blessing dan Fashion Pawrade Competition 2026: jumlah pemilik, hewan, pendamping, dan total donasi atau biaya yang masuk.
 - Ringkasan check in hari-H: jumlah pemilik Pet Blessing yang sudah dan belum check in, dipecah per Pos A (nomor ganjil) dan Pos B (nomor genap), serta jumlah peserta Fashion Pawrade Competition 2026 yang sudah reg ulang. Ini cara termudah memantau antrean dari mana saja saat acara.
-- Panel **Log login** dengan tombol Setujui, Tolak, dan Cabut untuk login admin, seperti dijelaskan di Bagian 2.
+- Panel **Log login** dengan tombol Cabut untuk menutup login admin, seperti dijelaskan di Bagian 2.
 
 Semua angka dan log memuat ulang sendiri tiap 15 detik; tombol **Muat ulang** memaksa pembaruan segera.
 
