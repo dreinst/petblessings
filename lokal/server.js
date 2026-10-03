@@ -30,6 +30,7 @@ const SYNC_MS = 4000;
 process.env.PGRST_JWT_SECRET = SECRET;
 process.env.PETBLESSING_API_URL = LOCAL;
 const loginHandler = require(path.join(ROOT, 'api/login.js'));
+const tautanPetugasHandler = require(path.join(ROOT, 'api/tautan-petugas.js'));
 const SYNC_TOKEN = jwt.sign({ role: 'sync_worker' }, SECRET);
 
 // ---------- Penyelaras ----------
@@ -251,6 +252,11 @@ async function tangani(req, res) {
     try { body = JSON.parse(await bacaBody(req)); } catch (e) {}
     const r = { code: 200, status(c) { this.code = c; return this; }, json(o) { kirimJson(res, this.code, o); } };
     return loginHandler({ method: 'POST', body, headers: Object.assign({}, req.headers, { 'x-real-ip': req.socket.remoteAddress }) }, r);
+  }
+  // Tautan tanpa login untuk petugas pos dan goodie bag (diminta halaman kendali, khusus superadmin).
+  if (p === '/api/tautan-petugas' && req.method === 'POST') {
+    const r = { code: 200, status(c) { this.code = c; return this; }, json(o) { kirimJson(res, this.code, o); } };
+    return tautanPetugasHandler({ method: 'POST', headers: req.headers }, r);
   }
   if (p === '/api-config.js') {
     res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' });

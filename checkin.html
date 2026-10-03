@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="hari-h.css">
 <script src="assets/vendor/jsQR.min.js"></script>
+<script src="assets/vendor/qrcode.min.js"></script>
 <script src="api-config.js"></script>
 <script src="hari-h.js"></script>
 <style>
@@ -86,6 +87,9 @@
   .stiker .pt{font-size:13px;color:var(--ink-soft);}
   .absen-list{font-size:13.5px;color:var(--ink-soft);margin-top:6px;}
 
+  .qr-ots{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0 6px;}
+  .qr-ots img{width:min(64vw,260px);height:auto;image-rendering:pixelated;border:1px solid var(--line);border-radius:12px;background:#fff;}
+  .qr-ots span{font-size:13px;color:var(--ink-soft);}
   .walkin label{display:block;font-size:14px;font-weight:600;margin:10px 0 5px;}
   .walkin input,.walkin select{width:100%;padding:12px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff;}
   .walkin .pet-row{display:grid;grid-template-columns:1fr 130px 44px;gap:6px;margin-bottom:6px;}
@@ -133,7 +137,7 @@
         <div class="scan-status" id="scanStatus" role="status" aria-live="polite">Siap scan. Arahkan kamera atau scanner ke QR peserta.</div>
         <div class="scan-actions">
           <button class="btn" id="camBtn">Nyalakan kamera</button>
-          <button class="btn" id="walkinBtn">+ Peserta baru (walk-in)</button>
+          <button class="btn" id="walkinBtn">+ Belum daftar (OTS)</button>
         </div>
         <p class="hint">Scanner barcode USB/Bluetooth langsung bisa dipakai: arahkan ke QR, tidak perlu klik apa pun.</p>
         <div class="cari">
@@ -463,10 +467,25 @@ HariH.mulai(function(){
     return '<div class="pet-row"><input placeholder="Nama hewan" class="pn" required><select class="pt">' +
       JENIS.map(function(j){ return '<option>' + j + '</option>'; }).join('') + '</select><button type="button" class="hapus" aria-label="Hapus hewan">&times;</button></div>';
   }
+  // Peserta yang belum daftar (OTS) tetap mengisi form online sendiri, supaya datanya lengkap
+  // (email, hewan) dan ikut undian. Petugas cukup menunjukkan QR form. Isian cepat oleh
+  // petugas hanya cadangan untuk peserta yang tidak bisa mengisi form.
+  var FORM_OTS = 'https://petblessings.vercel.app/petblessing.html';
   $('walkinBtn').addEventListener('click', function(){
     if(sibuk) return;
     hasilTerakhir = null;
-    tampil('<h2 style="font-size:20px">Peserta baru (walk-in)</h2><p class="muted" style="font-size:13.5px;margin:4px 0 0">Untuk yang belum daftar online. Dapat nomor dari penghitung yang sama. Stikernya ditulis tangan semua.</p>' +
+    var gambar = '';
+    try{ var qr = qrcode(0, 'M'); qr.addData(FORM_OTS); qr.make(); gambar = qr.createImgTag(6, 8); }catch(e){}
+    tampil('<h2 style="font-size:20px">Peserta belum daftar (OTS)</h2>' +
+      '<p style="font-size:15px;margin:6px 0 10px">Minta peserta scan QR ini dengan kamera HP-nya, lalu mengisi form pendaftaran sendiri. Setelah terkirim, QR pendaftarannya muncul di layar HP peserta. Scan QR itu di sini seperti peserta lain.</p>' +
+      '<div class="qr-ots">' + gambar + '<span>' + FORM_OTS.replace('https://', '') + '</span></div>' +
+      '<div class="aksi tumpuk"><button class="btn primary block" data-tutup>Tutup, kembali scan</button>' +
+      '<button type="button" class="btn block" data-isi-cepat>Peserta tidak bisa mengisi form: isi cepat oleh petugas</button></div>');
+  });
+  $('isiPanel').addEventListener('click', function(e){ if(e.target.closest('[data-isi-cepat]')) formWalkin(); });
+  function formWalkin(){
+    hasilTerakhir = null;
+    tampil('<h2 style="font-size:20px">Isi cepat oleh petugas (walk-in)</h2><p class="muted" style="font-size:13.5px;margin:4px 0 0">Hanya untuk peserta yang tidak bisa mengisi form sendiri. Tanpa email. Dapat nomor dari penghitung yang sama, stikernya ditulis tangan semua.</p>' +
       '<form class="walkin" id="formWalkin">' +
       '<label for="wNama">Nama pemilik</label><input id="wNama" required autocomplete="off">' +
       '<label for="wHp">No. HP (boleh kosong)</label><input id="wHp" inputmode="tel" autocomplete="off">' +
@@ -488,8 +507,8 @@ HariH.mulai(function(){
         tampilNomor(r, { id: r.owner_id, name: $('wNama').value, pets: pets.map(function(p, i){ return { name: p.name, type: p.type, sticker_letter: String.fromCharCode(65 + i) }; }) });
       }catch(err){ btn.disabled = false; btn.textContent = 'Simpan dan beri nomor'; alertKecil(this, err.message); }
     });
-  });
-});
+  }
+}, { petugas: true });
 </script>
 </body>
 </html>

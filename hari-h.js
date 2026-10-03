@@ -5,6 +5,10 @@
 //
 // Pakai: <div id="loginWrap"></div> + <div id="appWrap" hidden> di halaman,
 // lalu HariH.mulai(function(){ ...halaman siap... }).
+//
+// Halaman pos dan goodie bag memanggil HariH.mulai(fn, { petugas: true }): selain
+// superadmin, halaman itu juga terbuka lewat tautan petugas "...#kunci=<token>" tanpa
+// login. Token petugas memakai peran database web_petugas (vps-db/init/30-petugas-pos.sql).
 (function(){
   var TOKEN_KEY = 'petblessing_panitia_token';
   var q = new URLSearchParams(location.search);
@@ -23,6 +27,16 @@
   function klaim(){
     try{ var p = H.token().split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))); }catch(e){ return null; }
   }
+
+  // Tautan petugas: token di belakang "#kunci=" disimpan lalu dibuang dari alamat. Token
+  // superadmin yang masih berlaku di perangkat ini tidak ditimpa.
+  (function(){
+    var m = location.hash.match(/(?:^#|&)kunci=([\w.\-]+)/);
+    if(!m) return;
+    var k = klaim();
+    if(!(k && k.level === 'superadmin' && !(k.exp && k.exp * 1000 < Date.now()))) simpanToken(m[1]);
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+  })();
 
   H.esc = function(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -59,13 +73,14 @@
     el.textContent = nama + (aktif ? ' (aktif memberi nomor)' : ' (tidak memberi nomor)') + (H.UJI ? ' · MODE UJI' : '');
   };
 
-  function formLogin(){
+  function formLogin(catatan){
     var w = document.getElementById('loginWrap');
     w.hidden = false;
     w.innerHTML =
       '<form class="login-card" id="hhLogin">' +
         '<img src="assets/pet-blessing-badge.png" alt="" class="login-badge">' +
         '<h1>Login panitia</h1>' +
+        (catatan ? '<div class="alert warn" style="text-align:center">' + H.esc(catatan) + '</div>' : '') +
         '<p>Khusus superadmin. ' + (H.LOKAL ? 'Ini server lokal di lokasi.' : 'Ini server online.') + '</p>' +
         '<label for="hhUser">Username</label><input id="hhUser" autocomplete="username" required>' +
         '<label for="hhPass">Password</label><input id="hhPass" type="password" autocomplete="current-password" required>' +
@@ -88,14 +103,25 @@
     });
   }
 
-  H.mulai = function(siap){
+  // opsi.petugas = true: halaman ini juga boleh dibuka dengan tautan petugas.
+  H.mulai = function(siap, opsi){
     if(!H.API){ document.body.innerHTML = '<p style="padding:24px">API belum dikonfigurasi.</p>'; return; }
     var k = klaim();
-    if(!k || k.level !== 'superadmin' || (k.exp && k.exp * 1000 < Date.now())){ formLogin(); return; }
+    var habis = !!(k && k.exp && k.exp * 1000 < Date.now());
+    var petugas = !!(k && k.level === 'petugas');
+    if(!k || habis || !(k.level === 'superadmin' || (petugas && opsi && opsi.petugas))){
+      formLogin(!petugas ? '' : habis ? 'Tautan petugas sudah tidak berlaku. Minta tautan baru ke superadmin.'
+        : 'Halaman ini khusus superadmin. Tautan petugas hanya untuk halaman pos dan goodie bag.');
+      return;
+    }
+    H.level = k.level;
     document.getElementById('loginWrap').hidden = true;
     document.getElementById('appWrap').hidden = false;
     var out = document.querySelectorAll('[data-keluar]');
-    for(var i = 0; i < out.length; i++) out[i].addEventListener('click', H.keluar);
+    for(var i = 0; i < out.length; i++){
+      // Petugas masuk lewat tautan, jadi tombol Keluar disembunyikan supaya tidak terkunci karena salah tekan.
+      if(petugas) out[i].hidden = true; else out[i].addEventListener('click', H.keluar);
+    }
     siap();
   };
 
