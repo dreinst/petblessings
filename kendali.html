@@ -109,7 +109,7 @@ HariH.mulai(function(){
       var kunci = s.alamat.join(',');
       if(kunci !== qrDibuat){
         qrDibuat = kunci;
-        $('kartuKanan').innerHTML = '<h2>Buka di device lain</h2><p class="muted" style="font-size:13.5px;margin:0 0 10px">Sambungkan device ke WiFi router lokasi, lalu scan QR. Pertama kali muncul peringatan keamanan: pilih "Lanjutkan" / "Advanced, Proceed". Itu normal untuk server lokal.</p>' +
+        $('kartuKanan').innerHTML = '<h2>Buka di device lain</h2><p class="muted" style="font-size:13.5px;margin:0 0 10px">QR di halaman ini berisi alamat halaman panitia, bukan QR peserta. Sambungkan device ke WiFi router lokasi, lalu scan QR dengan kamera HP biasa (bukan dari dalam halaman reg ulang). QR peserta baru discan setelah halaman Pos terbuka di HP. Pertama kali muncul peringatan keamanan: pilih "Lanjutkan" / "Advanced, Proceed". Itu normal untuk server lokal.</p>' +
           s.alamat.filter(function(ip){ return !/^100\./.test(ip); }).map(function(ip){
             return '<p style="font-weight:600;margin:10px 0 6px">Alamat ' + ip + '</p><div class="qr-grid">' + HALAMAN.map(function(h, i){
               if(besar != null && i !== besar) return '';
