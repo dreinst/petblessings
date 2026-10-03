@@ -36,6 +36,11 @@ function validatePayload(body) {
   if (!isNonEmptyString(owner.id, 100)) return 'ID pendaftaran tidak valid';
   if (!isNonEmptyString(owner.name, 200)) return 'Nama pemilik wajib diisi';
   if (!isNonEmptyString(owner.phone, 30)) return 'Nomor HP wajib diisi';
+  // Email wajib (4 Okt 2026): dipakai panitia untuk mengirim info acara. Halaman form yang
+  // dibuka sebelum perubahan ini belum punya kolomnya, jadi pesannya menyuruh muat ulang.
+  if (!isNonEmptyString(owner.email, 200) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(owner.email.trim())) {
+    return 'Email wajib diisi dengan format yang benar. Kalau kolom email belum tampil, muat ulang halaman ini.';
+  }
   if (owner.is_parishioner !== 'ya' && owner.is_parishioner !== 'bukan') return 'Status umat tidak valid';
   if (!isNonEmptyString(owner.parish_origin, 200)) return 'Asal/wilayah wajib diisi';
   var companions = owner.companions == null ? 0 : owner.companions;
@@ -125,6 +130,7 @@ module.exports = async function handler(req, res) {
       id: body.owner.id,
       name: body.owner.name,
       phone: body.owner.phone,
+      email: body.owner.email.trim().toLowerCase(),
       is_parishioner: body.owner.is_parishioner,
       parish_origin: body.owner.parish_origin || null,
       companions: body.owner.companions || 0,
