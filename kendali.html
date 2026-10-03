@@ -29,6 +29,14 @@
   .qr img{width:100%;height:auto;display:block;}
   .qr b{display:block;margin-top:6px;font-size:14px;}
   .qr span{overflow-wrap:anywhere;color:var(--ink-soft);}
+  .qr img{image-rendering:pixelated;}
+  .qr a{display:block;margin-top:4px;font-weight:600;color:var(--brand-deep);}
+  /* ?besar=N: satu QR besar saja di tab ini, supaya kamera HP tidak salah membaca QR di sebelahnya */
+  .mode-besar .grid{grid-template-columns:1fr;}
+  .mode-besar #kartuKiri,.mode-besar .qr a,.mode-besar #catatanLog{display:none;}
+  .mode-besar .qr-grid{grid-template-columns:minmax(0,min(70vh,560px));justify-content:center;}
+  .mode-besar .qr{display:flex;flex-direction:column;}
+  .mode-besar .qr b{order:-2;font-size:28px;margin:0 0 4px;} .mode-besar .qr span{order:-1;font-size:16px;margin-bottom:12px;}
   .log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;max-height:260px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;white-space:pre-wrap;}
 </style>
 </head>
@@ -42,7 +50,7 @@
   </header>
   <div id="galat"></div>
   <div class="grid">
-    <section class="card">
+    <section class="card" id="kartuKiri">
       <h2>Pemberi nomor</h2>
       <div class="besar" id="pemberi">...</div>
       <div id="rincian"></div>
@@ -60,8 +68,9 @@ HariH.mulai(function(){
 
   if(H.LOKAL){
     $('judul').textContent = 'Kendali server lokal (Mac)';
-    var HALAMAN = [['checkin.html?meja=A', 'Pos A (ganjil)'], ['checkin.html?meja=B', 'Pos B (genap)'], ['monitor-checkin.html', 'Monitor pos'],
-                   ['panggil.html', 'Pemanggil'], ['layar-panggil.html', 'Layar ruang tunggu'], ['kendali.html', 'Kendali ini']];
+    var HALAMAN = [['checkin.html?meja=A', 'Pos A (ganjil)'], ['checkin.html?meja=B', 'Pos B (genap)'], ['goodie.html', 'Stiker dan goodie bag'],
+                   ['monitor-checkin.html', 'Monitor pos'], ['panggil.html', 'Pemanggil'], ['layar-panggil.html', 'Layar ruang tunggu'],
+                   ['undian.html', 'Undian'], ['kendali.html', 'Kendali ini']];
     async function perintah(p, konfirmasi){
       if(konfirmasi && !confirm(konfirmasi)) return;
       galat('');
@@ -73,6 +82,9 @@ HariH.mulai(function(){
       muat();
     }
     var qrDibuat = '';
+    // kendali.html?besar=N menampilkan satu QR besar (halaman ke-N) saja, satu tab per QR.
+    var besar = HALAMAN[H.param('besar')] ? Number(H.param('besar')) : null;
+    if(besar != null) document.body.classList.add('mode-besar');
     async function muat(){
       var s = await (await fetch('/lokal/status')).json();
       var st = null; try{ st = await H.status(1); H.labelServer(st); }catch(e){}
@@ -99,13 +111,16 @@ HariH.mulai(function(){
         qrDibuat = kunci;
         $('kartuKanan').innerHTML = '<h2>Buka di device lain</h2><p class="muted" style="font-size:13.5px;margin:0 0 10px">Sambungkan device ke WiFi router lokasi, lalu scan QR. Pertama kali muncul peringatan keamanan: pilih "Lanjutkan" / "Advanced, Proceed". Itu normal untuk server lokal.</p>' +
           s.alamat.filter(function(ip){ return !/^100\./.test(ip); }).map(function(ip){
-            return '<p style="font-weight:600;margin:10px 0 6px">Alamat ' + ip + '</p><div class="qr-grid">' + HALAMAN.map(function(h){
-              var url = 'https://' + ip + ':8443/' + h[0];
+            return '<p style="font-weight:600;margin:10px 0 6px">Alamat ' + ip + '</p><div class="qr-grid">' + HALAMAN.map(function(h, i){
+              if(besar != null && i !== besar) return '';
+              // Kendali dibuka dengan ?uji=1: semua QR ikut membuka halaman dalam mode uji (hanya peserta Testing).
+              var url = 'https://' + ip + ':8443/' + h[0] + (H.UJI ? (h[0].indexOf('?') < 0 ? '?' : '&') + 'uji=1' : '');
               var qr = qrcode(0, 'M'); qr.addData(url); qr.make();
-              return '<div class="qr"><div>' + qr.createImgTag(4, 0) + '</div><b>' + h[1] + '</b><span>' + url + '</span></div>';
+              return '<div class="qr"><div>' + qr.createImgTag(4, 0) + '</div><b>' + h[1] + (H.UJI ? ' (mode uji)' : '') + '</b><span>' + url + '</span>' +
+                '<a href="kendali.html?besar=' + i + (H.UJI ? '&uji=1' : '') + '" target="_blank" rel="noopener">Buka QR ini besar di tab sendiri</a></div>';
             }).join('') + '</div>';
           }).join('') +
-          '<h2 style="margin-top:16px">Catatan</h2><div class="log" id="log"></div>';
+          '<div id="catatanLog"><h2 style="margin-top:16px">Catatan</h2><div class="log" id="log"></div></div>';
       }
       if($('log')) $('log').textContent = s.log.join('\n') || 'belum ada';
     }

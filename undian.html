@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undian, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hari-h.css">
+<script src="api-config.js"></script>
+<script src="hari-h.js"></script>
+<style>
+  /* Layar undian (proyektor/TV): roda berisi semua pemilik hewan yang terdaftar.
+     Daftar peserta disimpan di perangkat ini, jadi roda tetap bisa diputar
+     walau wifi atau server putus di tengah acara. */
+  body{background:var(--brand-deep);color:#fff;}
+  .layar{min-height:100vh;display:grid;grid-template-columns:auto minmax(280px,1fr);gap:3vw;align-items:center;padding:3vh 3vw;}
+  .roda-wrap{position:relative;width:min(92vh,58vw);aspect-ratio:1;}
+  #roda{width:100%;height:100%;display:block;border-radius:50%;box-shadow:0 0 0 10px #F7D8A8,0 18px 50px rgba(0,0,0,.45);}
+  .jarum{position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-top:44px solid #fff;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));z-index:2;}
+  .poros{overflow:hidden;position:absolute;left:50%;top:50%;width:16%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  .poros img{width:78%;border-radius:50%;}
+  .panel{display:flex;flex-direction:column;gap:2vh;min-width:0;}
+  .panel h1{color:#fff;font-size:clamp(26px,4.6vh,54px);line-height:1.1;}
+  .panel .ket{font-size:clamp(15px,2.2vh,22px);color:#F3E9FF;}
+  #putarBtn{min-height:72px;font-size:clamp(22px,3.4vh,36px);border-radius:18px;background:#F7D8A8;border-color:#F7D8A8;color:var(--brand-deep);}
+  .atur{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .atur select{min-height:48px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;}
+  .menang{background:rgba(255,255,255,.12);border-radius:18px;padding:1.6vh 1.4vw;}
+  .menang h2{color:#F7D8A8;font-size:clamp(17px,2.6vh,26px);margin-bottom:6px;}
+  .menang ol{margin:0;padding-left:2.2em;max-height:34vh;overflow:auto;font-size:clamp(15px,2.2vh,22px);}
+  .menang li{margin:4px 0;} .menang li span{color:#F3E9FF;font-size:.85em;}
+  .status{font-size:13px;color:#F3E9FF;}
+  /* hasil putaran */
+  .hasil{position:fixed;inset:0;z-index:10;background:rgba(36,27,46,.88);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .hasil .card{max-width:min(900px,92vw);text-align:center;padding:5vh 4vw;border-radius:26px;}
+  .hasil .lbl{font-size:clamp(18px,3vh,30px);font-weight:600;color:var(--b);}
+  .hasil .nama{font-family:'Fraunces',Georgia,serif;font-weight:700;color:var(--brand-deep);font-size:clamp(40px,9vh,110px);line-height:1.05;margin:1.5vh 0;overflow-wrap:anywhere;}
+  .hasil .rinci{font-size:clamp(16px,2.8vh,30px);color:var(--ink);}
+  .hasil .aksi{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4vh;}
+  @media (max-width:820px){ .layar{grid-template-columns:1fr;justify-items:center;} .roda-wrap{width:min(92vw,70vh);} .panel{width:100%;} }
+</style>
+</head>
+<body>
+<div id="loginWrap" hidden style="background:var(--bg);color:var(--ink)"></div>
+<div id="appWrap" hidden>
+  <div class="layar">
+    <div class="roda-wrap">
+      <div class="jarum"></div>
+      <canvas id="roda"></canvas>
+      <div class="poros"><img src="assets/pet-blessing-badge.png" alt=""></div>
+    </div>
+    <div class="panel">
+      <h1>Undian Pet Blessing 2026</h1>
+      <div class="ket" id="ket"></div>
+      <button class="btn block" id="putarBtn">Putar</button>
+      <div class="menang"><h2 id="judulMenang">Pemenang</h2><ol id="daftar"></ol></div>
+      <div class="atur">
+        <select id="siapa" aria-label="Peserta undian">
+          <option value="semua">Semua pendaftar</option>
+          <option value="hadir">Hanya yang sudah reg ulang</option>
+        </select>
+        <button class="btn" id="muatBtn">Muat ulang data</button>
+        <button class="btn" id="resetBtn">Reset undian</button>
+        <button class="btn" data-keluar>Keluar</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+  <div class="hasil" id="hasil" hidden>
+    <div class="card" style="color:var(--ink)">
+      <div class="lbl">Selamat kepada</div>
+      <div class="nama" id="hNama"></div>
+      <div class="rinci" id="hRinci"></div>
+      <div class="aksi">
+        <button class="btn ok" id="sahBtn">Simpan pemenang</button>
+        <button class="btn" id="hangusBtn">Tidak hadir, putar lagi</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+HariH.mulai(function(){
+  var H = HariH, $ = function(id){ return document.getElementById(id); };
+  var KUNCI = 'pb_undian' + (H.UJI ? '_uji' : '');
+  var MAKS = 20; // jumlah pemenang; setelah lengkap roda tidak bisa diputar lagi
+  var WARNA = ['#0B6E5E', '#B8410F', '#B01C5A', '#6A35A0'];
+
+  // peserta = salinan daftar pemilik dari server. st = hasil undian. Dua-duanya
+  // disimpan di perangkat ini supaya halaman yang dimuat ulang tidak kehilangan pemenang.
+  var peserta = baca(KUNCI + '_peserta', {});
+  var st = baca(KUNCI, {});
+  // Data tersimpan dari versi lama atau yang rusak tidak boleh menghentikan halaman.
+  if(!Array.isArray(peserta.rows)) peserta = { waktu: null, rows: [] };
+  peserta.rows = peserta.rows.filter(function(p){ return p && p.id; });
+  st = { siapa: st.siapa === 'hadir' ? 'hadir' : 'semua',
+         menang: (Array.isArray(st.menang) ? st.menang : []).filter(function(m){ return m && m.id; }),
+         hangus: Array.isArray(st.hangus) ? st.hangus : [] };
+  var pool = [], kunciPool = null, rot = 0, sibuk = false, terpilih = null, jeda = 0;
+
+  function baca(k, kosong){ try{ var v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' ? v : kosong; }catch(e){ return kosong; } }
+  function tulis(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+  function simpan(){
+    if(!tulis(KUNCI, st)) $('status').textContent = 'Pemenang tidak bisa disimpan di perangkat ini (penyimpanan browser penuh atau mode pribadi). Catat pemenang secara manual dan jangan muat ulang halaman.';
+  }
+
+  async function muat(){
+    if(sibuk) return;   // jangan mengganggu roda yang sedang berputar atau pop up pemenang
+    try{
+      var rows = await H.api('/owners?select=id,name,queue_number,pets(name),checkins(post,arrival_number)&is_test=eq.' + H.UJI + '&order=queue_number');
+      peserta = { waktu: new Date().toISOString(), rows: rows.map(function(o){
+        var c = (o.checkins || []).filter(function(x){ return x.post === 'reg_ulang'; })[0];
+        return { id: o.id, nama: (o.name || '').trim() || 'Tanpa nama', no: o.queue_number, urut: c ? c.arrival_number : null,
+          hewan: (o.pets || []).map(function(p){ return p.name; }).filter(Boolean).join(', ') };
+      }) };
+      tulis(KUNCI + '_peserta', peserta);
+      $('status').textContent = (H.LOKAL ? 'Server lokal' : 'Server online') + ', data pukul ' + H.jam(peserta.waktu) + (H.UJI ? ', MODE UJI' : '');
+    }catch(e){
+      $('status').textContent = 'Server tidak terjangkau, memakai data tersimpan' + (peserta.waktu ? ' pukul ' + H.jam(peserta.waktu) : '') + '. Undian tetap bisa jalan.';
+    }
+    if(!sibuk) susun();
+  }
+
+  function susun(){
+    var keluar = {};
+    st.menang.forEach(function(m){ keluar[m.id] = 1; });
+    st.hangus.forEach(function(id){ keluar[id] = 1; });
+    pool = peserta.rows.filter(function(p){ return !keluar[p.id] && (st.siapa === 'semua' || p.urut != null); });
+    var k = pool.map(function(p){ return p.id; }).join();
+    if(k !== kunciPool){ kunciPool = k; gambar(); }
+    $('siapa').value = st.siapa;
+    var penuh = st.menang.length >= MAKS;
+    $('ket').textContent = penuh ? 'Undian selesai, ' + MAKS + ' pemenang sudah lengkap'
+      : pool.length + ' nama di roda' + (st.hangus.length ? ', ' + st.hangus.length + ' tidak hadir' : '');
+    $('judulMenang').textContent = 'Pemenang ' + st.menang.length + ' dari ' + MAKS;
+    $('putarBtn').disabled = !pool.length || penuh;
+    $('daftar').innerHTML = st.menang.map(function(m){
+      return '<li><b>' + H.esc(m.nama || 'Tanpa nama') + '</b> <span>' + H.esc(rinci(m)) + '</span></li>';
+    }).join('') || '<li style="list-style:none;margin-left:-2.2em">Belum ada</li>';
+    $('daftar').scrollTop = $('daftar').scrollHeight;
+  }
+  function rinci(p){
+    return 'No. pendaftaran ' + p.no + (p.urut != null ? ', no. urut ' + p.urut : '') + (p.hewan ? ', ' + p.hewan : '');
+  }
+
+  // Irisan ke-i menempati sudut i*a sampai (i+1)*a searah jarum jam dari atas (posisi jarum).
+  function gambar(){
+    var c = $('roda'), n = pool.length;
+    var sisi = Math.min(2400, Math.round(c.clientWidth * (window.devicePixelRatio || 1))) || 1200;
+    c.width = c.height = sisi;
+    var g = c.getContext('2d'), r = sisi / 2, a = 2 * Math.PI / (n || 1);
+    g.translate(r, r);
+    if(!n){ g.fillStyle = '#5E5363'; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); return; }
+    var f = Math.max(sisi * 0.008, Math.min(sisi * 0.034, r * a * 0.5));
+    g.font = '600 ' + f + 'px "Work Sans",system-ui,sans-serif';
+    g.textAlign = 'right'; g.textBaseline = 'middle';
+    for(var i = 0; i < n; i++){
+      g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, i * a - Math.PI / 2, (i + 1) * a - Math.PI / 2); g.closePath();
+      // irisan terakhir tidak boleh sewarna dengan irisan pertama di sebelahnya
+      g.fillStyle = WARNA[(i === n - 1 && i % 4 === 0 && n > 1) ? 2 : i % 4]; g.fill();
+      g.save(); g.rotate((i + 0.5) * a - Math.PI / 2);
+      var nm = String(pool[i].nama || 'Tanpa nama'); if(nm.length > 26) nm = nm.slice(0, 25) + '…';
+      g.fillStyle = '#fff'; g.fillText(nm, r * 0.965, 0, r * 0.74);
+      g.restore();
+    }
+  }
+
+  function putar(){
+    if(sibuk || !pool.length || st.menang.length >= MAKS) return;
+    sibuk = true; $('putarBtn').disabled = true;
+    var n = pool.length, a = 360 / n, acak = new Uint32Array(2);
+    if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(acak);
+    else{ acak[0] = Math.floor(Math.random() * 4294967296); acak[1] = Math.floor(Math.random() * 4294967296); }
+    var i = acak[0] % n, geser = (acak[1] / 4294967296 - 0.5) * a * 0.7;
+    var akhir = rot + 360 * 7 + ((360 - ((i + 0.5) * a + geser) - rot) % 360 + 360) % 360;
+    var sudah = false;
+    function berhenti(){
+      if(sudah) return; sudah = true;
+      rot = akhir % 360; $('roda').style.transform = 'rotate(' + rot + 'deg)';
+      terpilih = pool[i];
+      $('hNama').textContent = terpilih.nama; $('hRinci').textContent = rinci(terpilih);
+      $('hasil').hidden = false; $('sahBtn').focus();
+      H.bunyi(660, 180); setTimeout(function(){ H.bunyi(880, 180); }, 200); setTimeout(function(){ H.bunyi(1320, 400); }, 400);
+    }
+    try{
+      var an = $('roda').animate([{ transform: 'rotate(' + rot + 'deg)' }, { transform: 'rotate(' + akhir + 'deg)' }],
+        { duration: 8000, easing: 'cubic-bezier(.12,.62,.08,1)' });
+      an.onfinish = berhenti; an.oncancel = berhenti;
+      setTimeout(berhenti, 9500);   // jaga-jaga kalau browser tidak mengirim tanda selesai
+    }catch(e){ berhenti(); }        // browser tanpa animasi: langsung tampilkan pemenang
+  }
+  function selesai(menang){
+    if(!terpilih) return;           // klik ganda pada tombol pop up
+    if(menang) st.menang.push(terpilih); else st.hangus.push(terpilih.id);
+    terpilih = null; jeda = Date.now() + 700;
+    simpan(); $('hasil').hidden = true; sibuk = false; susun();
+  }
+
+  // Klik kedua dari klik ganda di pop up bisa jatuh ke tombol Putar di belakangnya, jadi diabaikan sebentar.
+  $('putarBtn').addEventListener('click', function(){ if(Date.now() >= jeda) putar(); });
+  $('sahBtn').addEventListener('click', function(){ selesai(true); });
+  $('hangusBtn').addEventListener('click', function(){ if(!terpilih) return; selesai(false); putar(); });
+  $('siapa').addEventListener('change', function(){ if(sibuk){ this.value = st.siapa; return; } st.siapa = this.value; simpan(); susun(); });
+  $('muatBtn').addEventListener('click', muat);
+  $('resetBtn').addEventListener('click', function(){
+    if(sibuk || !confirm('Hapus semua pemenang dan mulai undian dari awal?')) return;
+    st.menang = []; st.hangus = []; simpan(); susun();
+  });
+  window.addEventListener('resize', function(){ if(!sibuk) gambar(); });
+
+  susun();
+  H.ulang(muat, 30000);
+});
+</script>
+</body>
+</html>
