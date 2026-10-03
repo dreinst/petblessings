@@ -8,7 +8,9 @@ const { execSync } = require('child_process');
 const ROOT = path.join(__dirname, '../..');
 const jwt = require(path.join(ROOT, 'node_modules/jsonwebtoken'));
 const env = Object.fromEntries(fs.readFileSync(path.join(__dirname, '../.env'), 'utf8').split('\n').filter(Boolean).map((l) => [l.split('=')[0], l.slice(l.indexOf('=') + 1)]));
-if (!/127\.0\.0\.1/.test(env.VPS_API_URL)) { console.error('lokal/.env tidak menunjuk VPS tiruan, uji dibatalkan'); process.exit(1); }
+// Uji ini mengosongkan data hari-H di KEDUA database, jadi hanya boleh jalan terhadap VPS tiruan
+// (port 3102). Alamat 127.0.0.1 lain, misalnya terowongan SSH ke VPS asli di port 3103, ditolak.
+if (!/^http:\/\/127\.0\.0\.1:3102\/?$/.test(env.VPS_API_URL)) { console.error('lokal/.env tidak menunjuk VPS tiruan (http://127.0.0.1:3102), uji dibatalkan'); process.exit(1); }
 const TOKEN = jwt.sign({ role: 'web_superadmin', level: 'superadmin' }, env.JWT_SECRET);
 const LOKAL = 'http://127.0.0.1:8080/rest';
 const VPS = env.VPS_API_URL;
