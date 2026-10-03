@@ -12,10 +12,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="api-config.js"></script>
 <script>
-  // Pendaftaran online tutup 3 jam sebelum acara (4 Okt 2026, mulai 09.00 WIB).
+  // Pendaftaran online dibuka sampai 12.00 WIB di hari acara (4 Okt 2026), supaya peserta
+  // yang datang tanpa mendaftar bisa mengisi sendiri di lokasi (OTS) lalu reg ulang seperti biasa.
   // Waktu yang sama dicek ulang di api/register.js.
   document.addEventListener('DOMContentLoaded', function(){
-    if(Date.now() < Date.parse('2026-10-04T06:00:00+07:00')) return;
+    if(Date.now() < Date.parse('2026-10-04T12:00:00+07:00')) return;
     document.getElementById('regForm').hidden = true;
     document.getElementById('tutupInfo').hidden = false;
   });
