@@ -33,7 +33,11 @@
   .qr a{display:block;margin-top:4px;font-weight:600;color:var(--brand-deep);}
   /* ?besar=N: satu QR besar saja di tab ini, supaya kamera HP tidak salah membaca QR di sebelahnya */
   .mode-besar .grid{grid-template-columns:1fr;}
-  .mode-besar #kartuKiri,.mode-besar .qr a,.mode-besar #catatanLog{display:none;}
+  .mode-besar #kartuKiri,.mode-besar .qr a,.mode-besar #catatanLog,.mode-besar #tautanPetugas{display:none;}
+  /* tautan petugas tanpa login: disalin superadmin lalu dikirim ke petugas */
+  .tautan{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;}
+  .tautan .btn{flex:none;min-height:44px;padding:8px 14px;font-size:14px;}
+  #tautanPetugas{margin-bottom:18px;}
   .mode-besar .qr-grid{grid-template-columns:minmax(0,min(70vh,560px));justify-content:center;}
   .mode-besar .qr{display:flex;flex-direction:column;}
   .mode-besar .qr b{order:-2;font-size:28px;margin:0 0 4px;} .mode-besar .qr span{order:-1;font-size:16px;margin-bottom:12px;}
@@ -66,6 +70,50 @@ HariH.mulai(function(){
   function baris(a, b){ return '<div class="baris"><span>' + a + '</span><b>' + b + '</b></div>'; }
   function tombol(id, teks, kelas){ return '<button class="btn ' + (kelas || '') + ' block" id="' + id + '">' + teks + '</button>'; }
 
+  // ---------- tautan petugas tanpa login ----------
+  // Tiga halaman ini boleh dibuka petugas lewat tautan "...#kunci=<token>" (lihat hari-h.js dan
+  // api/tautan-petugas.js). Tokennya diminta sekali tiap halaman kendali dibuka, berlaku 20 jam.
+  var PETUGAS = [['checkin.html?meja=A', 'Pos A (ganjil)'], ['checkin.html?meja=B', 'Pos B (genap)'], ['goodie.html', 'Stiker dan goodie bag']];
+  var kunciPetugas = null, kunciSampai = null, kunciDicoba = false;
+  async function mintaKunci(){
+    if(kunciDicoba) return;
+    kunciDicoba = true;
+    try{
+      var r = await fetch('/api/tautan-petugas', { method: 'POST', headers: { Authorization: 'Bearer ' + H.token() } });
+      var d = await r.json();
+      if(r.ok && d.token){ kunciPetugas = d.token; kunciSampai = d.berlaku_sampai; }
+    }catch(e){}
+  }
+  function alamatHalaman(dasar, hal){ return dasar + hal + (H.UJI ? (hal.indexOf('?') < 0 ? '?' : '&') + 'uji=1' : ''); }
+  function alamatPetugas(dasar, hal){ return alamatHalaman(dasar, hal) + (kunciPetugas ? '#kunci=' + kunciPetugas : ''); }
+  function kartuTautan(dasar, catatanJaringan){
+    if(!kunciPetugas) return '<div class="alert warn" id="tautanPetugas">Tautan tanpa login belum bisa dibuat di server ini. Petugas masih perlu login superadmin.</div>';
+    var sampai = new Date(kunciSampai).toLocaleString('id-ID', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+    var semua = PETUGAS.map(function(p){ return p[1] + ':\n' + alamatPetugas(dasar, p[0]); }).join('\n\n');
+    return '<div id="tautanPetugas"><h2>Tautan petugas, tanpa login</h2>' +
+      '<p class="muted" style="font-size:13.5px;margin:0 0 6px">Salin lalu kirim ke petugas yang bersangkutan, misalnya lewat WhatsApp. Tautan langsung membuka halamannya tanpa login, dan hanya bisa dipakai untuk scan, memberi nomor, dan goodie bag. Berlaku sampai ' + H.esc(sampai) + '. ' + catatanJaringan + '</p>' +
+      PETUGAS.map(function(p){
+        return '<div class="tautan"><b>' + p[1] + (H.UJI ? ' (mode uji)' : '') + '</b><button type="button" class="btn" data-salin="' + H.esc(alamatPetugas(dasar, p[0])) + '">Salin tautan</button></div>';
+      }).join('') +
+      '<div class="tautan"><span class="muted">Ketiganya sekaligus, lengkap dengan nama halamannya</span><button type="button" class="btn" data-salin="' + H.esc(semua) + '">Salin semua</button></div></div>';
+  }
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-salin]');
+    if(!b) return;
+    var teks = b.getAttribute('data-salin');
+    b.dataset.label = b.dataset.label || b.textContent;
+    try{ await navigator.clipboard.writeText(teks); }
+    catch(err){   // browser tanpa izin clipboard: salin lewat kotak teks sementara
+      var t = document.createElement('textarea');
+      t.value = teks; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try{ document.execCommand('copy'); }catch(e2){}
+      t.remove();
+    }
+    b.textContent = 'Tersalin';
+    setTimeout(function(){ b.textContent = b.dataset.label; }, 1500);
+  });
+
   if(H.LOKAL){
     $('judul').textContent = 'Kendali server lokal (Mac)';
     var HALAMAN = [['checkin.html?meja=A', 'Pos A (ganjil)'], ['checkin.html?meja=B', 'Pos B (genap)'], ['goodie.html', 'Stiker dan goodie bag'],
@@ -87,6 +135,7 @@ HariH.mulai(function(){
     if(besar != null) document.body.classList.add('mode-besar');
     async function muat(){
       var s = await (await fetch('/lokal/status')).json();
+      await mintaKunci();
       var st = null; try{ st = await H.status(1); H.labelServer(st); }catch(e){}
       var lokalAktif = s.pemberi === 'lokal';
       $('pemberi').className = 'besar ' + (lokalAktif ? 'on' : 'off');
@@ -106,17 +155,20 @@ HariH.mulai(function(){
       if($('bAmbil')) $('bAmbil').onclick = function(){ perintah('ambil-alih', 'Server lokal akan memberi nomor dan server online berhenti. Lanjut?'); };
       if($('bPaksa')) $('bPaksa').onclick = function(){ perintah('ambil-alih?paksa=1', 'Hanya untuk darurat: server online tidak bisa dihubungi dan tidak ada yang memakainya. Nomor dilanjutkan dari nomor tertinggi di Mac + 10. Lanjut?'); };
       // QR alamat untuk device lain (dibuat sekali, kecuali alamat berubah).
-      var kunci = s.alamat.join(',');
+      var kunci = s.alamat.join(',') + '|' + (kunciPetugas ? 1 : 0);
+      var lan = s.alamat.filter(function(ip){ return !/^100\./.test(ip); });
       if(kunci !== qrDibuat){
         qrDibuat = kunci;
-        $('kartuKanan').innerHTML = '<h2>Buka di device lain</h2><p class="muted" style="font-size:13.5px;margin:0 0 10px">QR di halaman ini berisi alamat halaman panitia, bukan QR peserta. Sambungkan device ke WiFi router lokasi, lalu scan QR dengan kamera HP biasa (bukan dari dalam halaman reg ulang). QR peserta baru discan setelah halaman Pos terbuka di HP. Pertama kali muncul peringatan keamanan: pilih "Lanjutkan" / "Advanced, Proceed". Itu normal untuk server lokal.</p>' +
-          s.alamat.filter(function(ip){ return !/^100\./.test(ip); }).map(function(ip){
+        $('kartuKanan').innerHTML = (lan[0] ? kartuTautan('https://' + lan[0] + ':8443/', 'HP petugas harus tersambung ke WiFi yang sama dengan Mac ini. Saat pertama dibuka muncul peringatan keamanan, pilih Lanjutkan.') : '') +
+          '<h2>Buka di device lain</h2><p class="muted" style="font-size:13.5px;margin:0 0 10px">QR di halaman ini berisi alamat halaman panitia, bukan QR peserta. Sambungkan device ke WiFi router lokasi, lalu scan QR dengan kamera HP biasa (bukan dari dalam halaman reg ulang). QR peserta baru discan setelah halaman Pos terbuka di HP. Pertama kali muncul peringatan keamanan: pilih "Lanjutkan" / "Advanced, Proceed". Itu normal untuk server lokal.</p>' +
+          lan.map(function(ip){
             return '<p style="font-weight:600;margin:10px 0 6px">Alamat ' + ip + '</p><div class="qr-grid">' + HALAMAN.map(function(h, i){
               if(besar != null && i !== besar) return '';
               // Kendali dibuka dengan ?uji=1: semua QR ikut membuka halaman dalam mode uji (hanya peserta Testing).
-              var url = 'https://' + ip + ':8443/' + h[0] + (H.UJI ? (h[0].indexOf('?') < 0 ? '?' : '&') + 'uji=1' : '');
-              var qr = qrcode(0, 'M'); qr.addData(url); qr.make();
-              return '<div class="qr"><div>' + qr.createImgTag(4, 0) + '</div><b>' + h[1] + (H.UJI ? ' (mode uji)' : '') + '</b><span>' + url + '</span>' +
+              // Tiga halaman pertama (pos dan goodie bag) memakai tautan petugas, jadi scan QR-nya langsung masuk tanpa login.
+              var url = alamatHalaman('https://' + ip + ':8443/', h[0]), tanpaLogin = i < PETUGAS.length && !!kunciPetugas;
+              var qr = qrcode(0, tanpaLogin ? 'L' : 'M'); qr.addData(tanpaLogin ? alamatPetugas('https://' + ip + ':8443/', h[0]) : url); qr.make();
+              return '<div class="qr"><div>' + qr.createImgTag(4, 0) + '</div><b>' + h[1] + (H.UJI ? ' (mode uji)' : '') + '</b><span>' + url + (tanpaLogin ? ' (tanpa login)' : '') + '</span>' +
                 '<a href="kendali.html?besar=' + i + (H.UJI ? '&uji=1' : '') + '" target="_blank" rel="noopener">Buka QR ini besar di tab sendiri</a></div>';
             }).join('') + '</div>';
           }).join('') +
@@ -150,7 +202,9 @@ HariH.mulai(function(){
         }catch(e){ galat(e.message); }
         muat();
       };
-      $('kartuKanan').innerHTML = '<h2>Alamat online</h2><p>Pos A dan B: <b>' + location.host + '/checkin.html?meja=A</b> dan <b>?meja=B</b><br>Monitor: <b>' + location.host + '/monitor-checkin.html</b><br>Pemanggil: <b>' + location.host + '/panggil.html</b><br>Layar ruang tunggu: <b>' + location.host + '/layar-panggil.html</b></p>';
+      await mintaKunci();
+      if(!$('alamatOnline')) $('kartuKanan').innerHTML = kartuTautan(location.origin + '/', 'Tautan online ini hanya bisa memberi nomor kalau server online yang sedang aktif.') +
+        '<h2 id="alamatOnline">Alamat online</h2><p>Pos A dan B: <b>' + location.host + '/checkin.html?meja=A</b> dan <b>?meja=B</b><br>Monitor: <b>' + location.host + '/monitor-checkin.html</b><br>Pemanggil: <b>' + location.host + '/panggil.html</b><br>Layar ruang tunggu: <b>' + location.host + '/layar-panggil.html</b></p>';
     }
     H.ulang(function(){ return muat().catch(function(e){ galat(e.message); }); }, 4000);
   }
