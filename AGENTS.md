@@ -24,6 +24,8 @@ Photobooth dan sertifikat ada di repo lain (`dreinst/mcfbooth`, lihat AGENTS.md 
 | Halaman hasil (QR poster) tidak menemukan peserta | peserta harus sudah reg ulang; fungsi `api.cari_hasil` | `hasil.html`, migrasi 27 |
 | Link foto/sertifikat kosong di hasil.html | booth belum menulis `pets.photo_folder_url` / `certificate_url` | repo mcfbooth (`app/sertifikat.py`, `app/watcher.py`) |
 | Dashboard superadmin angka aneh | | `superadmin.html` (`loadStats`) |
+| Goodie bag: peserta tidak muncul di layar petugas, atau statusnya beda antar server | penyerahan dicatat sebagai baris `checkins` dengan `post = 'pos1'` (satu per pemilik), dan hanya ada di server tempat dicatat (penyelaras tidak membawanya) | `goodie.html`, `checkin.html` (`POS_GOODIE`) |
+| Undian: pemenang hilang atau beda antar perangkat | pemenang disimpan di browser perangkat yang memutar (localStorage), tidak di database | `undian.html` |
 | Bot WA tidak membalas / logged out | `docker logs petblessing-wa-bot` di VPS | `wa-bot/index.js`; JANGAN tautkan ulang nomor tanpa izin |
 
 ## Menguji
@@ -31,6 +33,8 @@ Photobooth dan sertifikat ada di repo lain (`dreinst/mcfbooth`, lihat AGENTS.md 
 - Server lokal + VPS tiruan (tidak menyentuh produksi): `bash lokal/uji/siapkan-vps-tiruan.sh`,
   `bash lokal/siapkan.sh`, `node lokal/server.js`, lalu `node lokal/uji/uji-hari-h.js` (36 cek).
   Syarat: `lokal/.env` berisi `VPS_API_URL=http://127.0.0.1:3102`.
+  `uji-hari-h.js` mengosongkan data hari-H di kedua database. Jangan dijalankan saat `lokal/.env`
+  menunjuk VPS asli atau terowongannya (misalnya `127.0.0.1:3103`); skrip menolak alamat selain port 3102.
 - Halaman bisa dibuka lewat server lokal di `http://127.0.0.1:8080/<halaman>.html`.
 
 ## Jangan dilakukan tanpa izin panitia
