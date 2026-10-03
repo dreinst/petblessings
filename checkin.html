@@ -283,7 +283,16 @@ HariH.mulai(function(){
     // QR yang sama masih di depan kamera: jangan dibuka lagi sebelum 4 detik berlalu.
     if(kode === kodeTerakhir && Date.now() - kodeT < 4000) return;
     kodeTerakhir = kode; kodeT = Date.now();
-    if(!m){ H.bunyi(300, 200); tanda('warn', 'QR terbaca, tapi bukan QR pendaftaran Pet Blessing. Minta peserta menunjukkan QR pendaftarannya.'); return; }
+    if(!m){
+      H.bunyi(300, 200);
+      // QR alamat halaman panitia (dari halaman kendali) dan QR poster pendaftaran kadang ikut discan di sini.
+      tanda('warn', /(checkin|goodie|kendali|monitor-checkin|panggil|layar-panggil|undian)\.html/i.test(kode)
+        ? 'QR terbaca, tapi ini QR alamat halaman panitia, bukan QR peserta. QR itu discan dengan kamera HP biasa untuk membuka halaman. Di halaman ini yang discan adalah QR pendaftaran peserta.'
+        : /(petblessing|pawrade)\.html|petblessings\.vercel\.app/i.test(kode)
+        ? 'QR terbaca, tapi ini QR poster pendaftaran, bukan QR peserta. Minta peserta menunjukkan QR yang muncul setelah ia mendaftar.'
+        : 'QR terbaca, tapi bukan QR pendaftaran Pet Blessing. Minta peserta menunjukkan QR pendaftarannya.');
+      return;
+    }
     tanda('ok', 'QR terbaca. Membuka data peserta...');
     if(navigator.vibrate) navigator.vibrate(60);
     $('scanBox').classList.add('kena'); setTimeout(function(){ $('scanBox').classList.remove('kena'); }, 700);
