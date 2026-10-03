@@ -84,11 +84,6 @@ HariH.mulai(function(){
   var H = HariH, $ = function(id){ return document.getElementById(id); };
   var KUNCI = 'pb_undian' + (H.UJI ? '_uji' : '');
   var MAKS = 20; // jumlah pemenang; setelah lengkap roda tidak bisa diputar lagi
-  // Pendaftar Fashion Pawrade yang tidak ikut Pet Blessing ikut diundi (dicocokkan lewat nomor HP
-  // supaya satu orang tidak muncul dua kali). Data Pawrade hanya ada di server online, jadi
-  // diambil langsung dari sana; kalau tidak terjangkau dipakai daftar terakhir yang tersimpan.
-  var IKUT_PAWRADE = !H.UJI;
-  var API_ONLINE = H.LOKAL ? 'https://petblessing-api.187.53.129.205.sslip.io' : H.API;
   var WARNA = ['#0B6E5E', '#B8410F', '#B01C5A', '#6A35A0'];
 
   // peserta = salinan daftar pemilik dari server. st = hasil undian. Dua-duanya
@@ -97,7 +92,7 @@ HariH.mulai(function(){
   var st = baca(KUNCI, {});
   // Data tersimpan dari versi lama atau yang rusak tidak boleh menghentikan halaman.
   if(!Array.isArray(peserta.rows)) peserta = { waktu: null, rows: [] };
-  peserta.rows = peserta.rows.filter(function(p){ return p && p.id; });
+  peserta.rows = peserta.rows.filter(function(p){ return p && p.id && !p.pawrade; });
   st = { siapa: st.siapa === 'hadir' ? 'hadir' : 'semua',
          menang: (Array.isArray(st.menang) ? st.menang : []).filter(function(m){ return m && m.id; }),
          hangus: Array.isArray(st.hangus) ? st.hangus : [] };
@@ -112,53 +107,26 @@ HariH.mulai(function(){
   async function muat(){
     if(sibuk) return;   // jangan mengganggu roda yang sedang berputar atau pop up pemenang
     try{
-      var rows = await H.api('/owners?select=id,name,phone,queue_number,pets(name),checkins(post,arrival_number)&is_test=eq.' + H.UJI + '&order=queue_number');
-      var baru = rows.map(function(o){
+      // Roda mengikuti database: semua pemilik Pet Blessing (Fashion Pawrade tidak ikut), dimuat ulang tiap 30 detik.
+      var rows = await H.api('/owners?select=id,name,queue_number,pets(name),checkins(post,arrival_number)&is_test=eq.' + H.UJI + '&order=queue_number');
+      peserta = { waktu: new Date().toISOString(), rows: rows.map(function(o){
         var c = (o.checkins || []).filter(function(x){ return x.post === 'reg_ulang'; })[0];
-        return { id: o.id, nama: (o.name || '').trim() || 'Tanpa nama', no: o.queue_number, urut: c ? c.arrival_number : null, hadir: !!c,
+        return { id: o.id, nama: (o.name || '').trim() || 'Tanpa nama', no: o.queue_number, urut: c ? c.arrival_number : null,
           hewan: (o.pets || []).map(function(p){ return p.name; }).filter(Boolean).join(', ') };
-      });
-      var catatan = '';
-      if(IKUT_PAWRADE){
-        var pw = await ambilPawrade(rows);
-        if(pw.rows.length) catatan = ', termasuk ' + pw.rows.length + ' pendaftar Pawrade' + (pw.lama ? ' (salinan terakhir, server online tidak terjangkau)' : '');
-        else if(pw.lama) catatan = ', data Pawrade tidak terjangkau';
-        else if(pw.total) catatan = ', ' + pw.total + ' pendaftar Pawrade semuanya sudah ada di daftar Pet Blessing';
-        baru = baru.concat(pw.rows);
-      }
-      peserta = { waktu: new Date().toISOString(), rows: baru };
+      }) };
       tulis(KUNCI + '_peserta', peserta);
-      $('status').textContent = (H.LOKAL ? 'Server lokal' : 'Server online') + ', data pukul ' + H.jam(peserta.waktu) + catatan + (H.UJI ? ', MODE UJI' : '');
+      $('status').textContent = (H.LOKAL ? 'Server lokal' : 'Server online') + ', data pukul ' + H.jam(peserta.waktu) + (H.UJI ? ', MODE UJI' : '');
     }catch(e){
       $('status').textContent = 'Server tidak terjangkau, memakai data tersimpan' + (peserta.waktu ? ' pukul ' + H.jam(peserta.waktu) : '') + '. Undian tetap bisa jalan.';
     }
     if(!sibuk) susun();
   }
 
-  // Nomor HP hanya dipakai untuk mencocokkan, tidak disimpan di perangkat dan tidak ditampilkan.
-  function kunciHp(hp){ return String(hp || '').replace(/\D/g, '').replace(/^62/, '').replace(/^0+/, ''); }
-  async function ambilPawrade(pemilikPb){
-    try{
-      var res = await fetch(API_ONLINE + '/pawrade_owners?select=id,name,phone,pawrade_pets(name),pawrade_checkins(id)&order=queue_number', {
-        headers: { Authorization: 'Bearer ' + H.token() }, signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined });
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      var sudah = {};
-      pemilikPb.forEach(function(o){ var k = kunciHp(o.phone); if(k) sudah[k] = 1; });
-      var semua = await res.json();
-      return { lama: false, total: semua.length, rows: semua.filter(function(o){ var k = kunciHp(o.phone); if(!k || sudah[k]) return false; sudah[k] = 1; return true; }).map(function(o){
-        return { id: 'pawrade-' + o.id, nama: (o.name || '').trim() || 'Tanpa nama', no: null, urut: null, pawrade: true, hadir: (o.pawrade_checkins || []).length > 0,
-          hewan: (o.pawrade_pets || []).map(function(p){ return p.name; }).filter(Boolean).join(', ') };
-      }) };
-    }catch(e){
-      return { lama: true, rows: peserta.rows.filter(function(p){ return p.pawrade; }) };
-    }
-  }
-
   function susun(){
     var keluar = {};
     st.menang.forEach(function(m){ keluar[m.id] = 1; });
     st.hangus.forEach(function(id){ keluar[id] = 1; });
-    pool = peserta.rows.filter(function(p){ return !keluar[p.id] && (st.siapa === 'semua' || p.hadir || p.urut != null); });
+    pool = peserta.rows.filter(function(p){ return !keluar[p.id] && (st.siapa === 'semua' || p.urut != null); });
     var k = pool.map(function(p){ return p.id; }).join();
     if(k !== kunciPool){ kunciPool = k; gambar(); }
     $('siapa').value = st.siapa;
@@ -173,7 +141,7 @@ HariH.mulai(function(){
     $('daftar').scrollTop = $('daftar').scrollHeight;
   }
   function rinci(p){
-    return (p.pawrade ? 'Fashion Pawrade' : 'No. pendaftaran ' + p.no + (p.urut != null ? ', no. urut ' + p.urut : '')) + (p.hewan ? ', ' + p.hewan : '');
+    return 'No. pendaftaran ' + p.no + (p.urut != null ? ', no. urut ' + p.urut : '') + (p.hewan ? ', ' + p.hewan : '');
   }
 
   // Irisan ke-i menempati sudut i*a sampai (i+1)*a searah jarum jam dari atas (posisi jarum).
