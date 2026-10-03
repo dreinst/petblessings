@@ -19,6 +19,10 @@ var ACCOUNTS = [
   { level: 'admin',      role: 'web_admin',      userEnv: 'PANITIA_USERNAME',    hashEnv: 'PANITIA_PASSWORD_HASH' },
 ];
 
+// Masa berlaku login. Superadmin tidak dibatasi 12 jam lagi (permintaan panitia, 4 Okt 2026):
+// 30 hari, dan diperpanjang otomatis tiap halaman hari-H dibuka (lihat "perpanjang" di bawah).
+var UMUR_LOGIN = { superadmin: '30d', admin: '12h' };
+
 // Nama perangkat singkat dari user agent, cukup untuk dikenali pemiliknya
 // (konsep "find my device"), bukan sidik jari lengkap.
 function describeDevice(ua) {
@@ -50,6 +54,26 @@ module.exports = async function handler(req, res) {
   }
 
   var body = req.body || {};
+
+  // Perpanjang login superadmin tanpa mengetik ulang password (dipanggil hari-h.js tiap halaman
+  // dibuka). Token superadmin yang masih berlaku ditukar dengan token baru, supaya login tidak
+  // habis di tengah acara.
+  if (body.perpanjang) {
+    var lama = null;
+    try {
+      lama = jwt.verify(String((req.headers || {}).authorization || '').replace(/^Bearer /, ''), process.env.PGRST_JWT_SECRET);
+    } catch (e) {}
+    if (!lama || lama.role !== 'web_superadmin' || lama.level !== 'superadmin') {
+      res.status(401).json({ error: 'Login dulu' });
+      return;
+    }
+    res.status(200).json({
+      token: jwt.sign({ role: lama.role, level: lama.level, sid: lama.sid }, process.env.PGRST_JWT_SECRET, { expiresIn: UMUR_LOGIN.superadmin }),
+      level: lama.level,
+    });
+    return;
+  }
+
   var username = body.username;
   var password = body.password;
 
@@ -97,6 +121,6 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  var token = jwt.sign({ role: account.role, level: account.level, sid: sid }, jwtSecret, { expiresIn: '12h' });
+  var token = jwt.sign({ role: account.role, level: account.level, sid: sid }, jwtSecret, { expiresIn: UMUR_LOGIN[account.level] });
   res.status(200).json({ token: token, level: account.level, status: status, device: device, ip: ip });
 };
