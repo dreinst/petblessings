@@ -327,7 +327,7 @@
   // --- Data ---
   async function listRegistrations(){
     var token = sessionStorage.getItem(TOKEN_KEY);
-    var res = await fetch(API_URL + '/pawrade_owners?select=id,name,phone,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pawrade_pets(id,name,type,has_photo,notes)&order=submitted_at.desc', {
+    var res = await fetch(API_URL + '/pawrade_owners?select=id,name,phone,email,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pawrade_pets(id,name,type,has_photo,notes)&order=submitted_at.desc', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if(res.status === 401){
@@ -343,6 +343,7 @@
         owner: {
           name: row.name,
           phone: row.phone,
+          email: row.email || '',
           isParishioner: row.is_parishioner,
           parishOrigin: row.parish_origin,
           companions: row.companions || 0
@@ -406,7 +407,7 @@
       return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
         '<div class="owner"><span class="owner-name">'+escapeHtml(titleCase(r.owner.name))+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
         (shortCode ? '<div class="reg-code">Kode: '+escapeHtml(shortCode)+'</div>' : '')+
-        '<div class="phone">'+escapeHtml(r.owner.phone)+'</div>'+
+        '<div class="phone">'+escapeHtml(r.owner.phone)+(r.owner.email ? ' · '+escapeHtml(r.owner.email) : '')+'</div>'+
         originLine+
         companionLine+
         '<div class="pet-list">'+petsHtml+'</div>'+
@@ -766,6 +767,7 @@
       return {
         'Nama pemilik': titleCase(r.owner.name),
         'No. HP': r.owner.phone,
+        'Email': r.owner.email || '',
         'Status umat': r.owner.isParishioner === 'ya' ? 'Umat paroki' : 'Bukan umat paroki',
         'Asal paroki/daerah': titleCase(r.owner.parishOrigin) || '',
         'Pendamping': r.owner.companions || 0,

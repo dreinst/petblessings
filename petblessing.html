@@ -78,7 +78,7 @@
   .field label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;}
   .field label .req{color:var(--pink);margin-left:2px;}
   .field .hint{font-size:12.5px;color:var(--ink-soft);margin-top:5px;}
-  input[type=text],input[type=tel],input[type=number],select,textarea{
+  input[type=text],input[type=tel],input[type=email],input[type=number],select,textarea{
     width:100%;padding:12px 14px;font-size:16px;font-family:inherit;color:var(--ink);
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     transition:border-color .15s ease;
@@ -231,6 +231,12 @@
           <input type="tel" id="ownerPhone" autocomplete="tel" placeholder="08xx xxxx xxxx">
           <div class="fill-hint">Pastikan nomor benar dan aktif di WhatsApp. Setelah mendaftar, screenshot QR di halaman konfirmasi.</div>
           <div class="field-error" id="err-ownerPhone">Nomor HP wajib diisi.</div>
+        </div>
+        <div class="field">
+          <label for="ownerEmail">Email<span class="req">*</span></label>
+          <input type="email" id="ownerEmail" autocomplete="email" inputmode="email" placeholder="nama@email.com">
+          <div class="fill-hint">Info acara (yang perlu dibawa dan tata tertib) dikirim ke email ini. Pastikan penulisannya benar.</div>
+          <div class="field-error" id="err-ownerEmail">Email wajib diisi dengan format yang benar, contoh nama@email.com.</div>
         </div>
         <div class="field">
           <label>Apakah Anda umat Paroki St. Vincentius a Paulo, Malang, Jawa Timur?<span class="req">*</span></label>
@@ -602,6 +608,10 @@
     if(!ownerPhone.value.trim()){ setError(ownerPhone, document.getElementById('err-ownerPhone'), true); ok = false; }
     else setError(ownerPhone, document.getElementById('err-ownerPhone'), false);
 
+    var ownerEmail = document.getElementById('ownerEmail');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.value.trim())){ setError(ownerEmail, document.getElementById('err-ownerEmail'), true); ok = false; }
+    else setError(ownerEmail, document.getElementById('err-ownerEmail'), false);
+
     var isParishioner = document.querySelector('input[name="isParishioner"]:checked');
     if(!isParishioner){ document.getElementById('err-isParishioner').classList.add('show'); ok = false; }
     else document.getElementById('err-isParishioner').classList.remove('show');
@@ -718,6 +728,7 @@
           id: ownerId,
           name: registration.owner.name,
           phone: registration.owner.phone,
+          email: registration.owner.email,
           is_parishioner: registration.owner.isParishioner,
           parish_origin: registration.owner.parishOrigin || null,
           companions: registration.owner.companions,
@@ -761,6 +772,7 @@
       owner: {
         name: document.getElementById('ownerName').value.trim(),
         phone: document.getElementById('ownerPhone').value.trim(),
+        email: document.getElementById('ownerEmail').value.trim().toLowerCase(),
         isParishioner: isParishioner,
         parishOrigin: document.getElementById('parishOrigin').value.trim(),
         companions: hasCompanion === 'ya' ? parseInt(document.getElementById('companionCount').value, 10) : 0
@@ -804,6 +816,7 @@
     document.getElementById('confirmSummary').innerHTML =
       '<b>'+escapeHtml(registration.owner.name)+'</b>'+
       escapeHtml(registration.owner.phone)+'<br>'+
+      escapeHtml(registration.owner.email)+'<br>'+
       registration.pets.length+' hewan: '+escapeHtml(petLines)+
       (registration.owner.companions > 0 ? '<br>'+registration.owner.companions+' pendamping' : '');
 
