@@ -7,8 +7,13 @@
 // lalu HariH.mulai(function(){ ...halaman siap... }).
 //
 // Halaman pos dan goodie bag memanggil HariH.mulai(fn, { petugas: true }): selain
-// superadmin, halaman itu juga terbuka lewat tautan petugas "...#kunci=<token>" tanpa
-// login. Token petugas memakai peran database web_petugas (vps-db/init/30-petugas-pos.sql).
+// superadmin, halaman itu juga terbuka untuk petugas tanpa login. Token petugas (peran
+// database web_petugas, vps-db/init/30-petugas-pos.sql) didapat dari tautan
+// "...#kunci=<token>", atau diminta sendiri ke /api/tautan-petugas selama jam acara.
+//
+// Di Vercel, halaman hari-H pindah ke server lokal lewat internet (PB_LOKAL_INTERNET di
+// api-config.js) selama server lokal yang memberi nomor, supaya QR petugas yang lama tetap
+// bisa dipakai tanpa menyambung ke wifi Mac. Tambahkan ?online=1 untuk tetap di server online.
 (function(){
   var TOKEN_KEY = 'petblessing_panitia_token';
   var q = new URLSearchParams(location.search);
@@ -103,18 +108,51 @@
     });
   }
 
-  // opsi.petugas = true: halaman ini juga boleh dibuka dengan tautan petugas.
-  H.mulai = function(siap, opsi){
+  // Server lokal (Mac) lewat internet. Dipakai halaman di Vercel: kalau Mac terjangkau dan sedang
+  // memberi nomor, pindah ke sana dengan membawa token yang ada. Halaman kendali tidak ikut pindah
+  // karena dari sanalah cadangan online diaktifkan.
+  async function pindahKeLokal(){
+    var dasar = window.PB_LOKAL_INTERNET;
+    if(H.LOKAL || !dasar || q.get('online') === '1' || /kendali\.html$/.test(location.pathname)) return false;
+    try{
+      var r = await fetch(dasar + '/lokal/status', { signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined });
+      if(!r.ok || (await r.json()).pemberi !== 'lokal') return false;
+    }catch(e){ return false; }
+    var t = H.token();
+    location.replace(dasar + location.pathname + location.search + (t ? '#kunci=' + t : ''));
+    return true;
+  }
+  function berlaku(k){ return !!k && !(k.exp && k.exp * 1000 < Date.now()); }
+
+  // opsi.petugas = true: halaman ini juga boleh dibuka petugas tanpa login.
+  H.mulai = async function(siap, opsi){
     if(!H.API){ document.body.innerHTML = '<p style="padding:24px">API belum dikonfigurasi.</p>'; return; }
+    if(await pindahKeLokal()) return;
     var k = klaim();
-    var habis = !!(k && k.exp && k.exp * 1000 < Date.now());
+    var untukPetugas = !!(opsi && opsi.petugas);
+    // Pintu pos: selama jam acara halaman pos dan goodie bag mendapat token petugas tanpa login.
+    if(untukPetugas && !berlaku(k)){
+      try{
+        var res = await fetch('/api/tautan-petugas', { method: 'POST' });
+        var data = await res.json();
+        if(res.ok && data.token){ simpanToken(data.token); k = klaim(); }
+      }catch(e){}
+    }
+    var habis = !!k && !berlaku(k);
     var petugas = !!(k && k.level === 'petugas');
-    if(!k || habis || !(k.level === 'superadmin' || (petugas && opsi && opsi.petugas))){
-      formLogin(!petugas ? '' : habis ? 'Tautan petugas sudah tidak berlaku. Minta tautan baru ke superadmin.'
-        : 'Halaman ini khusus superadmin. Tautan petugas hanya untuk halaman pos dan goodie bag.');
+    if(!k || habis || !(k.level === 'superadmin' || (petugas && untukPetugas))){
+      formLogin(!petugas ? '' : habis ? 'Akses petugas sudah tidak berlaku. Minta tautan baru ke superadmin.'
+        : 'Halaman ini khusus superadmin. Petugas hanya membuka halaman pos dan goodie bag.');
       return;
     }
     H.level = k.level;
+    // Login superadmin diperpanjang otomatis (30 hari) supaya tidak habis di tengah acara.
+    if(k.level === 'superadmin' && k.exp && k.exp * 1000 - Date.now() < 25 * 864e5){
+      fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + H.token() }, body: JSON.stringify({ perpanjang: true }) })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if(d && d.token) simpanToken(d.token); })
+        .catch(function(){});
+    }
     document.getElementById('loginWrap').hidden = true;
     document.getElementById('appWrap').hidden = false;
     var out = document.querySelectorAll('[data-keluar]');

@@ -12,3 +12,8 @@ window.PETBLESSING_API_URL = 'https://petblessing-api.187.53.129.205.sslip.io';
 window.WA_PANITIA = '6282228555254';
 
 window.TURNSTILE_SITE_KEY = '0x4AAAAAAEv82S-01dyodu4-';
+
+// Server lokal hari-H (Mac panitia) lewat internet: rute di VPS yang meneruskan ke Mac lewat
+// Tailscale. Halaman hari-H di Vercel pindah ke alamat ini selama Mac yang memberi nomor
+// (lihat hari-h.js), jadi QR petugas yang lama tetap bisa dipakai tanpa wifi Mac.
+window.PB_LOKAL_INTERNET = 'https://petblessing-lokal.187.53.129.205.sslip.io';
