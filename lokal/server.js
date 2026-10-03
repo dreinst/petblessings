@@ -263,7 +263,7 @@ async function tangani(req, res) {
     return res.end("window.PETBLESSING_API_URL = location.origin + '/rest';\nwindow.PB_SERVER = 'lokal';\n");
   }
   if (p === '/lokal/status') {
-    return kirimJson(res, 200, Object.assign({}, state, { alamat: alamatLan() }));
+    return kirimJson(res, 200, Object.assign({}, state, { alamat: alamatLan(), pintu_pos: process.env.PINTU_POS !== 'tutup' }));
   }
   if (p.startsWith('/lokal/') && req.method === 'POST') {
     if (!superadmin(req)) return kirimJson(res, 401, { error: 'Login superadmin dulu' });
@@ -272,6 +272,8 @@ async function tangani(req, res) {
       else if (p === '/lokal/serahkan') await antrekan(serahkanKeVps);
       else if (p === '/lokal/sinkron') await sinkron();
       else if (p === '/lokal/hapus-konflik') state.konflik = [];
+      // Pintu pos: halaman pos dan goodie bag boleh dibuka tanpa login selama jam acara (api/tautan-petugas.js).
+      else if (p === '/lokal/pintu-pos') { process.env.PINTU_POS = url.searchParams.get('buka') === '0' ? 'tutup' : ''; catat('Akses pos tanpa login ' + (process.env.PINTU_POS === 'tutup' ? 'DITUTUP' : 'dibuka')); }
       else return kirimJson(res, 404, { error: 'tidak ada' });
       return kirimJson(res, 200, state);
     } catch (e) {
@@ -279,11 +281,14 @@ async function tangani(req, res) {
     }
   }
 
-  // File statis: hanya halaman dan aset di akar repo (bukan lokal/, api/, dst).
-  let f = p === '/' ? '/kendali.html' : p;
-  
-  const full = path.join(ROOT, f);
-  const boleh = full.startsWith(ROOT) && (/^\/[^/]+\.(html|js|css)$/.test(f) || f.startsWith('/assets/'));
+  // File statis: hanya halaman (.html, .js, .css) tepat di akar repo dan isi folder assets.
+  // Jalur dinormalkan dulu lalu diperiksa hasil akhirnya, supaya alamat seperti
+  // "/assets/..%2flokal%2f.env" tidak bisa keluar dari folder assets (lokal/.env berisi rahasia).
+  const f = p === '/' ? '/kendali.html' : p;
+  const full = path.normalize(path.join(ROOT, f));
+  const diAssets = full.startsWith(path.join(ROOT, 'assets') + path.sep);
+  const diAkar = path.dirname(full) === ROOT && /^[^.][^/]*\.(html|js|css)$/.test(path.basename(full));
+  const boleh = !f.includes('\0') && (diAkar || diAssets);
   if (!boleh || !fs.existsSync(full) || fs.statSync(full).isDirectory()) { res.writeHead(404); return res.end('Tidak ada'); }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(full)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(full).pipe(res);

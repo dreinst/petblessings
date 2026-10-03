@@ -174,6 +174,7 @@ HariH.mulai(function(){
   var POS_GOODIE = 'pos1';
 
   var $ = function(id){ return document.getElementById(id); };
+  if(H.level !== 'superadmin') $('cariInput').placeholder = 'Cari nama, kode 8 karakter, atau nomor pendaftaran';
 
   // ---------- meja ----------
   function pakaiMeja(m){
@@ -312,16 +313,19 @@ HariH.mulai(function(){
     var q = raw.replace(/[,()"\\*:]/g, ' ').replace(/\s+/g, ' ').trim();
     var box = $('hasilCari');
     if(q.length < 1){ box.innerHTML = ''; return; }
-    var parts = ['name.ilike.*' + q + '*', 'phone.ilike.*' + q + '*'];
+    // Nomor HP hanya bisa dicari dan dilihat superadmin (peran petugas tidak punya hak membacanya).
+    var hp = H.level === 'superadmin';
+    var parts = ['name.ilike.*' + q + '*'];
+    if(hp) parts.push('phone.ilike.*' + q + '*');
     if(/^\d{1,5}$/.test(q)) parts.push('queue_number.eq.' + q);
     if(/^[0-9a-f]{8}$/i.test(q)) parts.push('and(id.gte.' + q.toLowerCase() + '-0000-0000-0000-000000000000,id.lte.' + q.toLowerCase() + '-ffff-ffff-ffff-ffffffffffff)');
     box.innerHTML = '<div class="muted">Mencari...</div>';
     try{
-      var rows = await H.api('/owners?select=id,queue_number,name,phone,is_test,pets(name),checkins(post,arrival_number)&is_test=eq.' + H.UJI + '&order=name&limit=12&or=' + encodeURIComponent('(' + parts.join(',') + ')'));
+      var rows = await H.api('/owners?select=id,queue_number,name,' + (hp ? 'phone,' : '') + 'is_test,pets(name),checkins(post,arrival_number)&is_test=eq.' + H.UJI + '&order=name&limit=12&or=' + encodeURIComponent('(' + parts.join(',') + ')'));
       box.innerHTML = rows.length ? rows.map(function(o){
         var c = (o.checkins || []).find(function(x){ return x.post === 'reg_ulang'; });
         return '<button type="button" class="row-btn" data-id="' + o.id + '"><span class="info"><span class="nm">' + H.esc(o.name) + '</span>' +
-          '<span class="meta">Daftar ' + o.queue_number + ' · ' + H.esc(o.phone) + ' · ' + H.esc((o.pets || []).map(function(p){ return p.name; }).join(', ')) + '</span></span>' +
+          '<span class="meta">Daftar ' + o.queue_number + (hp ? ' · ' + H.esc(o.phone) : '') + ' · ' + H.esc((o.pets || []).map(function(p){ return p.name; }).join(', ')) + '</span></span>' +
           (c ? '<span class="tag">#' + c.arrival_number + '</span>' : '') + '</button>';
       }).join('') : '<div class="muted">Tidak ketemu. Coba ejaan lain, atau daftarkan sebagai peserta baru.</div>';
     }catch(err){ box.innerHTML = '<div class="alert err">' + H.esc(err.message) + '</div>'; }
