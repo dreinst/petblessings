@@ -132,9 +132,10 @@ HariH.mulai(function(){
   pasangZ();
 
   // Peserta yang didahulukan: tampil tepat setelah nomor `setelah` walau nomor urutnya lebih besar.
-  // 055 Rony Riawan (Chiro): datang kedua, stikernya sempat salah ditulis "1A" dan reg ulangnya
-  // baru tercatat 09.24, jadi dibacakan setelah nomor 1.
-  var DAHULUKAN = H.UJI ? {} : { 55: { setelah: 1, catatan: 'Panggil dengan nama, dibacakan setelah nomor 001. Stikernya bertuliskan 1A karena salah tulis, nomor di sistem 055.' } };
+  // 055 Livvy (Chester): datang pertama pukul 08.44. Dua stiker sempat ditulis "1A" (Chester dan Chiro);
+  // panitia memutuskan Chiro (Rony Riawan) memegang 001 dan stiker Chester ditulis ulang 055A,
+  // jadi Chester tetap dibacakan di awal, tepat setelah nomor 001.
+  var DAHULUKAN = H.UJI ? {} : { 55: { setelah: 1, catatan: 'Dibacakan setelah nomor 001. Datang paling awal, stikernya ditulis ulang menjadi 055A.' } };
   function urut(o){ return DAHULUKAN[o.nomor] ? DAHULUKAN[o.nomor].setelah + 0.5 : o.nomor; }
 
   function tiga(n){ return String(n).padStart(3, '0'); }
