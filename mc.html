@@ -134,7 +134,7 @@ HariH.mulai(function(){
   // Peserta yang didahulukan: tampil tepat setelah nomor `setelah` walau nomor urutnya lebih besar.
   // 055 Rony Riawan (Chiro): datang kedua, stikernya sempat salah ditulis "1A" dan reg ulangnya
   // baru tercatat 09.24, jadi dibacakan setelah nomor 1.
-  var DAHULUKAN = H.UJI ? {} : { 55: { setelah: 1, catatan: 'Didahulukan: dibacakan setelah nomor 001. Datang kedua, stikernya sempat salah tulis.' } };
+  var DAHULUKAN = H.UJI ? {} : { 55: { setelah: 1, catatan: 'Panggil dengan nama, dibacakan setelah nomor 001. Stikernya bertuliskan 1A karena salah tulis, nomor di sistem 055.' } };
   function urut(o){ return DAHULUKAN[o.nomor] ? DAHULUKAN[o.nomor].setelah + 0.5 : o.nomor; }
 
   function tiga(n){ return String(n).padStart(3, '0'); }
