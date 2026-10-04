@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daftar MC, Pet Blessing 2026</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hari-h.css">
+<script src="api-config.js"></script>
+<script src="hari-h.js"></script>
+<style>
+  /* Daftar untuk MC: semua peserta yang sudah reg ulang, urut nomor urut, lengkap dengan
+     hewannya. Hanya membaca data, diperbarui sendiri tiap beberapa detik. Tanda "sudah
+     dibacakan" disimpan di perangkat MC saja, tidak mengubah data panitia. */
+  :root{--z:1;}
+  .wrap{max-width:900px;margin:0 auto;padding:0 14px 90px;}
+  .atas{position:sticky;top:0;z-index:5;background:var(--brand-deep);color:#fff;margin:0 -14px;padding:12px 14px;}
+  .atas-baris{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;}
+  .atas-baris > div{flex:1;min-width:0;}
+  .atas img{width:40px;height:40px;}
+  .atas h1{color:#fff;font-size:22px;line-height:1.1;}
+  .atas .sub{font-size:13.5px;color:#F3E9FF;margin-top:2px;}
+  .hidup{margin-left:auto;font-size:13px;font-weight:600;padding:6px 10px;border-radius:999px;background:#DCF3E8;color:#0B6E5E;white-space:nowrap;}
+  .hidup.putus{background:#F6E7E5;color:#A6423A;}
+  .alat{display:grid;gap:10px;margin:12px 0;}
+  #cari{width:100%;padding:13px 14px;font-size:17px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
+  .saring{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .pil{min-height:44px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .pil.aktif{background:var(--brand-deep);border-color:var(--brand-deep);color:#fff;}
+  .saring .ruang{flex:1;}
+  .dipanggil{background:var(--warn-soft);color:#5B3A00;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:calc(var(--z) * 17px);}
+  .dipanggil b{font-size:calc(var(--z) * 20px);}
+
+  .pemilik{background:var(--card);border:1.5px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden;}
+  .pemilik.baru{border-color:#0B6E5E;box-shadow:0 0 0 3px #DCF3E8;}
+  .pemilik.selesai{opacity:.62;}
+  .kepala{display:flex;align-items:center;gap:14px;padding:12px 14px;cursor:pointer;flex-wrap:wrap;}
+  .kepala > div{flex:1;min-width:0;overflow-wrap:anywhere;}
+  .no{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:calc(var(--z) * 40px);line-height:1;color:var(--brand-deep);min-width:2.2em;font-variant-numeric:tabular-nums;}
+  .nama{font-size:calc(var(--z) * 21px);font-weight:700;line-height:1.2;color:var(--ink);}
+  .info{font-size:calc(var(--z) * 13.5px);color:var(--ink-soft);margin-top:2px;}
+  .tanda{margin-left:auto;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;}
+  .tanda.baru{background:#DCF3E8;color:#0B6E5E;}
+  .tanda.panggil{background:var(--warn-soft);color:#5B3A00;}
+  .hewan{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;cursor:pointer;font-family:inherit;color:var(--ink);min-height:56px;}
+  .hewan .lb{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:calc(var(--z) * 22px);color:var(--brand-deep);min-width:3.6em;font-variant-numeric:tabular-nums;}
+  .hewan > span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere;}
+  .hewan .nm{font-size:calc(var(--z) * 22px);font-weight:700;}
+  .hewan .jn{font-size:calc(var(--z) * 17px);color:var(--ink-soft);}
+  .hewan .ck{margin-left:auto;flex:none;width:34px;height:34px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:transparent;}
+  .hewan.sudah{background:#EEF7F1;}
+  .hewan.sudah .nm,.hewan.sudah .jn{text-decoration:line-through;color:var(--ink-soft);}
+  .hewan.sudah .ck{background:#0B6E5E;border-color:#0B6E5E;color:#fff;}
+  .tanpa{padding:12px 14px;border-top:1px solid var(--line);font-size:calc(var(--z) * 15px);color:var(--ink-soft);}
+  .kosong{text-align:center;padding:28px 16px;font-size:16px;}
+  .server-badge{margin:6px 0 0;}
+
+  /* Mode baca: satu pemilik memenuhi layar, huruf besar, tombol lanjut. */
+  .baca{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;padding:16px;}
+  .baca-atas{display:flex;align-items:center;gap:10px;}
+  .baca-atas .ke{font-size:15px;font-weight:600;color:var(--ink-soft);margin-right:auto;}
+  .baca-isi{flex:1;display:flex;flex-direction:column;justify-content:center;gap:2vh;overflow:auto;padding:8px 4px;}
+  .baca .no{font-size:clamp(84px,22vw,200px);}
+  .baca .nama{font-size:clamp(28px,6.4vw,58px);}
+  .baca .info{font-size:clamp(15px,3vw,22px);}
+  .baca-hewan{display:grid;gap:1.4vh;margin-top:1vh;}
+  .baca-hewan div{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:2px solid var(--line);padding-top:1.4vh;}
+  .baca-hewan .lb{font-family:'Fraunces',Georgia,serif;font-weight:700;color:var(--brand-deep);font-size:clamp(30px,7vw,64px);}
+  .baca-hewan .nm{font-weight:700;font-size:clamp(32px,7.6vw,70px);line-height:1.1;}
+  .baca-hewan .jn{color:var(--ink-soft);font-size:clamp(22px,5vw,44px);}
+  .baca-bawah{display:grid;grid-template-columns:1fr 2fr;gap:10px;}
+  .baca-bawah .btn{min-height:64px;font-size:18px;}
+</style>
+</head>
+<body>
+<div id="loginWrap" hidden></div>
+<div id="appWrap" hidden>
+  <div class="wrap">
+    <header class="atas">
+      <div class="atas-baris">
+        <img src="assets/pet-blessing-badge.png" alt="">
+        <div><h1>Daftar MC</h1><div class="sub" id="ringkas">memuat…</div></div>
+        <span class="hidup" id="hidup">menyambung…</span>
+      </div>
+    </header>
+
+    <div class="alat">
+      <input id="cari" type="search" placeholder="Cari nomor urut, nama pemilik, atau nama hewan" autocomplete="off">
+      <div class="saring">
+        <button class="pil aktif" type="button" data-s="semua">Semua</button>
+        <button class="pil" type="button" data-s="belum">Belum dibacakan</button>
+        <button class="pil" type="button" data-s="ganjil">Ganjil</button>
+        <button class="pil" type="button" data-s="genap">Genap</button>
+        <span class="ruang"></span>
+        <button class="pil" type="button" id="kecil" aria-label="Perkecil huruf">A kecil</button>
+        <button class="pil" type="button" id="besar" aria-label="Perbesar huruf">A besar</button>
+        <button class="pil aktif" type="button" id="bukaBaca">Mode baca</button>
+      </div>
+    </div>
+
+    <div class="dipanggil" id="dipanggil" hidden></div>
+    <div id="galat"></div>
+    <div class="card muted kosong" id="kosong" hidden></div>
+    <div id="daftar"></div>
+    <span class="server-badge" id="serverBadge"></span>
+  </div>
+</div>
+
+<div class="baca" id="layarBaca" hidden>
+  <div class="baca-atas">
+    <span class="ke" id="bacaKe"></span>
+    <button class="btn" type="button" id="tutupBaca">Kembali ke daftar</button>
+  </div>
+  <div class="baca-isi" id="bacaIsi"></div>
+  <div class="baca-bawah">
+    <button class="btn" type="button" id="bacaMundur">Sebelumnya</button>
+    <button class="btn primary" type="button" id="bacaMaju">Sudah dibacakan, lanjut</button>
+  </div>
+</div>
+
+<script>
+HariH.mulai(function(){
+  var H = HariH, $ = function(id){ return document.getElementById(id); };
+  var KUNCI = 'pb_mc_dibacakan' + (H.UJI ? '_uji' : ''), KUNCI_Z = 'pb_mc_huruf';
+  var dibaca = {}, semua = [], st = null, saring = 'semua', kata = '', tanda = '', okTerakhir = 0;
+  var kenal = null, baruSampai = {}, nomorBaca = null;
+  try{ dibaca = JSON.parse(localStorage.getItem(KUNCI) || '{}'); }catch(e){}
+  var z = Number(localStorage.getItem(KUNCI_Z)) || 1;
+  function pasangZ(){ document.documentElement.style.setProperty('--z', z); localStorage.setItem(KUNCI_Z, z); }
+  pasangZ();
+
+  function tiga(n){ return String(n).padStart(3, '0'); }
+  function huruf(p){ return String(p.label || '').replace(/^\d+/, ''); }
+  function kunci(o, p, i){ return o.nomor + ':' + (huruf(p) || i); }
+  function sudah(o){ return o.pets.length > 0 && o.pets.every(function(p, i){ return dibaca[kunci(o, p, i)]; }); }
+  function infoPemilik(o){
+    var b = [];
+    if(o.meja) b.push('Pos ' + o.meja);
+    if(o.waktu) b.push('reg ulang ' + H.jam(o.waktu));
+    b.push(o.pets.length + ' hewan');
+    if(o.companions) b.push(o.companions + ' pendamping');
+    return b.join(' · ');
+  }
+
+  function tersaring(){
+    var k = kata.trim().toLowerCase();
+    var angka = /^\d+[a-z]?$/.test(k) ? String(Number(k.replace(/[a-z]$/, ''))) : null;
+    return semua.filter(function(o){
+      if(saring === 'belum' && sudah(o)) return false;
+      if(saring === 'ganjil' && o.nomor % 2 !== 1) return false;
+      if(saring === 'genap' && o.nomor % 2 !== 0) return false;
+      if(!k) return true;
+      if(angka !== null) return String(o.nomor) === angka;
+      return (o.name || '').toLowerCase().indexOf(k) >= 0
+        || o.pets.some(function(p){ return ((p.name || '') + ' ' + (p.type || '')).toLowerCase().indexOf(k) >= 0; });
+    });
+  }
+
+  function gambar(){
+    if(!st) return;
+    var daftar = tersaring();
+    var dipanggil = st.dipanggil, belumPanggil = {};
+    st.menunggu.forEach(function(m){ belumPanggil[m.nomor] = 1; });
+    var adaPanggilan = st.riwayat_panggil.length > 0;
+    var nHewan = 0, nBaca = 0;
+    semua.forEach(function(o){ o.pets.forEach(function(p, i){ nHewan++; if(dibaca[kunci(o, p, i)]) nBaca++; }); });
+    $('ringkas').textContent = semua.length + ' pemilik, ' + nHewan + ' hewan sudah reg ulang · ' + nBaca + ' hewan sudah dibacakan';
+
+    var dp = $('dipanggil');
+    dp.hidden = !dipanggil;
+    if(dipanggil) dp.innerHTML = 'Sedang dipanggil panitia: <b>' + tiga(dipanggil.nomor) + ' ' + H.esc(dipanggil.name) + '</b>';
+
+    var kosong = $('kosong');
+    kosong.hidden = daftar.length > 0;
+    if(!daftar.length) kosong.textContent = semua.length
+      ? 'Tidak ada yang cocok dengan pencarian atau saringan ini.'
+      : 'Belum ada peserta yang reg ulang. Daftar ini terisi sendiri begitu meja reg ulang memberi nomor urut.';
+
+    var kini = Date.now();
+    var baruTanda = JSON.stringify([daftar, dibaca, dipanggil && dipanggil.nomor, Object.keys(baruSampai).filter(function(n){ return baruSampai[n] > kini; })]);
+    if(baruTanda !== tanda){
+      tanda = baruTanda;
+      $('daftar').innerHTML = daftar.map(function(o){
+        var baru = baruSampai[o.nomor] > kini;
+        var lencana = baru ? '<span class="tanda baru">baru reg ulang</span>'
+          : (adaPanggilan && !belumPanggil[o.nomor] ? '<span class="tanda panggil">sudah dipanggil</span>' : '');
+        return '<section class="pemilik' + (baru ? ' baru' : '') + (sudah(o) ? ' selesai' : '') + '">' +
+          '<div class="kepala" data-baca="' + o.nomor + '"><span class="no">' + tiga(o.nomor) + '</span>' +
+            '<div><div class="nama">' + H.esc(o.name) + '</div><div class="info">' + H.esc(infoPemilik(o)) + '</div></div>' + lencana + '</div>' +
+          (o.pets.length ? o.pets.map(function(p, i){
+            var k = kunci(o, p, i);
+            return '<button type="button" class="hewan' + (dibaca[k] ? ' sudah' : '') + '" data-k="' + H.esc(k) + '">' +
+              '<span class="lb">' + tiga(o.nomor) + H.esc(huruf(p)) + '</span>' +
+              '<span><span class="nm">' + H.esc(p.name || '(tanpa nama)') + '</span> <span class="jn">' + H.esc(p.type || '') + '</span></span>' +
+              '<span class="ck" aria-hidden="true">&#10003;</span></button>';
+          }).join('') : '<div class="tanpa">Tidak ada hewan yang tercatat hadir.</div>') +
+          '</section>';
+      }).join('');
+    }
+    if(!$('layarBaca').hidden) gambarBaca();
+  }
+
+  /* ---- mode baca ---- */
+  function gambarBaca(){
+    var daftar = tersaring();
+    if(!daftar.length){ $('bacaIsi').innerHTML = '<p class="muted kosong">Tidak ada peserta di saringan ini.</p>'; $('bacaKe').textContent = ''; return; }
+    var i = daftar.findIndex(function(o){ return o.nomor === nomorBaca; });
+    if(i < 0){ i = daftar.findIndex(function(o){ return !sudah(o); }); if(i < 0) i = 0; nomorBaca = daftar[i].nomor; }
+    var o = daftar[i];
+    $('bacaKe').textContent = (i + 1) + ' dari ' + daftar.length + (sudah(o) ? ' · sudah dibacakan' : '');
+    $('bacaIsi').innerHTML = '<div class="no">' + tiga(o.nomor) + '</div>' +
+      '<div><div class="nama">' + H.esc(o.name) + '</div><div class="info">' + H.esc(infoPemilik(o)) + '</div></div>' +
+      '<div class="baca-hewan">' + (o.pets.length ? o.pets.map(function(p){
+        return '<div><span class="lb">' + tiga(o.nomor) + H.esc(huruf(p)) + '</span><span class="nm">' + H.esc(p.name || '(tanpa nama)') + '</span><span class="jn">' + H.esc(p.type || '') + '</span></div>';
+      }).join('') : '<div><span class="jn">Tidak ada hewan yang tercatat hadir.</span></div>') + '</div>';
+    $('bacaMundur').disabled = i === 0;
+    $('bacaMaju').textContent = i === daftar.length - 1 ? 'Sudah dibacakan (terakhir)' : 'Sudah dibacakan, lanjut';
+  }
+  function geser(arah, tandai){
+    var daftar = tersaring();
+    var i = daftar.findIndex(function(o){ return o.nomor === nomorBaca; });
+    if(i < 0) return gambar();
+    if(tandai){ var o = daftar[i]; o.pets.forEach(function(p, j){ dibaca[kunci(o, p, j)] = 1; }); simpan(); }
+    // Dengan saringan "Belum dibacakan", pemilik yang baru ditandai keluar dari daftar: yang berikutnya menggantikan tempatnya.
+    var sesudah = tersaring();
+    var j = sesudah.findIndex(function(o){ return o.nomor === nomorBaca; });
+    var tujuan = j < 0 ? Math.min(i, sesudah.length - 1) : Math.max(0, Math.min(sesudah.length - 1, j + arah));
+    nomorBaca = sesudah.length ? sesudah[tujuan].nomor : null;
+    gambar();
+  }
+  function simpan(){ try{ localStorage.setItem(KUNCI, JSON.stringify(dibaca)); }catch(e){} }
+
+  $('daftar').addEventListener('click', function(e){
+    var h = e.target.closest('.hewan');
+    if(h){ var k = h.dataset.k; if(dibaca[k]) delete dibaca[k]; else dibaca[k] = 1; simpan(); gambar(); return; }
+    var kp = e.target.closest('[data-baca]');
+    if(kp){ nomorBaca = Number(kp.dataset.baca); $('layarBaca').hidden = false; gambar(); }
+  });
+  $('bukaBaca').addEventListener('click', function(){ nomorBaca = null; $('layarBaca').hidden = false; gambar(); });
+  $('tutupBaca').addEventListener('click', function(){ $('layarBaca').hidden = true; });
+  $('bacaMaju').addEventListener('click', function(){ geser(1, true); });
+  $('bacaMundur').addEventListener('click', function(){ geser(-1, false); });
+  document.addEventListener('keydown', function(e){
+    if($('layarBaca').hidden) return;
+    if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); geser(1, true); }
+    else if(e.key === 'ArrowLeft'){ e.preventDefault(); geser(-1, false); }
+    else if(e.key === 'Escape') $('layarBaca').hidden = true;
+  });
+  $('cari').addEventListener('input', function(){ kata = this.value; gambar(); });
+  document.querySelectorAll('[data-s]').forEach(function(b){
+    b.addEventListener('click', function(){
+      saring = b.dataset.s;
+      document.querySelectorAll('[data-s]').forEach(function(x){ x.classList.toggle('aktif', x === b); });
+      gambar();
+    });
+  });
+  $('kecil').addEventListener('click', function(){ z = Math.max(0.8, Math.round((z - 0.1) * 10) / 10); pasangZ(); });
+  $('besar').addEventListener('click', function(){ z = Math.min(1.8, Math.round((z + 0.1) * 10) / 10); pasangZ(); });
+
+  /* ---- data langsung ---- */
+  H.ulang(async function(){
+    try{
+      st = await H.status(5000);
+      H.labelServer(st);
+      semua = st.recent.slice().sort(function(a, b){ return a.nomor - b.nomor; });
+      var kini = Date.now();
+      // Peserta yang baru muncul sejak halaman dibuka ditandai sebentar supaya MC tahu ada tambahan.
+      if(kenal){ semua.forEach(function(o){ if(!kenal[o.nomor]) baruSampai[o.nomor] = kini + 45000; }); }
+      kenal = {}; semua.forEach(function(o){ kenal[o.nomor] = 1; });
+      okTerakhir = kini;
+      $('galat').innerHTML = '';
+      gambar();
+    }catch(e){
+      $('galat').innerHTML = '<div class="alert err">Tidak tersambung: ' + H.esc(e.message) + '. Daftar di bawah adalah data terakhir.</div>';
+    }
+  }, 3000);
+  setInterval(function(){
+    var basi = !okTerakhir || Date.now() - okTerakhir > 12000;
+    $('hidup').className = 'hidup' + (basi ? ' putus' : '');
+    $('hidup').textContent = !okTerakhir ? 'menyambung…' : basi ? 'terputus, mencoba lagi' : 'langsung · ' + new Date(okTerakhir).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if(st) gambar();   // lencana "baru reg ulang" hilang sendiri
+  }, 1000);
+}, { petugas: true });
+</script>
+</body>
+</html>
