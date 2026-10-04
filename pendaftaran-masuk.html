@@ -59,6 +59,25 @@
   .pet-row{font-size:13.5px;padding:8px 10px;background:var(--brand-light);border-radius:8px;color:var(--brand-deep);display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;}
   .pet-row .pet-notes{display:block;width:100%;color:var(--ink-soft);margin-top:2px;font-size:12.5px;}
   .pet-photo-btn{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;font-size:12px;font-family:inherit;border:1px solid var(--brand);border-radius:6px;background:var(--card);color:var(--brand-deep);cursor:pointer;}
+  .pet-photo-btn.next{margin-left:0;}
+  .pet-tag{font-size:11.5px;padding:2px 7px;border-radius:6px;background:var(--accent-light);color:#6B4310;}
+  /* Email bisa diubah langsung di kartu */
+  .email-row{display:flex;align-items:center;gap:8px;margin-top:4px;}
+  .email-row input{flex:1;min-width:0;padding:6px 9px;font-size:13.5px;font-family:inherit;color:var(--ink);border:1px dashed var(--line);border-radius:8px;background:transparent;}
+  .email-row input:focus{border-style:solid;border-color:var(--brand);background:#fff;outline:none;}
+  .email-row .email-state{font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+  .email-row .email-state.bad{color:var(--danger);}
+  .filter{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin:-8px 0 14px;cursor:pointer;}
+  /* Cek foto hari H: foto saat daftar di sebelah sertifikat */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .compare figure{margin:0;}
+  .compare figcaption{font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;}
+  .compare img{max-height:46vh;}
+  .compare .none{font-size:13px;color:var(--ink-soft);padding:30px 8px;border:1px dashed var(--line);border-radius:8px;}
+  @media (max-width:520px){ .compare{grid-template-columns:1fr;} }
+  .modal .redo-btn{display:inline-flex;margin:12px 8px 0 0;padding:10px 16px;border:1px solid var(--danger);border-radius:10px;background:var(--card);color:var(--danger);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;}
+  .modal .redo-btn.sure{background:var(--danger);color:#fff;}
+  .modal .redo-btn:disabled{opacity:.6;cursor:not-allowed;}
   .modal .dl-btn{display:inline-flex;align-items:center;gap:6px;margin:12px 8px 0 0;padding:10px 16px;border:1px solid var(--brand);border-radius:10px;background:var(--card);color:var(--brand-deep);text-decoration:none;font-size:14px;font-weight:500;}
   .modal .upload-btn{position:relative;display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;padding:10px 16px;border:none;border-radius:10px;background:var(--brand);color:#fff;font-size:14px;font-weight:500;cursor:pointer;overflow:hidden;}
   .modal .upload-btn input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;}
@@ -168,6 +187,7 @@
     <button type="button" id="refreshBtn">Muat ulang</button>
     <button type="button" class="export-btn" id="exportBtn">Export xlsx</button>
   </div>
+  <label class="filter"><input type="checkbox" id="onlyHariH"> Hanya yang sudah punya foto hari H</label>
   <div class="notice" id="notice"></div>
   <div class="stats" id="count"></div>
 
@@ -327,7 +347,7 @@
   // --- Data ---
   async function listRegistrations(){
     var token = sessionStorage.getItem(TOKEN_KEY);
-    var res = await fetch(API_URL + '/owners?select=id,name,phone,email,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pets(id,name,type,has_photo,notes)&order=submitted_at.desc', {
+    var res = await fetch(API_URL + '/owners?select=id,name,phone,email,is_parishioner,parish_origin,companions,donation_amount,donation_has_proof,submitted_at,pets(id,name,type,has_photo,notes,certificate_url,photo_folder_url,mcfbooth_session_code)&order=submitted_at.desc', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if(res.status === 401){
@@ -353,11 +373,23 @@
           hasProof: row.donation_has_proof
         },
         pets: (row.pets || []).map(function(p){
-          return { id: p.id, name: p.name, type: p.type, hasPhoto: p.has_photo, notes: p.notes };
+          return { id: p.id, name: p.name, type: p.type, hasPhoto: p.has_photo, notes: p.notes,
+                   certUrl: p.certificate_url, folderUrl: p.photo_folder_url, boothCode: p.mcfbooth_session_code };
         }),
         submittedAt: row.submitted_at
       };
     });
+  }
+  // Permintaan "Foto ulang" yang belum dikerjakan penjaga di Mac booth (kolom dari migrasi 33).
+  // Kalau kolomnya belum ada di database ini, tombol Foto ulang tidak ditampilkan.
+  var redoReady = false, redoPending = {};
+  async function loadRedo(){
+    redoPending = {};
+    try{
+      var res = await fetch(API_URL + '/pets?select=id&foto_ulang=not.is.null', { headers: authHeaders() });
+      redoReady = res.ok;
+      if(res.ok) (await res.json()).forEach(function(p){ redoPending[p.id] = true; });
+    }catch(e){ redoReady = false; }
   }
 
   var isSuperadmin = false;
@@ -388,7 +420,11 @@
       var petsHtml = r.pets.map(function(p){
         var notes = p.notes && p.notes !== '-' ? '<span class="pet-notes">'+escapeHtml(p.notes)+'</span>' : '';
         var photoBtn = '<button type="button" class="pet-photo-btn" data-action="photo" data-pet="'+escapeHtml(p.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto</button>';
-        return '<div class="pet-row"><span>'+escapeHtml(titleCase(p.name))+' &middot; '+escapeHtml(p.type)+'</span>'+photoBtn+notes+'</div>';
+        // Sertifikat buatan meja pilah: kode sesi booth diawali nomor urut dan huruf hewan, misalnya 027A.
+        var label = p.boothCode ? (p.boothCode.match(/^\d+[A-Z]/) || [''])[0] : '';
+        var hariHBtn = p.certUrl ? '<button type="button" class="pet-photo-btn next" data-action="hariH" data-pet="'+escapeHtml(p.id)+'">Foto hari H'+(label ? ' '+escapeHtml(label) : '')+'</button>' : '';
+        var redoTag = redoPending[p.id] ? '<span class="pet-tag">Menunggu dicocokkan ulang</span>' : '';
+        return '<div class="pet-row"><span>'+escapeHtml(titleCase(p.name))+' &middot; '+escapeHtml(p.type)+'</span>'+photoBtn+hariHBtn+redoTag+notes+'</div>';
       }).join('');
       var originLine = r.owner.isParishioner === 'bukan' && r.owner.parishOrigin
         ? '<div class="origin">Dari '+escapeHtml(titleCase(r.owner.parishOrigin))+'</div>' : '';
@@ -407,7 +443,8 @@
       return '<div class=\"entry\" data-id=\"'+escapeHtml(r.id)+'\">'+
         '<div class="owner"><span class="owner-name">'+escapeHtml(titleCase(r.owner.name))+'</span><span class="time">'+formatTime(r.submittedAt)+'</span></div>'+
         (shortCode ? '<div class="reg-code">Kode: '+escapeHtml(shortCode)+'</div>' : '')+
-        '<div class="phone">'+escapeHtml(r.owner.phone)+(r.owner.email ? ' · '+escapeHtml(r.owner.email) : '')+'</div>'+
+        '<div class="phone">'+escapeHtml(r.owner.phone)+'</div>'+
+        '<div class="email-row"><input type="email" data-email value="'+escapeHtml(r.owner.email)+'" placeholder="Email belum ada, ketik di sini" aria-label="Email '+escapeHtml(r.owner.name)+'" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="email-state" data-email-state></span></div>'+
         originLine+
         companionLine+
         '<div class="pet-list">'+petsHtml+'</div>'+
@@ -629,6 +666,106 @@
       body.innerHTML = '<p>Gagal memuat foto. Cek koneksi lalu coba lagi.</p>';
     }
   }
+  // --- Foto hari H: sertifikat buatan meja pilah, dibandingkan dengan foto saat daftar ---
+  // "Foto ulang" mengisi pets.foto_ulang dengan kode sesi booth. Penjaga di Mac booth
+  // (repo mcfbooth, alat/foto_ulang.py) lalu membatalkan pemilahan itu: sertifikat dibuang
+  // dan fotonya kembali ke kotak masuk meja pilah untuk dicocokkan lagi.
+  function driveThumb(url){
+    var m = String(url || '').match(/\/d\/([\w-]+)/) || String(url || '').match(/[?&]id=([\w-]+)/);
+    return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200' : '';
+  }
+  function redoHtml(pet){
+    if(redoPending[pet.id]) return '<p>Foto ulang sudah diminta. Sertifikat ini dibatalkan dalam beberapa detik, lalu fotonya kembali ke kotak masuk meja pilah.</p>';
+    if(!isSuperadmin || !redoReady || !pet.boothCode) return '';
+    return '<p>Kalau hewan di kedua foto berbeda, tekan Foto ulang. Sertifikat ini dibatalkan dan fotonya kembali ke kotak masuk meja pilah untuk dicocokkan lagi.</p>'+
+      '<button type="button" class="redo-btn" data-redo-btn>Foto ulang</button>';
+  }
+  async function showHariH(r, petId){
+    var pet = r.pets.find(function(p){ return p.id === petId; });
+    if(!pet) return;
+    var modal = document.getElementById('proofModal');
+    var body = document.getElementById('proofBody');
+    var thumb = driveThumb(pet.certUrl);
+    document.getElementById('proofTitle').textContent = 'Cek foto ' + titleCase(pet.name) + ' (' + titleCase(r.owner.name) + ')';
+    body.innerHTML = '<div class="compare">'+
+      '<figure><figcaption>Foto saat daftar</figcaption><div class="none" data-reg>Memuat foto…</div></figure>'+
+      '<figure><figcaption>Foto hari H (sertifikat)</figcaption>'+
+        (thumb ? '<img src="'+escapeHtml(thumb)+'" alt="Sertifikat '+escapeHtml(pet.name)+'" referrerpolicy="no-referrer">' : '<div class="none">Pratinjau tidak tersedia, buka sertifikatnya lewat tombol di bawah.</div>')+
+      '</figure></div>'+
+      '<a class="dl-btn" href="'+escapeHtml(pet.certUrl)+'" target="_blank" rel="noopener">Buka sertifikat</a>'+
+      (pet.folderUrl ? '<a class="dl-btn" href="'+escapeHtml(pet.folderUrl)+'" target="_blank" rel="noopener">Buka folder foto</a>' : '')+
+      '<div data-redo>'+redoHtml(pet)+'</div>';
+    modal.classList.add('show');
+    body.querySelector('[data-redo]').addEventListener('click', function(e){
+      var btn = e.target.closest('[data-redo-btn]');
+      if(!btn) return;
+      // Tekan dua kali, supaya sertifikat tidak batal karena salah sentuh.
+      if(!btn.classList.contains('sure')){ btn.classList.add('sure'); btn.textContent = 'Yakin? Tekan sekali lagi'; return; }
+      requestRedo(r, pet, btn);
+    });
+    var regEl = body.querySelector('[data-reg]');
+    try{
+      var res = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(petId) + '&select=photo_base64', { headers: authHeaders() });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      var rows = await res.json();
+      var img = rows && rows[0] && rows[0].photo_base64;
+      if(img && img.indexOf('data:image/') === 0){
+        var el = document.createElement('img'); el.src = img; el.alt = 'Foto ' + pet.name + ' saat daftar';
+        regEl.replaceWith(el);
+      }else{
+        regEl.textContent = 'Pendaftar tidak mengunggah foto hewan ini.';
+      }
+    }catch(e){
+      regEl.textContent = 'Gagal memuat foto saat daftar.';
+    }
+  }
+  async function requestRedo(r, pet, btn){
+    btn.disabled = true; btn.textContent = 'Meminta…';
+    try{
+      var res = await fetch(API_URL + '/pets?id=eq.' + encodeURIComponent(pet.id), {
+        method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ foto_ulang: pet.boothCode })
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      redoPending[pet.id] = true;
+      btn.closest('[data-redo]').innerHTML = redoHtml(pet);
+      applySearch();
+      showNotice('Foto ulang untuk ' + titleCase(pet.name) + ' diminta. Fotonya kembali ke kotak masuk meja pilah.');
+    }catch(e){
+      btn.disabled = false; btn.classList.remove('sure'); btn.textContent = 'Foto ulang';
+      showNotice('Gagal meminta foto ulang: ' + (e.message || 'coba lagi sebentar lagi.'));
+    }
+  }
+  // --- Email: diubah langsung di kartu, tersimpan saat Enter ditekan atau pindah kolom ---
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  async function saveEmail(input){
+    var entryEl = input.closest('.entry');
+    var stateEl = entryEl.querySelector('[data-email-state]');
+    var r = allRegs.find(function(x){ return x.id === entryEl.dataset.id; });
+    if(!r) return;
+    var email = input.value.trim().toLowerCase();
+    stateEl.className = 'email-state';
+    if(email === (r.owner.email || '')){ input.value = email; stateEl.textContent = ''; return; }
+    if(email && !EMAIL_RE.test(email)){ stateEl.textContent = 'Format email belum benar'; stateEl.classList.add('bad'); return; }
+    stateEl.textContent = 'Menyimpan…';
+    try{
+      var res = await fetch(API_URL + '/owners?id=eq.' + encodeURIComponent(r.id), {
+        method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ email: email || null })
+      });
+      if(res.status === 401){ sessionStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      r.owner.email = email; input.value = email;
+      stateEl.textContent = 'Tersimpan';
+      setTimeout(function(){ if(stateEl.textContent === 'Tersimpan') stateEl.textContent = ''; }, 2500);
+    }catch(e){
+      stateEl.textContent = 'Gagal menyimpan, coba lagi'; stateEl.classList.add('bad');
+    }
+  }
+  document.getElementById('list').addEventListener('change', function(e){ if(e.target.matches('[data-email]')) saveEmail(e.target); });
+  document.getElementById('list').addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target.matches('[data-email]')) e.target.blur(); });
+
   // --- QR yang sungguh-sungguh sudah dikirim ke WhatsApp (superadmin) ---
   // Diambil dari api.wa_queue (baris terbaru per pemilik), bukan dibuat
   // ulang di client, supaya yang ditampilkan/diunduh persis QR yang
@@ -689,6 +826,7 @@
     else if(btn.dataset.action === 'proof') showProof(r);
     else if(btn.dataset.action === 'qr') showSentQr(r);
     else if(btn.dataset.action === 'photo') showPetPhoto(r, btn.dataset.pet);
+    else if(btn.dataset.action === 'hariH') showHariH(r, btn.dataset.pet);
     else if(btn.dataset.action === 'delete') deleteEntry(entryEl, r, btn);
   });
 
@@ -723,7 +861,10 @@
   }
   function currentView(){
     var q = document.getElementById('search').value.trim().toLowerCase();
-    return q ? allRegs.filter(function(x){ return searchBlob(x).indexOf(q) !== -1; }) : allRegs;
+    var onlyHariH = document.getElementById('onlyHariH').checked;
+    return allRegs.filter(function(x){
+      return (!q || searchBlob(x).indexOf(q) !== -1) && (!onlyHariH || x.pets.some(function(p){ return p.certUrl; }));
+    });
   }
 
   function searchBlob(r){
@@ -731,11 +872,7 @@
     return (r.owner.name+' '+r.pets.map(function(p){return p.name;}).join(' ')+' '+shortCode+' '+(r.id||'')).toLowerCase();
   }
 
-  function applySearch(){
-    var q = document.getElementById('search').value.trim().toLowerCase();
-    if(!q){ render(allRegs); return; }
-    render(allRegs.filter(function(r){ return searchBlob(r).indexOf(q) !== -1; }));
-  }
+  function applySearch(){ render(currentView()); }
 
   async function load(){
     if(tokenLevel() === 'admin'){
@@ -746,6 +883,7 @@
     document.getElementById('list').innerHTML = '<div class="loading">Memuat pendaftaran…</div>';
     try{
       allRegs = await listRegistrations();
+      await loadRedo();
       applySearch();
     }catch(e){
       document.getElementById('list').innerHTML = '<div class="error">Belum bisa memuat data. Coba muat ulang.</div>';
@@ -795,6 +933,7 @@
   }
 
   document.getElementById('search').addEventListener('input', applySearch);
+  document.getElementById('onlyHariH').addEventListener('change', applySearch);
   document.getElementById('refreshBtn').addEventListener('click', load);
   document.getElementById('exportBtn').addEventListener('click', exportXlsx);
 
