@@ -40,6 +40,7 @@
   .no{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:calc(var(--z) * 40px);line-height:1;color:var(--brand-deep);min-width:2.2em;font-variant-numeric:tabular-nums;}
   .nama{font-size:calc(var(--z) * 21px);font-weight:700;line-height:1.2;color:var(--ink);}
   .info{font-size:calc(var(--z) * 13.5px);color:var(--ink-soft);margin-top:2px;}
+  .catatan{margin-top:6px;padding:6px 10px;border-radius:8px;background:var(--warn-soft);color:#5B3A00;font-size:calc(var(--z) * 14px);font-weight:600;}
   .tanda{margin-left:auto;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;}
   .tanda.baru{background:#DCF3E8;color:#0B6E5E;}
   .tanda.panggil{background:var(--warn-soft);color:#5B3A00;}
@@ -130,6 +131,12 @@ HariH.mulai(function(){
   function pasangZ(){ document.documentElement.style.setProperty('--z', z); localStorage.setItem(KUNCI_Z, z); }
   pasangZ();
 
+  // Peserta yang didahulukan: tampil tepat setelah nomor `setelah` walau nomor urutnya lebih besar.
+  // 055 Rony Riawan (Chiro): datang kedua, stikernya sempat salah ditulis "1A" dan reg ulangnya
+  // baru tercatat 09.24, jadi dibacakan setelah nomor 1.
+  var DAHULUKAN = H.UJI ? {} : { 55: { setelah: 1, catatan: 'Didahulukan: dibacakan setelah nomor 001. Datang kedua, stikernya sempat salah tulis.' } };
+  function urut(o){ return DAHULUKAN[o.nomor] ? DAHULUKAN[o.nomor].setelah + 0.5 : o.nomor; }
+
   function tiga(n){ return String(n).padStart(3, '0'); }
   function huruf(p){ return String(p.label || '').replace(/^\d+/, ''); }
   function kunci(o, p, i){ return o.nomor + ':' + (huruf(p) || i); }
@@ -183,11 +190,14 @@ HariH.mulai(function(){
       tanda = baruTanda;
       $('daftar').innerHTML = daftar.map(function(o){
         var baru = baruSampai[o.nomor] > kini;
-        var lencana = baru ? '<span class="tanda baru">baru reg ulang</span>'
+        var dulu = DAHULUKAN[o.nomor];
+        var lencana = dulu ? '<span class="tanda panggil">didahulukan</span>'
+          : baru ? '<span class="tanda baru">baru reg ulang</span>'
           : (adaPanggilan && !belumPanggil[o.nomor] ? '<span class="tanda panggil">sudah dipanggil</span>' : '');
         return '<section class="pemilik' + (baru ? ' baru' : '') + (sudah(o) ? ' selesai' : '') + '">' +
           '<div class="kepala" data-baca="' + o.nomor + '"><span class="no">' + tiga(o.nomor) + '</span>' +
-            '<div><div class="nama">' + H.esc(o.name) + '</div><div class="info">' + H.esc(infoPemilik(o)) + '</div></div>' + lencana + '</div>' +
+            '<div><div class="nama">' + H.esc(o.name) + '</div><div class="info">' + H.esc(infoPemilik(o)) + '</div>' +
+            (dulu ? '<div class="catatan">' + H.esc(dulu.catatan) + '</div>' : '') + '</div>' + lencana + '</div>' +
           (o.pets.length ? o.pets.map(function(p, i){
             var k = kunci(o, p, i);
             return '<button type="button" class="hewan' + (dibaca[k] ? ' sudah' : '') + '" data-k="' + H.esc(k) + '">' +
@@ -210,7 +220,8 @@ HariH.mulai(function(){
     var o = daftar[i];
     $('bacaKe').textContent = (i + 1) + ' dari ' + daftar.length + (sudah(o) ? ' · sudah dibacakan' : '');
     $('bacaIsi').innerHTML = '<div class="no">' + tiga(o.nomor) + '</div>' +
-      '<div><div class="nama">' + H.esc(o.name) + '</div><div class="info">' + H.esc(infoPemilik(o)) + '</div></div>' +
+      '<div><div class="nama">' + H.esc(o.name) + '</div><div class="info">' + H.esc(infoPemilik(o)) + '</div>' +
+        (DAHULUKAN[o.nomor] ? '<div class="catatan">' + H.esc(DAHULUKAN[o.nomor].catatan) + '</div>' : '') + '</div>' +
       '<div class="baca-hewan">' + (o.pets.length ? o.pets.map(function(p){
         return '<div><span class="lb">' + tiga(o.nomor) + H.esc(huruf(p)) + '</span><span class="nm">' + H.esc(p.name || '(tanpa nama)') + '</span><span class="jn">' + H.esc(p.type || '') + '</span></div>';
       }).join('') : '<div><span class="jn">Tidak ada hewan yang tercatat hadir.</span></div>') + '</div>';
@@ -263,7 +274,7 @@ HariH.mulai(function(){
     try{
       st = await H.status(5000);
       H.labelServer(st);
-      semua = st.recent.slice().sort(function(a, b){ return a.nomor - b.nomor; });
+      semua = st.recent.slice().sort(function(a, b){ return urut(a) - urut(b); });
       var kini = Date.now();
       // Peserta yang baru muncul sejak halaman dibuka ditandai sebentar supaya MC tahu ada tambahan.
       if(kenal){ semua.forEach(function(o){ if(!kenal[o.nomor]) baruSampai[o.nomor] = kini + 45000; }); }
