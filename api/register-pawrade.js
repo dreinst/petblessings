@@ -80,6 +80,10 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // Acara sudah selesai (4 Okt 2026), pendaftaran ditutup. Form di pawrade.html ikut disembunyikan.
+  res.status(403).json({ error: 'Pendaftaran Fashion Pawrade Competition 2026 sudah ditutup.' });
+  return;
+
   var body = req.body || {};
   var jwtSecret = process.env.PGRST_JWT_SECRET;
   var apiUrl = process.env.PETBLESSING_API_URL;
