@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
   // Setelah itu peserta dilayani sebagai walk-in di meja reg ulang.
   // Waktu yang sama dipakai di petblessing.html.
   if (Date.now() >= Date.parse('2026-10-04T12:00:00+07:00')) {
-    res.status(403).json({ error: 'Pendaftaran online sudah ditutup. Silakan datang langsung, kamu tetap dilayani di meja reg ulang.' });
+    res.status(403).json({ error: 'Pendaftaran Pet Blessing 2026 sudah ditutup.' });
     return;
   }
 

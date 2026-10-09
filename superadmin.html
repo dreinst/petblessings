@@ -137,6 +137,8 @@
     <div class="stats posts" id="statsPosts"></div>
     <p class="note" id="testNote" style="display:none;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:var(--accent-light);color:#5E4419;font-size:13px;font-weight:600;"></p>
     <p class="note" id="wrongNote" style="margin:-6px 0 14px;font-size:13px;color:var(--ink-soft);"></p>
+    <h2 class="section" id="absenJudul">Tidak datang</h2>
+    <div class="stat" style="text-align:left;padding:12px;margin-bottom:18px;overflow-x:auto;"><table id="absenTabel" style="width:100%;border-collapse:collapse;font-size:13px;"></table></div>
     <h2 class="section">Pendaftar Pet Blessing per hari (dibanding status iklan)</h2>
     <div class="stat" style="text-align:left;padding:12px;margin-bottom:6px;"><table id="perDay" style="width:100%;border-collapse:collapse;font-size:13px;"></table></div>
     <p class="note" style="margin:0 0 18px;font-size:12px;color:var(--ink-soft);">Status iklan dicatat manual dari Ads Manager: iklan lama aktif sampai 23 Sep, mati 24 sampai 25 Sep karena dana habis, iklan Instagram aktif mulai 26 Sep. Bukti sebab-akibat lemah: pendaftar juga datang dari pengumuman gereja dan WhatsApp.</p>
@@ -260,7 +262,7 @@
     var errBox = document.getElementById('statsError');
     try{
       var results = await Promise.all([
-        fetch(API_URL + '/owners?select=queue_number,is_test,submitted_at,companions,donation_amount,pets(id,type),checkins(post,desk,arrival_number)', { headers: authHeaders() }),
+        fetch(API_URL + '/owners?select=queue_number,name,is_test,submitted_at,companions,donation_amount,pets(id,type),checkins(post,desk,arrival_number)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_owners?select=donation_amount,pawrade_pets(id)', { headers: authHeaders() }),
         fetch(API_URL + '/pawrade_checkins?select=id', { headers: authHeaders() })
       ]);
@@ -306,6 +308,24 @@
         card('Belum reg ulang', owners.length - pos.A.sudah - pos.B.sudah) +
         card('Pos A (ganjil), dari ' + pos.A.total, pos.A.sudah) +
         card('Pos B (genap), dari ' + pos.B.total, pos.B.sudah);
+      // Rangkuman yang tidak datang: pemilik terdaftar tanpa catatan reg ulang, urut nomor pendaftaran.
+      var absen = owners.filter(function(o){
+        return !(o.checkins || []).some(function(k){ return k.post === 'reg_ulang'; });
+      }).sort(function(a, b){ return Number(a.queue_number) - Number(b.queue_number); });
+      var absenHewan = absen.reduce(function(n, o){ return n + (o.pets || []).length; }, 0);
+      document.getElementById('absenJudul').textContent = 'Tidak datang: ' + absen.length + ' pemilik, ' + absenHewan + ' hewan (dari ' + owners.length + ' pemilik, ' + pets + ' hewan terdaftar)';
+      var sel = 'padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;';
+      document.getElementById('absenTabel').innerHTML = absen.length
+        ? '<tr><th style="' + sel + '">No.</th><th style="' + sel + '">Pemilik</th><th style="' + sel + '">Hewan</th><th style="' + sel + '">Daftar</th></tr>' +
+          absen.map(function(o){
+            var jenis = {};
+            (o.pets || []).forEach(function(p){ var j = normJenis(p.type); jenis[j] = (jenis[j] || 0) + 1; });
+            var rincian = Object.keys(jenis).map(function(j){ return jenis[j] + ' ' + j; }).join(', ');
+            var daftar = o.submitted_at ? new Date(o.submitted_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }) : '';
+            return '<tr><td style="' + sel + 'font-weight:700;">' + escapeHtml(String(o.queue_number)) + '</td><td style="' + sel + '">' + escapeHtml(o.name || '') +
+              '</td><td style="' + sel + '">' + escapeHtml(rincian) + '</td><td style="' + sel + 'white-space:nowrap;">' + escapeHtml(daftar) + '</td></tr>';
+          }).join('')
+        : '<tr><td style="padding:5px 8px;">Semua pemilik terdaftar sudah reg ulang.</td></tr>';
       var tn = document.getElementById('testNote');
       tn.style.display = testCount ? 'block' : 'none';
       tn.textContent = 'Masih ada ' + testCount + ' pemilik data uji (Testing Nomor N) di database. Tidak dihitung di angka di atas. Hapus sebelum acara.';
