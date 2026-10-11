@@ -12,7 +12,7 @@
 <script src="hari-h.js"></script>
 <style>
   /* Dibuka di Mac (server lokal): status, serah terima pemberi nomor, QR alamat device.
-     Dibuka online (Vercel): lihat detak server lokal + aktifkan cadangan online. */
+     Dibuka online: lihat detak server lokal + aktifkan cadangan online. */
   .wrap{max-width:1100px;margin:0 auto;padding:12px 14px 40px;}
   header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px;}
   header h1{font-size:22px;flex:1;}
@@ -88,9 +88,9 @@ HariH.mulai(function(){
   }
   function alamatHalaman(dasar, hal){ return dasar + hal + (H.UJI ? (hal.indexOf('?') < 0 ? '?' : '&') + 'uji=1' : ''); }
   function alamatPetugas(dasar, hal){ return alamatHalaman(dasar, hal) + (kunciPetugas ? '#kunci=' + kunciPetugas : ''); }
-  // Alamat yang sama dengan QR petugas lama (petblessings.vercel.app). Dari sana halaman pindah
+  // Alamat yang sama dengan QR petugas lama. Dari sana halaman pindah
   // sendiri ke server yang sedang memberi nomor, dan selama jam acara terbuka tanpa login.
-  var ALAMAT_ONLINE = 'https://petblessings.vercel.app/';
+  var ALAMAT_ONLINE = 'https://petblessing.dpro.events/';
   function kartuInternet(){
     return '<div id="alamatInternet"><h2>Alamat petugas lewat internet, tanpa login</h2>' +
       '<p class="muted" style="font-size:13.5px;margin:0 0 6px">Sama dengan QR petugas yang lama. HP petugas cukup punya internet (data seluler atau wifi apa saja), tidak perlu wifi Mac dan tidak perlu login selama jam acara. Data tetap masuk ke database server yang sedang memberi nomor.</p>' +

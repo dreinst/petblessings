@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 // Login panitia untuk halaman rekap (pendaftaran-masuk.html) dan check-in
-// (checkin.html). Dua akun, keduanya dari environment variable Vercel:
+// (checkin.html). Dua akun, keduanya dari environment variable server:
 //   admin      -> PANITIA_USERNAME / PANITIA_PASSWORD_HASH
 //                 boleh buka rekap, ubah data pendaftaran, lihat bukti transfer,
 //                 tapi tiap login harus disetujui superadmin dulu

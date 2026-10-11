@@ -660,7 +660,7 @@
   // Data layer: submitRegistration() is the one place that talks to storage.
   // Nothing else in the form needs to change if this function's storage
   // backend changes again later. Semua tulis data lewat /api/register
-  // (Vercel), bukan langsung ke database -- supaya captcha bisa diverifikasi
+  // bukan langsung ke database -- supaya captcha bisa diverifikasi
   // dulu (lihat api/register.js).
   var API_URL = window.PETBLESSING_API_URL;
 

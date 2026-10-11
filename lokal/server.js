@@ -3,7 +3,7 @@
 //
 // * HTTPS :8443 dan HTTP :8080 untuk semua device di router (kamera di HP
 //   butuh HTTPS; HTTP untuk laptop booth yang memakai Python urllib).
-// * Menyajikan halaman yang sama dengan Vercel. api-config.js diganti supaya
+// * Menyajikan halaman yang sama dengan server online. api-config.js diganti supaya
 //   halaman memakai API lokal (/rest -> PostgREST lokal).
 // * /api/login memakai api/login.js yang sama, akunnya dari lokal/.env.
 // * Penyelaras: tiap SYNC_MS menyamakan data dengan VPS kalau internet ada.

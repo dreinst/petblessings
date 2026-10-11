@@ -1,6 +1,6 @@
 // Bagian bersama halaman hari-H Pet Blessing (checkin, monitor, panggil,
 // layar-panggil, kendali): login superadmin, akses API, status server.
-// Halaman yang sama jalan di Vercel (API VPS) dan di server lokal Mac
+// Halaman yang sama jalan di server online (API VPS) dan di server lokal Mac
 // (API lokal, lihat lokal/server.js yang mengganti api-config.js).
 //
 // Pakai: <div id="loginWrap"></div> + <div id="appWrap" hidden> di halaman,
@@ -11,7 +11,7 @@
 // database web_petugas, vps-db/init/30-petugas-pos.sql) didapat dari tautan
 // "...#kunci=<token>", atau diminta sendiri ke /api/tautan-petugas selama jam acara.
 //
-// Di Vercel, halaman hari-H pindah ke server lokal lewat internet (PB_LOKAL_INTERNET di
+// Di server online, halaman hari-H pindah ke server lokal lewat internet (PB_LOKAL_INTERNET di
 // api-config.js) selama server lokal yang memberi nomor, supaya QR petugas yang lama tetap
 // bisa dipakai tanpa menyambung ke wifi Mac. Tambahkan ?online=1 untuk tetap di server online.
 (function(){
@@ -108,7 +108,7 @@
     });
   }
 
-  // Server lokal (Mac) lewat internet. Dipakai halaman di Vercel: kalau Mac terjangkau dan sedang
+  // Server lokal (Mac) lewat internet. Dipakai halaman di server online: kalau Mac terjangkau dan sedang
   // memberi nomor, pindah ke sana dengan membawa token yang ada. Halaman kendali tidak ikut pindah
   // karena dari sanalah cadangan online diaktifkan.
   async function pindahKeLokal(){

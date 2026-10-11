@@ -1,6 +1,6 @@
 # Disalin ke /data/coolify/proxy/dynamic/petblessing-lokal.yaml di VPS (Traefik memuatnya sendiri, tanpa restart).
 # Server lokal hari-H Pet Blessing di Mac panitia (lokal/server.js, port 8080) lewat Tailscale, supaya HP
-# petugas bisa membuka halaman pos lewat internet tanpa menyambung ke wifi Mac. Halaman di Vercel pindah
+# petugas bisa membuka halaman pos lewat internet tanpa menyambung ke wifi Mac. Halaman di server online pindah
 # sendiri ke alamat ini selama Mac yang memberi nomor (PB_LOKAL_INTERNET di api-config.js, hari-h.js).
 # 100.74.79.16 = alamat Tailscale Mac. Hapus berkas ini di VPS setelah acara selesai.
 http:
@@ -19,7 +19,7 @@ http:
         average: 600
         burst: 300
         period: 1m
-    # hanya supaya halaman di Vercel boleh membaca /lokal/status (GET) sebelum pindah ke sini
+    # hanya supaya halaman di server online boleh membaca /lokal/status (GET) sebelum pindah ke sini
     petblessing-lokal-cors:
       headers:
         accessControlAllowMethods: [GET, OPTIONS]
