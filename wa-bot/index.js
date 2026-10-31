@@ -33,8 +33,8 @@ const EMOJI_SETS = ['🐾', '🐶🐱', '✅', '👋', ''];
 // Kontak panitia, disisipkan di setiap blast supaya pendaftar yang butuh bantuan
 // tidak membalas ke nomor ini (nomor ini cuma untuk kirim, bukan tanya jawab).
 const COMMITTEE_CONTACTS = [
-  { name: 'Lala', phone: '6281234320977' },
-  { name: 'Livvy', phone: '6281130588892' },
+  { name: 'Lala', phone: '[NOMOR DISENSOR]' },
+  { name: 'Livvy', phone: '[NOMOR DISENSOR]' },
 ];
 
 function committeeContactBlock() {
