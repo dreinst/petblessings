@@ -40,7 +40,7 @@ Semua halaman panitia memakai bilah navigasi yang sama di bagian atas: deretan t
 2. Isi bagian **Data pemilik**: nama, nomor HP (WhatsApp), dan jawab apakah Anda umat Paroki St. Vincentius a Paulo Malang. Kalau bukan, isi asal paroki, gereja, atau daerah. Jawab juga apakah Anda membawa pendamping (pet handler, keluarga, atau teman). Kalau ya, isi jumlah orangnya, supaya panitia bisa memperkirakan jumlah yang hadir.
 3. Isi bagian **Data hewan peliharaan** untuk hewan pertama: nama hewan, jenis hewan (Anjing, Kucing, Burung, Kelinci, Hamster, Reptil, atau Lainnya), foto (opsional), dan catatan kalau ada. Kalau memilih Lainnya, sebutkan jenisnya.
 4. Kalau membawa lebih dari satu hewan, tekan **+ Tambah hewan** dan isi kartu berikutnya. Tombol **Hapus** membuang kartu hewan yang tidak jadi didaftarkan.
-5. Bagian **Donasi** boleh dikosongkan. Kalau berdonasi, transfer ke rekening BCA 8161072001 a.n. Nicke Purnama Kartawiharja Kusumah (nomornya juga tertera di form), lalu isi jumlahnya dan lampirkan bukti transfer.
+5. Bagian **Donasi** boleh dikosongkan. Kalau berdonasi, transfer ke rekening BCA [REKENING DISENSOR] a.n. [NAMA DISENSOR] (nomornya juga tertera di form), lalu isi jumlahnya dan lampirkan bukti transfer.
 6. Centang pernyataan di bagian **Syarat & ketentuan**. Verifikasi anti-bot (captcha) berjalan otomatis, biasanya tanpa perlu apa-apa.
 7. Tekan **Kirim pendaftaran**.
 
